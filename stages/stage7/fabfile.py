@@ -1,0 +1,712 @@
+
+import re
+
+import os
+import sys
+
+from orizuru.config import Config
+
+from fabric.api import *
+from fabric.utils import puts
+from fabric.colors import green, yellow, red
+
+import cuisine
+
+def stage7():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    execute(stage7_container_zookeeper)
+    execute(stage7_container_cassandra)
+    execute(stage7_container_midonet_agent)
+    execute(stage7_container_midonet_gateway)
+    execute(stage7_container_midonet_api)
+
+    # only install midonet manager if the user and password was set
+    # a user who does not have the user/password must be able to install midonet.org without it
+    if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
+        if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
+            execute(stage7_container_midonet_manager)
+
+    execute(stage7_container_midonet_cli)
+    execute(stage7_container_midonet_tunnelzone)
+
+@parallel
+@roles('container_zookeeper')
+def stage7_container_zookeeper():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    zkhosts = []
+
+    # the first cluster node myst have my_id 1
+    zkid = 1
+
+    # construct the ensemble string
+    for container in sorted(metadata.roles["container_zookeeper"]):
+        zkhosts.append('"%s:2888:3888"' % metadata.containers[container]["ip"])
+
+        if container == env.host_string:
+            my_id = zkid
+
+        zkid = zkid + 1
+
+    run("""
+set -x
+
+#
+# initialize the password cache
+#
+%s
+
+#
+# initialize the puppet modules
+#
+REPO="%s"
+PUPPET_NODE_DEFINITION="$(mktemp)"
+
+cd "$(mktemp -d)"; git clone "${REPO}"
+
+PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
+
+#
+# set up the node definition
+#
+cat>"${PUPPET_NODE_DEFINITION}"<<EOF
+node $(hostname) {
+  hadoop-zookeeper::server {"$(hostname)":
+    myid => "%s",
+    ensemble => [%s]
+  }
+}
+EOF
+
+#
+# do the puppet run
+#
+puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
+
+/etc/init.d/zookeeper restart
+
+""" % (
+        open(os.environ["PASSWORDCACHE"]).read(),
+        metadata.config["midonet_puppet_modules"],
+        my_id,
+        ",".join(zkhosts)
+    ))
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@parallel
+@roles('container_cassandra')
+def stage7_container_cassandra():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    cshosts = []
+
+    for container in sorted(metadata.roles["container_cassandra"]):
+        cshosts.append("%s" % metadata.containers[container]["ip"])
+
+    cuisine.package_ensure("dsc21")
+
+    ip_address = metadata.containers[env.host_string]["ip"]
+
+    cuisine.file_write("/etc/cassandra/cassandra.yaml", """
+
+cluster_name: 'midonet'
+seed_provider:
+    - class_name: org.apache.cassandra.locator.SimpleSeedProvider
+      parameters:
+          - seeds: "%s"
+listen_address: %s
+rpc_address: %s
+
+num_tokens: 256
+hinted_handoff_enabled: true
+max_hint_window_in_ms: 10800000 # 3 hours
+hinted_handoff_throttle_in_kb: 1024
+max_hints_delivery_threads: 2
+batchlog_replay_throttle_in_kb: 1024
+authenticator: AllowAllAuthenticator
+authorizer: AllowAllAuthorizer
+permissions_validity_in_ms: 2000
+
+partitioner: org.apache.cassandra.dht.Murmur3Partitioner
+
+data_file_directories:
+    - /var/lib/cassandra/data
+
+commitlog_directory: /var/lib/cassandra/commitlog
+disk_failure_policy: stop
+commit_failure_policy: stop
+key_cache_size_in_mb:
+key_cache_save_period: 14400
+row_cache_size_in_mb: 0
+row_cache_save_period: 0
+counter_cache_size_in_mb:
+counter_cache_save_period: 7200
+saved_caches_directory: /var/lib/cassandra/saved_caches
+commitlog_sync: periodic
+commitlog_sync_period_in_ms: 10000
+commitlog_segment_size_in_mb: 32
+
+concurrent_reads: 32
+concurrent_writes: 32
+concurrent_counter_writes: 32
+memtable_allocation_type: heap_buffers
+index_summary_capacity_in_mb:
+index_summary_resize_interval_in_minutes: 60
+trickle_fsync: false
+trickle_fsync_interval_in_kb: 10240
+storage_port: 7000
+ssl_storage_port: 7001
+start_native_transport: true
+native_transport_port: 9042
+
+start_rpc: true
+rpc_port: 9160
+rpc_keepalive: true
+rpc_server_type: sync
+
+thrift_framed_transport_size_in_mb: 15
+
+incremental_backups: false
+snapshot_before_compaction: false
+auto_snapshot: true
+tombstone_warn_threshold: 1000
+tombstone_failure_threshold: 100000
+column_index_size_in_kb: 64
+batch_size_warn_threshold_in_kb: 5
+compaction_throughput_mb_per_sec: 16
+sstable_preemptive_open_interval_in_mb: 50
+read_request_timeout_in_ms: 5000
+range_request_timeout_in_ms: 10000
+write_request_timeout_in_ms: 2000
+counter_write_request_timeout_in_ms: 5000
+cas_contention_timeout_in_ms: 1000
+truncate_request_timeout_in_ms: 60000
+request_timeout_in_ms: 10000
+cross_node_timeout: false
+
+endpoint_snitch: SimpleSnitch
+
+dynamic_snitch_update_interval_in_ms: 100
+dynamic_snitch_reset_interval_in_ms: 600000
+dynamic_snitch_badness_threshold: 0.1
+
+request_scheduler: org.apache.cassandra.scheduler.NoScheduler
+
+server_encryption_options:
+    internode_encryption: none
+    keystore: conf/.keystore
+    keystore_password: cassandra
+    truststore: conf/.truststore
+    truststore_password: cassandra
+
+client_encryption_options:
+    enabled: false
+    keystore: conf/.keystore
+    keystore_password: cassandra
+
+internode_compression: all
+inter_dc_tcp_nodelay: false
+
+""" % (
+        ",".join(cshosts),
+        ip_address,
+        ip_address
+    ))
+
+    cuisine.package_ensure("openjdk-7-jre-headless")
+
+    run("""
+service cassandra start || service cassandra restart
+
+sleep 10
+
+if [[ ! "$(grep 'Saved cluster name Test Cluster' /var/log/cassandra/system.log)" == "" ]]; then
+    service cassandra stop
+    rm -rfv /var/lib/cassandra/*
+    rm -v /var/log/cassandra/system.log
+    service cassandra start
+fi
+
+""")
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@parallel
+@roles('container_midonet_gateway', 'container_openstack_neutron', 'container_openstack_controller', 'container_openstack_compute')
+def stage7_container_midonet_agent():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    run("""
+set -x
+
+#
+# initialize the password cache
+#
+%s
+
+#
+# initialize the puppet modules
+#
+REPO="%s"
+
+ZOOKEEPERS="%s"
+CASSANDRAS="%s"
+
+XMS="%s"
+XMX="%s"
+XMN="%s"
+
+PUPPET_NODE_DEFINITION="$(mktemp)"
+
+cd "$(mktemp -d)"; git clone "${REPO}"
+
+PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
+
+#
+# set up the node definition
+#
+cat>"${PUPPET_NODE_DEFINITION}"<<EOF
+node $(hostname) {
+  midolman::agent {"$(hostname)":
+    zookeepers => "${ZOOKEEPERS}",
+    cassandras => "${CASSANDRAS}"
+  }
+}
+EOF
+#
+# do the puppet run
+#
+puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
+
+sleep 12
+
+ps axufwwwwwwwwwwwww | grep -v grep | grep midolman && exit 0
+
+/usr/share/midolman/midolman-prepare
+
+screen -S midolman -d -m -- /usr/share/midolman/midolman-start
+
+sleep 30
+
+ps axufwwwwwwwwwwwww | grep -v grep | grep midolman
+
+""" % (
+        open(os.environ["PASSWORDCACHE"]).read(),
+        metadata.config["midonet_puppet_modules"],
+        ",".join(sorted(metadata.roles["container_zookeeper"])),
+        ",".join(sorted(metadata.roles["container_cassandra"])),
+        metadata.config["HEAP_INITIAL"],
+        metadata.config["MAX_HEAPSIZE"],
+        metadata.config["HEAP_NEWSIZE"]
+    ))
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@parallel
+@roles('container_midonet_gateway')
+def stage7_container_midonet_gateway():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    server_idx = int(re.sub(r"\D", "", env.host_string))
+
+    overlay_ip_idx = 255 - server_idx
+
+    run("""
+set -x
+
+#
+# fakeuplink logic for midonet gateways without binding a dedicated virtual edge NIC
+#
+# this is recommended for silly toy installations only - do not do this in production!
+#
+# The idea with the veth-pairs was originally introduced and explained to me from Daniel Mellado.
+#
+# Thanks a lot, Daniel!
+#
+
+# this will go into the host-side of the veth pair
+PHYSICAL_IP="%s"
+
+# this will be bound to the provider router
+OVERLAY_BINDING_IP="%s"
+
+ip a | grep veth1 || \
+    ip link add type veth
+
+# these two interfaces are basically acting as a virtual RJ45 cross-over patch cable
+ifconfig veth0 up
+ifconfig veth1 up
+
+# this bridge brings us to the linux kernel routing
+brctl addbr fakeuplink
+
+# this is the physical ip we use for routing (SNATing inside linux)
+ifconfig fakeuplink "${PHYSICAL_IP}/24" up
+
+# this is the physical plug of the veth-pair
+brctl addif fakeuplink veth0 # veth1 will be used by midonet
+
+# change this to the ext range for more authentic testing
+ip route add 200.200.200.0/24 via "${OVERLAY_BINDING_IP}"
+
+# enable routing
+echo 1 > /proc/sys/net/ipv4/ip_forward
+iptables -v -t nat -o eth0 -I POSTROUTING -j MASQUERADE
+
+""" % (
+        "%s.%s" % (metadata.config["fake_transfer_net"], str(server_idx)),
+        "%s.%s" % (metadata.config["fake_transfer_net"], str(overlay_ip_idx))
+    ))
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@parallel
+@roles('container_midonet_api')
+def stage7_container_midonet_api():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    run("""
+set -x
+
+#
+# initialize the password cache
+#
+%s
+
+#
+# initialize the puppet modules
+#
+REPO="%s"
+KEYSTONE_IP="%s"
+MIDONET_API_IP="%s"
+ZOOKEEPER_HOSTS="%s"
+
+PUPPET_NODE_DEFINITION="$(mktemp)"
+
+cd "$(mktemp -d)"; git clone "${REPO}"
+
+PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
+
+#
+# init script is starting the daemon multiple times? might as well hit it with the sledge hammer.
+#
+ps axufww | grep -v grep | grep ^tomcat | awk '{print $2;}' | xargs -n1 kill -9
+
+#
+# set up the node definition
+#
+cat>"${PUPPET_NODE_DEFINITION}"<<EOF
+node $(hostname) {
+  midonet_api::tomcat6 {"$(hostname)":
+    keystone_admin_token => "${ADMIN_TOKEN}",
+    keystone_service_host => "${KEYSTONE_IP}",
+    rest_api_base_url => "http://${MIDONET_API_IP}:8080/midonet-api",
+    zookeeper_hosts => "${ZOOKEEPER_HOSTS}"
+  }
+}
+EOF
+#
+# do the puppet run
+#
+puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
+
+""" % (
+        open(os.environ["PASSWORDCACHE"]).read(),
+        metadata.config["midonet_puppet_modules"],
+        metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"],
+        metadata.containers[env.host_string]["ip"],
+        ",".join(map(lambda zk: str(metadata.containers[zk]["ip"]), sorted(metadata.roles["container_zookeeper"])))
+    ))
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@parallel
+@roles('container_midonet_manager')
+def stage7_container_midonet_manager():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    run("""
+set -x
+
+#
+# initialize the password cache
+#
+%s
+
+#
+# initialize the puppet modules
+#
+REPO="%s"
+PUPPET_NODE_DEFINITION="$(mktemp)"
+
+cd "$(mktemp -d)"; git clone "${REPO}"
+
+PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
+
+#
+# set up the node definition
+#
+cat>"${PUPPET_NODE_DEFINITION}"<<EOF
+node $(hostname) {
+  midonet_manager::apache2 {"$(hostname)":
+    rest_api_base => "http://%s:8080",
+  }
+}
+EOF
+#
+# do the puppet run
+#
+puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
+
+""" % (
+        open(os.environ["PASSWORDCACHE"]).read(),
+        metadata.config["midonet_puppet_modules"],
+        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
+    ))
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@parallel
+@roles('container_midonet_cli')
+def stage7_container_midonet_cli():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    cuisine.package_ensure([
+        "python-midonetclient",
+        "python-keystoneclient",
+        "python-glanceclient",
+        "python-novaclient",
+        "python-neutronclient"
+        ])
+
+    run("""
+set -x
+
+#
+# initialize the password cache
+#
+%s
+
+source /etc/keystone/KEYSTONERC_ADMIN
+
+ADMIN_TENANT_ID="$(keystone tenant-list | grep admin | awk -F'|' '{print $2;}' | xargs -n1 echo)"
+
+cat >/root/.midonetrc<<EOF
+[cli]
+api_url = http://%s:8080/midonet-api
+username = admin
+password = ${ADMIN_PASS}
+tenant = ${ADMIN_TENANT_ID}
+project_id = admin
+EOF
+
+""" % (
+        open(os.environ["PASSWORDCACHE"]).read(),
+        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"]
+    ))
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@parallel
+@roles('container_midonet_cli')
+def stage7_container_midonet_tunnelzone():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    cuisine.package_ensure("expect")
+
+    run("""
+set -x
+
+#
+# create tunnel-zone
+#
+midonet-cli -e 'tunnel-zone list name gre' | \
+    grep '^tzone' | grep 'name gre type gre' || \
+        midonet-cli -e 'tunnel-zone create name gre type gre'
+
+""")
+
+    for role in ['container_midonet_gateway', 'container_openstack_neutron', 'container_openstack_controller', 'container_openstack_compute']:
+        for container in metadata.containers:
+            if container in metadata.roles[role]:
+                puts(green("enrolling container %s in tunnel-zone gre" % container))
+                run("""
+set -x
+
+CONTAINER_NAME="%s"
+CONTAINER_IP="%s"
+
+/usr/bin/expect<<EOF
+set timeout 10
+spawn midonet-cli
+
+expect "midonet> " { send "tunnel-zone list name gre\r" }
+expect "midonet> " { send "host list name ${CONTAINER_NAME}\r" }
+expect "midonet> " { send "tunnel-zone tzone0 add member host host0 address ${CONTAINER_IP}\r" }
+expect "midonet> " { send "quit\r" }
+
+EOF
+
+""" %(
+        container,
+        metadata.containers[container]["ip"]
+    ))
+
+    run("""
+set -x
+
+source /etc/keystone/KEYSTONERC_ADMIN
+
+neutron net-list | grep public || \
+    neutron net-create public --shared --router:external=true
+
+# this is the pseudo FIP subnet
+neutron subnet-list | grep extsubnet || \
+    neutron subnet-create public 200.200.200.0/24 --name extsubnet --enable_dhcp False
+
+# create one example tenant router for the admin tenant
+neutron router-list | grep ext-to-int || \
+    neutron router-create ext-to-int
+
+# make the Midonet provider router the virtual next-hop router for the tenant router
+neutron router-gateway-set "ext-to-int" public
+
+# create the first admin tenant internal openstack vm network
+neutron net-list | grep internal || \
+    neutron net-create internal --shared
+
+# create the subnet for the vms
+neutron subnet-list | grep internalsubnet || \
+    neutron subnet-create internal \
+        --allocation-pool start=192.168.77.100,end=192.168.77.200 \
+        --name internalsubnet \
+        --enable_dhcp=True \
+        --gateway=192.168.77.1 \
+        --dns-nameserver=8.8.8.8 \
+        --dns-nameserver=8.8.4.4 \
+        192.168.77.0/24
+
+# attach the internal network to the tenant router to allow outgoing traffic for the vms
+neutron router-interface-add "ext-to-int" "internalsubnet"
+
+SECURITY_GROUP_NAME="testing"
+
+# delete existing security groups with the same name
+for ID in $(nova secgroup-list | grep "${SECURITY_GROUP_NAME}" | awk -F'|' '{ print $2; }' | awk '{ print $1; }'); do
+    nova secgroup-delete "${ID}" || true # may be already in use
+done
+
+# try to find the survivor
+for ID in $(nova secgroup-list | grep "${SECURITY_GROUP_NAME}" | awk -F'|' '{ print $2; }' | awk '{ print $1; }'); do
+    EXISTING="${ID}"
+done
+
+# if not found, create
+if [[ "${EXISTING}" == "" ]]; then
+    nova secgroup-create "${SECURITY_GROUP_NAME}" "created by a script"
+    EXISTING="$(nova secgroup-list | grep "${SECURITY_GROUP_NAME}" | awk -F'|' '{ print $2; }' | awk '{ print $1; }')"
+fi
+
+nova secgroup-add-rule "${EXISTING}" tcp 22 22 0.0.0.0/0 || true # ssh
+nova secgroup-add-rule "${EXISTING}" tcp 80 80 0.0.0.0/0 || true # http
+nova secgroup-add-rule "${EXISTING}" udp 53 53 0.0.0.0/0 || true # dns
+nova secgroup-add-rule "${EXISTING}" icmp -1 -1 0.0.0.0/0 || true # icmp
+
+SSHKEY="/root/.ssh/id_rsa_nova"
+
+if [[ ! -f "${SSHKEY}" ]]; then
+  ssh-keygen -b 8192 -t rsa -N "" -C "nova" -f "${SSHKEY}"
+fi
+
+nova keypair-list | grep "$(hostname)_root_ssh_id_rsa_nova" || \
+    nova keypair-add --pub_key "${SSHKEY}.pub" "$(hostname)_root_ssh_id_rsa_nova"
+
+nova boot \
+    --flavor "$(nova flavor-list | grep m1.small | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
+    --image "$(nova image-list | grep cirros | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
+    --key-name "$(nova keypair-list | grep "$(hostname)_root_ssh_id_rsa_nova" | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
+    --security-groups "$(neutron security-group-list | grep testing | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
+    --nic net-id="$(neutron net-list | grep internal | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
+    "test$(date +%s)"
+
+""")
+
+    # provider router has been created now. we can set up the static routing logic.
+    # note that we might also change this role loop to include compute nodes
+    # (for simulating a similar approach like the HP DVR off-ramping directly from the compute nodes)
+    for role in ['container_midonet_gateway']:
+        for container in metadata.containers:
+            if container in metadata.roles[role]:
+                puts(green("setting up fakeuplink provider router leg for container %s" % container))
+
+                physical_ip_idx = int(re.sub(r"\D", "", container))
+
+                overlay_ip_idx = 255 - physical_ip_idx
+
+                #
+                # This logic is the complimentary logic to what happens on the midonet gateways when the veth pair, the fakeuplink bridge and the eth0 SNAT is set up.
+                # We might some day change this to proper BGP peer (which will be in another container or on a different host of course).
+                #
+                run("""
+set -x
+
+CONTAINER_NAME="%s"
+FAKEUPLINK_VETH1_IP="%s"
+FAKEUPLINK_NETWORK="%s.0/24"
+FAKEUPLINK_VETH0_IP="%s"
+
+/usr/bin/expect<<EOF
+set timeout 10
+spawn midonet-cli
+
+expect "midonet> " { send "cleart\r" }
+
+expect "midonet> " { send "router list name 'MidoNet Provider Router'\r" }
+
+expect "midonet> " { send "router router0 add port address ${FAKEUPLINK_VETH1_IP} net ${FAKEUPLINK_NETWORK}\r" }
+expect "midonet> " { send "port list device router0 address ${FAKEUPLINK_VETH1_IP}\r" }
+
+expect "midonet> " { send "host list name ${CONTAINER_NAME}\r" }
+expect "midonet> " { send "host host0 add binding port router router0 port port0 interface veth1\r" }
+
+expect "midonet> " { send "router router0 add route type normal weight 0 src 0.0.0.0/0 dst 0.0.0.0/0 gw ${FAKEUPLINK_VETH0_IP} port port0\r" }
+
+expect "midonet> " { send "quit\r" }
+
+EOF
+
+""" % (
+        container,
+        "%s.%s" % (metadata.config["fake_transfer_net"], str(overlay_ip_idx)),
+        metadata.config["fake_transfer_net"],
+        "%s.%s" % (metadata.config["fake_transfer_net"], str(physical_ip_idx))
+    ))
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+

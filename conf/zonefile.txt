@@ -1,0 +1,18 @@
+
+$TTL 86400
+@   IN SOA ns1.first-ns.de. postmaster.robot.first-ns.de. (
+    2014122300   ; serial
+    14400        ; refresh
+    1800         ; retry
+    604800       ; expire
+    86400 )      ; minimum
+
+@                        IN NS      ns1.first-ns.de.
+@                        IN NS      robotns2.second-ns.de.
+@                        IN NS      robotns3.second-ns.com.
+
+@                        IN A       119.15.120.99
+benningen                IN A       119.15.120.64
+infradata2               IN A       119.15.120.219
+www                      IN A       119.15.120.99
+
