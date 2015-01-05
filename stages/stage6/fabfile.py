@@ -689,7 +689,7 @@ for XSERVICE in "${SERVICE}"; do
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "database" "connection" "mysql://${SERVICE}:${%s_DBPASS}@${DATABASE_SERVER_IP}/${SERVICE}"
 
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "neutron_url_timeout" "60"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "neutron_url_timeout" "240"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rpc_backend" "rabbit"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_host" "${RABBIT_IP}"
