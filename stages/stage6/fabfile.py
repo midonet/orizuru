@@ -876,12 +876,12 @@ for XSERVICE in "${SERVICE}"; do
 done
 
 #
-# switch to qemu if the system does not support hardware virtualization
+# always switch to qemu (containers cannot access kvm even in privileged mode)
 #
-if [[ "$(grep -c vmx /proc/cpuinfo)" == "0" ]]; then
-    CONFIGFILE="/etc/${SERVICE}/${SERVICE}-compute.conf"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "libvirt" "virt_type" "qemu"
-fi
+#if [[ "$(grep -c vmx /proc/cpuinfo)" == "0" ]]; then echo 'the system supports hardware virt'; fi
+
+CONFIGFILE="/etc/${SERVICE}/${SERVICE}-compute.conf"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "libvirt" "virt_type" "qemu"
 
 cat>/etc/libvirt/qemu.conf<<EOF
 
