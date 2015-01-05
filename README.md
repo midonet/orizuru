@@ -13,7 +13,8 @@ export CONFIGFILE="$(pwd)/conf/alex.yaml"
 export OS_MIDOKURA_ROOT_PASSWORD="new root password"
 ```
 
-Please make sure you use an ssh-agent for your ssh key passphrase so that fabric can login as root to the servers you defined without asking you for the passphrase.
+Please make sure you use an ssh-agent for your ssh key passphrase so that fabric can login as root to the ips of the servers you defined without asking you for the passphrase.
+Also you should make sure that all the host fingerprints for the ips are in your .ssh/known_hosts file before you start the script.
 
 The installer will start creating the containers on the servers and install Openstack with Midonet when you type this:
 ```
