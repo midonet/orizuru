@@ -111,7 +111,7 @@ def stage7_container_cassandra():
     for container in sorted(metadata.roles["container_cassandra"]):
         cshosts.append("%s" % metadata.containers[container]["ip"])
 
-    cuisine.package_ensure("dsc21")
+    cuisine.package_ensure("dsc20")
 
     ip_address = metadata.containers[env.host_string]["ip"]
 

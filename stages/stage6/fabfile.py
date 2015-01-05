@@ -1005,9 +1005,11 @@ chown -R glance:glance /var/lib/glance
 
 rm -rfv /tmp/keystone-signing*
 
-for SUBSERVICE in "api" "registry"; do
+for SUBSERVICE in "registry" "api"; do
     ps axufwwwwww | grep -v grep | grep -- "/usr/bin/glance-${SUBSERVICE}" || \
         screen -S glance-${SUBSERVICE} -d -m -- start-stop-daemon --start --chuid glance --chdir /var/lib/glance --name glance-${SUBSERVICE} --exec /usr/bin/glance-${SUBSERVICE}
+    sleep 10
+    ps axufwwwwww | grep -v grep | grep -- "/usr/bin/glance-${SUBSERVICE}"
 done
 
 rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"

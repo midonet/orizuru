@@ -50,8 +50,8 @@ roles:
 
     midonet_gateway:
     - zk001
-    - zk002
-    - zk003
+    # - zk002
+    # - zk003
 
     midonet_api:
     - os002
