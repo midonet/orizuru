@@ -8,7 +8,7 @@ config:
     domain: benningen.midokura.de
 
     # if you enable MEM here you should also set two environment variables:
-    # OS_MIDOKURA_RHEL_SUBSCRIPTION_USER
+    # OS_MIDOKURA_REPOSITORY_USER
     # OS_MIDOKURA_REPOSITORY_PASS
     midonet_repo: OSS # can be OSS or MEM
 
