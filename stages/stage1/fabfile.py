@@ -70,8 +70,6 @@ def configure_stage1():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    Install(metadata).dist_upgrade()
-
     Configure(metadata).configure()
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
