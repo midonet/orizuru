@@ -746,6 +746,7 @@ for i in $(seq 1 100); do
 done
 
 if [[ "" == "${INSTANCE_ALIVE}" ]]; then
+    echo "instance not alive after 100 seconds, this is not good."
     exit 1
 fi
 
@@ -757,7 +758,8 @@ neutron floatingip-list --field fixed_ip_address | grep "${INSTANCE_IP}" || neut
 
 neutron floatingip-list
 
-sleep 10
+echo "sleeeping 120 seconds before trying to ping and ssh login into instance"
+sleep 120
 
 FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
 
