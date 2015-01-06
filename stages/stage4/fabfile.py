@@ -117,7 +117,6 @@ CONTAINER_NETMASK="%s"
 CONTAINER_NETWORK="%s"
 DOMAIN_NAME="%s"
 SERVER_IP="%s"
-
 CONTAINER_VETH="${RANDOM}"
 
 NETNS_NAME="docker_${CONTAINER_VETH}_${CONTAINER_ROLE}_${SERVER_NAME}"
@@ -231,7 +230,9 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     # midonet api
     #
     if [[ "midonet_api" == "${CONTAINER_ROLE}" ]]; then
-        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 8080 -j DNAT --to "${CONTAINER_IP}:8080"
+        # iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 8080 -j DNAT --to "${CONTAINER_IP}:8080"
+
+        iptables -t nat -I PREROUTING -p tcp --dport 8080 -j DNAT --to "${CONTAINER_IP}:8080"
         iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 8080 -j ACCEPT
     fi
 
