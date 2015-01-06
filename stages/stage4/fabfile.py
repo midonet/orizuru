@@ -168,7 +168,7 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     # add one side of the pair to our master bridge connected to the tinc overlay
     brctl addif "${DOCKER_BRIDGE}" "${CONTAINER_VETH_A}"
 
-    # up the ante
+    # up the interface on our side
     ip link set "${CONTAINER_VETH_A}" up
 
     # punch the other side of the pair into the namespace of the container
@@ -178,13 +178,18 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     ip netns exec "${NETNS_NAME}" ip addr add "${CONTAINER_IP}/${CONTAINER_NETMASK}" dev eth0
     ip netns exec "${NETNS_NAME}" ip route add default via "${CONTAINER_DEFAULT_GW}"
 
+    # if this is a midonet gateway, add a route to the fip range via this ip
+    if [[ "midonet_gateway" == "${CONTAINER_ROLE}" ]]; then
+        ip route add 200.200.200.0/24 via "${CONTAINER_IP}"
+    fi
+
     sleep 2
 else
     CONTAINER_ID="$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_NAME}" | awk '{print $1;}' | head -n1)"
 fi
 
 #
-# hard-wire the hostname and /etc/hosts to the k0nt4!n0r
+# hard-wire the /etc/hosts to the container
 #
 
 CONTAINER_HOSTS_PATH="$(docker ps | grep -v ^CONTAINER | grep "^${CONTAINER_ID}" | awk '{print $1;}' | xargs -n1 --no-run-if-empty docker inspect --format "{{ .HostsPath }}")"

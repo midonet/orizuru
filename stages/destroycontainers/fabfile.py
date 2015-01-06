@@ -41,6 +41,8 @@ done
 
 docker images | grep "${TEMPLATE_NAME}" && docker rmi -f "${TEMPLATE_NAME}" || true;
 
+rm -fv /var/run/netns/docker_*_${SERVER_NAME} || true;
+
 exit 0
 
 """ % (env.host_string, role))

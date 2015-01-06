@@ -122,6 +122,7 @@ if [[ "$(uname -o 2>/dev/null)" == "GNU/Linux" ]]; then
 else
     /sbin/ifconfig "${INTERFACE}" "${LOCAL_IP}" "${BROADCAST}" netmask "${NETMASK}"
 fi
+
 """ % (
         metadata.config["vpn_base"],
         metadata.config["idx"][env.host_string],
@@ -143,10 +144,34 @@ exit 0
 ConnectTo = %s
 """ % server)
 
+            if server in metadata.roles["midonet_gateway"]:
+                cuisine.file_append("/etc/tinc/%s/tinc-up" % metadata.config["domain"], """
+#
+# tinc routing configuration: forward floating ip range packets to %s
+# where they will be further forwarded to the midonet_gateway docker container
+#
+VPN_BASE="%s"
+GW="${VPN_BASE}.%s"
+
+NET="200.200.200.0"
+NETMASK="255.255.255.0"
+
+if [[ "$(uname -o 2>/dev/null)" == "GNU/Linux" ]]; then
+    /sbin/route add -net "${NET}" netmask "${NETMASK}" gw "${GW}"
+else
+    /sbin/route add -net "${NET}" "${GW}" "${NETMASK}"
+fi
+
+""" % (
+    server,
+    metadata.config["vpn_base"],
+    metadata.config["idx"][server]
+    ))
+
             cuisine.file_append("/etc/tinc/%s/tinc-up" % metadata.config["domain"], """
 
 #
-# tinc routing configuration for reaching out to networks on %s
+# tinc routing configuration: forward packets for the docker network ips on server %s
 #
 VPN_BASE="%s"
 NET="%s"

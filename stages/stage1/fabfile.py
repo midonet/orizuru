@@ -25,7 +25,6 @@ def stage1pingcheck():
 def stage1zonefile():
     metadata = Config(os.environ["CONFIGFILE"])
 
-    # goes to stdout.  live with it.
     Orizuru(metadata).zonefile()
 
     # do not remove this or you will have the word "Done." in your zonefile (thanks fabric)
@@ -36,7 +35,7 @@ def stage1hostsfile():
 
     Orizuru(metadata).hostsfile()
 
-    # do not remove this
+    # do not remove this.
     sys.exit(0)
 
 def stage1sshconfig():
@@ -44,14 +43,13 @@ def stage1sshconfig():
 
     Orizuru(metadata).sshconfig()
 
-    # do not remove this
+    # do not remove this.
     sys.exit(0)
 
 def stage1sshcheck():
     metadata = Config(os.environ["CONFIGFILE"])
 
     puts(yellow("executing stage1 connection check"))
-    #local("sleep 5")
     execute(connect_stage1)
 
 @parallel
@@ -79,6 +77,8 @@ def configure_stage1():
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
+
+    Install(metadata).dist_upgrade()
 
     Configure(metadata).configure()
 

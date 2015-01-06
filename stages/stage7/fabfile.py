@@ -111,9 +111,14 @@ def stage7_container_cassandra():
     for container in sorted(metadata.roles["container_cassandra"]):
         cshosts.append("%s" % metadata.containers[container]["ip"])
 
-    cuisine.package_ensure("dsc21")
+    cuisine.package_ensure("cassandra=2.0.10")
+    cuisine.package_ensure("dsc20=2.0.10-1")
+
+    # cuisine.package_ensure("dsc21")
 
     ip_address = metadata.containers[env.host_string]["ip"]
+
+    # dsc20: org.apache.cassandra.exceptions.ConfigurationException: Invalid yaml. Please remove properties [counter_write_request_timeout_in_ms, sstable_preemptive_open_interval_in_mb, index_summary_capacity_in_mb, counter_cache_size_in_mb, memtable_allocation_type, concurrent_counter_writes, index_summary_resize_interval_in_minutes, counter_cache_save_period] from your cassandra.yaml
 
     cuisine.file_write("/etc/cassandra/cassandra.yaml", """
 
@@ -147,8 +152,8 @@ key_cache_size_in_mb:
 key_cache_save_period: 14400
 row_cache_size_in_mb: 0
 row_cache_save_period: 0
-counter_cache_size_in_mb:
-counter_cache_save_period: 7200
+# counter_cache_size_in_mb:
+# counter_cache_save_period: 7200
 saved_caches_directory: /var/lib/cassandra/saved_caches
 commitlog_sync: periodic
 commitlog_sync_period_in_ms: 10000
@@ -156,10 +161,10 @@ commitlog_segment_size_in_mb: 32
 
 concurrent_reads: 32
 concurrent_writes: 32
-concurrent_counter_writes: 32
-memtable_allocation_type: heap_buffers
-index_summary_capacity_in_mb:
-index_summary_resize_interval_in_minutes: 60
+# concurrent_counter_writes: 32
+# memtable_allocation_type: heap_buffers
+# index_summary_capacity_in_mb:
+# index_summary_resize_interval_in_minutes: 60
 trickle_fsync: false
 trickle_fsync_interval_in_kb: 10240
 storage_port: 7000
@@ -182,11 +187,11 @@ tombstone_failure_threshold: 100000
 column_index_size_in_kb: 64
 batch_size_warn_threshold_in_kb: 5
 compaction_throughput_mb_per_sec: 16
-sstable_preemptive_open_interval_in_mb: 50
+# sstable_preemptive_open_interval_in_mb: 50
 read_request_timeout_in_ms: 5000
 range_request_timeout_in_ms: 10000
 write_request_timeout_in_ms: 2000
-counter_write_request_timeout_in_ms: 5000
+# counter_write_request_timeout_in_ms: 5000
 cas_contention_timeout_in_ms: 1000
 truncate_request_timeout_in_ms: 60000
 request_timeout_in_ms: 10000
@@ -648,7 +653,7 @@ nova keypair-list | grep "$(hostname)_root_ssh_id_rsa_nova" || \
     nova keypair-add --pub_key "${SSHKEY}.pub" "$(hostname)_root_ssh_id_rsa_nova"
 
 nova boot \
-    --flavor "$(nova flavor-list | grep m1.small | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
+    --flavor "$(nova flavor-list | grep m1.tiny | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
     --image "$(nova image-list | grep cirros | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
     --key-name "$(nova keypair-list | grep "$(hostname)_root_ssh_id_rsa_nova" | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
     --security-groups "$(neutron security-group-list | grep testing | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
@@ -707,6 +712,14 @@ EOF
         metadata.config["fake_transfer_net"],
         "%s.%s" % (metadata.config["fake_transfer_net"], str(physical_ip_idx))
     ))
+
+    #
+    # TODO set up fip for the cirros instance using neutron floatingip- commands
+    # TODO ping the instance
+    # TODO log in using expect
+    # TODO ping the internet from inside the instance
+    # TODO wget a web page from inside the instance
+    #
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

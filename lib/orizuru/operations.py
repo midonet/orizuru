@@ -316,6 +316,8 @@ fi
         cuisine.package_ensure(self._metadata.config["common_packages"])
 
     def newrelic(self):
+        run("rm -fv /etc/newrelic/nrsysmond.cfg* || true")
+
         cuisine.package_ensure("newrelic-sysmond")
 
         run("""
@@ -356,8 +358,9 @@ grub grub/update_grub_changeprompt_threeway select install_new
 grub-legacy-ec2 grub/update_grub_changeprompt_threeway select install_new
 EOF
 
+yes | dpkg --configure -a
+
 apt-get -y -u --force-yes install
-dpkg --configure -a
 
 apt-get -y -u --force-yes dist-upgrade
 
