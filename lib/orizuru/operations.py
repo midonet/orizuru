@@ -297,7 +297,7 @@ hardstatus string '%%{= kG} %s [%%= %%{= kw}%%?%%-Lw%%?%%{r}[%%{W}%%n*%%f %%t%%?
 
         run("""
 #
-# Round 1: try to apt-get update without purging ze cache
+# Round 1: try to apt-get update without purging the cache
 #
 apt-get update 1>/dev/null
 

@@ -808,6 +808,8 @@ COMPUTE_IP="%s"
 
 CONTROLLER_IP="%s"
 
+CONTROLLER_OUTER_IP="%s"
+
 MIDONET_API="%s"
 
 NEUTRON_IP="%s"
@@ -836,7 +838,7 @@ for XSERVICE in "${SERVICE}"; do
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "my_ip" "${COMPUTE_IP}"
 
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "novncproxy_base_url" "http://${CONTROLLER_IP}:6080/vnc_auto.html"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "novncproxy_base_url" "http://${CONTROLLER_OUTER_IP}:6080/vnc_auto.html"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "vncserver_listen" "${COMPUTE_IP}"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "vncserver_proxyclient_address" "${COMPUTE_IP}"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "vnc_enabled" "True"
@@ -930,6 +932,7 @@ ps axufwwwww | grep -v grep | grep nova-compute
         metadata.containers[metadata.roles["container_openstack_glance"][0]]["ip"],
         metadata.containers[env.host_string]["ip"],
         metadata.containers[metadata.roles["container_openstack_controller"][0]]["ip"],
+        metadata.servers[metadata.roles["openstack_controller"][0]]["ip"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
         metadata.containers[metadata.roles["container_openstack_neutron"][0]]["ip"],
         service.upper()

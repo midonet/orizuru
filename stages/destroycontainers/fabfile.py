@@ -47,3 +47,7 @@ exit 0
 
 """ % (env.host_string, role))
 
+    run("docker ps --no-trunc -aq | xargs -n1 --no-run-if-empty docker rm -f")
+
+    run("docker images | grep '^<none>' | awk '{print $3}' | xargs -n1 --no-run-if-empty docker rmi -f")
+

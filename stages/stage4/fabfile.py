@@ -55,7 +55,8 @@ FROM ubuntu:14.04
 
 MAINTAINER Alexander Gabert <alexander.gabert@gmail.com>
 
-RUN apt-get update && apt-get install -y openssh-server
+RUN apt-get update 1>/dev/null
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server
 RUN mkdir /var/run/sshd
 RUN echo "root:%s" | chpasswd
 RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
@@ -92,7 +93,7 @@ mkdir -pv root/.ssh
 
 cat /root/.ssh/authorized_keys > root/.ssh/authorized_keys
 
-docker images | grep "template_${CONTAINER_ROLE}_${SERVER_NAME}" || docker build -t "template_${CONTAINER_ROLE}_${SERVER_NAME}" .
+docker images | grep "template_${CONTAINER_ROLE}_${SERVER_NAME}" || docker build --no-cache=true -t "template_${CONTAINER_ROLE}_${SERVER_NAME}" .
 
 mkdir -pv /etc/rc.local.d
 
@@ -115,6 +116,7 @@ CONTAINER_DEFAULT_GW="%s"
 CONTAINER_NETMASK="%s"
 CONTAINER_NETWORK="%s"
 DOMAIN_NAME="%s"
+SERVER_IP="%s"
 
 CONTAINER_VETH="${RANDOM}"
 
@@ -132,8 +134,14 @@ if [[ "${DEFAULT_GW_IFACE}" == "" ]]; then
 fi
 
 if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_NAME}")" == "" ]]; then
-    iptables -t nat -A POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" ! -d "${CONTAINER_NETWORK}/${CONTAINER_NETMASK}" -j MASQUERADE
+    #
+    # when the container wants to talk to the outside world, SNAT it from the default network device
+    #
+    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" ! -d "${CONTAINER_NETWORK}/${CONTAINER_NETMASK}" -j MASQUERADE
 
+    #
+    # start the container in a screen session
+    #
     screen -d -m -- docker run -h "${CONTAINER_ROLE}_${SERVER_NAME}" --privileged=true -i -t --rm --net="none" --name "${CONTAINER_VETH}_${CONTAINER_ROLE}_${SERVER_NAME}" "template_${CONTAINER_ROLE}_${SERVER_NAME}"
 
     for i in $(seq 1 120); do
@@ -158,30 +166,59 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
         exit 1
     fi
 
-    # link the network namespace of the spawned container to ip namespaces
+    #
+    # link the network namespace of the spawned container to make it a non-anonymous ip namespace
+    #
     mkdir -p "/var/run/netns"
     ln -s "/proc/${CONTAINER_PID}/ns/net" "/var/run/netns/${NETNS_NAME}"
 
-    # add the veth pair
+    #
+    # add the veth pair for this container
+    #
     ip link add "${CONTAINER_VETH_A}" type veth peer name "${CONTAINER_VETH_B}"
 
-    # add one side of the pair to our master bridge connected to the tinc overlay
+    #
+    # add one side of the pair to our master bridge for the container network on this host (routed by tinc)
+    #
     brctl addif "${DOCKER_BRIDGE}" "${CONTAINER_VETH_A}"
 
-    # up the interface on our side
+    #
+    # set up networking for the container in our main namespace
+    #
     ip link set "${CONTAINER_VETH_A}" up
 
-    # punch the other side of the pair into the namespace of the container
+    #
+    # set up networking in the container namespace
+    #
     ip link set "${CONTAINER_VETH_B}" netns "${NETNS_NAME}"
     ip netns exec "${NETNS_NAME}" ip link set dev "${CONTAINER_VETH_B}" name eth0
     ip netns exec "${NETNS_NAME}" ip link set eth0 up
     ip netns exec "${NETNS_NAME}" ip addr add "${CONTAINER_IP}/${CONTAINER_NETMASK}" dev eth0
     ip netns exec "${NETNS_NAME}" ip route add default via "${CONTAINER_DEFAULT_GW}"
 
+    #
     # if this is a midonet gateway, add a route to the fip range via this ip
+    #
     if [[ "midonet_gateway" == "${CONTAINER_ROLE}" ]]; then
         ip route add 200.200.200.0/24 via "${CONTAINER_IP}"
     fi
+
+    #
+    # if this is a host with a compute container we must forward 6080 to the inner ip of the container
+    #
+    if [[ "openstack_compute" == "${CONTAINER_ROLE}" ]]; then
+        iptables -I PREROUTING -t nat -i "${DEFAULT_GW_IFACE}" -p tcp --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
+        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 6080 -j ACCEPT
+    fi
+
+    #
+    # if this is a host with a horizon dashboard we must forward 80 to the inner ip of the container
+    #
+    if [[ "openstack_horizon" == "${CONTAINER_ROLE}" ]]; then
+        iptables -I PREROUTING -t nat -i "${DEFAULT_GW_IFACE}" -p tcp --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
+        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
+    fi
+
 
     sleep 2
 else
@@ -207,7 +244,8 @@ exit 0
         CIDR(metadata.servers[env.host_string]["dockernet"])[1],
         CIDR(metadata.servers[env.host_string]["dockernet"]).netmask,
         CIDR(metadata.servers[env.host_string]["dockernet"])[0],
-        metadata.config["domain"]
+        metadata.config["domain"],
+        metadata.servers[env.host_string]["ip"]
     ))
 
                 run("""
