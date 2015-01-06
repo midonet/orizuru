@@ -30,6 +30,8 @@ def stage7():
     execute(stage7_container_midonet_cli)
     execute(stage7_container_midonet_tunnelzone)
 
+    execute(stage7_container_test_connectivity)
+
 @parallel
 @roles('container_zookeeper')
 def stage7_container_zookeeper():
@@ -713,13 +715,59 @@ EOF
         "%s.%s" % (metadata.config["fake_transfer_net"], str(physical_ip_idx))
     ))
 
-    #
-    # TODO set up fip for the cirros instance using neutron floatingip- commands
-    # TODO ping the instance
-    # TODO log in using expect
-    # TODO ping the internet from inside the instance
-    # TODO wget a web page from inside the instance
-    #
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@parallel
+@roles('container_midonet_cli')
+def stage7_container_test_connectivity():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    run("""
+
+source /etc/keystone/KEYSTONERC_ADMIN
+
+neutron floatingip-list | grep 200.200.200 || neutron floatingip-create public
+
+FIP_ID="$(neutron floatingip-list | grep 200.200.200 | awk -F'|' '{print $2;}' | xargs -n1 echo)"
+
+INSTANCE_IP=""
+
+for i in $(seq 1 100); do
+    INSTANCE_ALIVE="$(nova list | grep test | grep ACTIVE)"
+
+    if [[ "" == "${INSTANCE_ALIVE}" ]]; then
+        sleep 1
+    else
+        break
+    fi
+done
+
+if [[ "" == "${INSTANCE_ALIVE}" ]]; then
+    exit 1
+fi
+
+INSTANCE_IP="$(nova list --field name | grep test | awk -F'|' '{print $2;}' | xargs -n1 echo | xargs -n1 nova show | grep 'internal network' | awk -F'|' '{print $3;}' | xargs -n1 echo)"
+
+NOVA_PORT_ID="$(neutron port-list --field id --field fixed_ips | grep "${INSTANCE_IP}" | awk -F'|' '{print $2;}' | xargs -n1 echo)"
+
+neutron floatingip-list --field fixed_ip_address | grep "${INSTANCE_IP}" || neutron floatingip-associate "${FIP_ID}" "${NOVA_PORT_ID}"
+
+neutron floatingip-list
+
+sleep 10
+
+FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
+
+ping -c3 "${FIP}"
+
+ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- wget -O/dev/null http://www.midokura.com
+
+ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- ping -c3 www.midokura.com
+
+""")
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

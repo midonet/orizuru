@@ -66,9 +66,9 @@ finish:
 
 success:
 	@echo i think we are done here.
-	@grep ADMIN_ tmp/passwords.txt
-	@echo "horizon is at: http://$(shell grep -A2 openstack_horizon_ tmp/.ssh/config | tail -n1 | awk -F'-W' '{print $$2;}' | awk '{print $$1;}' | awk -F':' '{print $$1;}')/horizon/"
-	@echo "midonet manager is at: http://$(shell grep -A2 midonet_manager_ tmp/.ssh/config | tail -n1 | awk -F'-W' '{print $$2;}' | awk '{print $$1;}' | awk -F':' '{print $$1;}')/midonet-cp2/"
+	@grep ADMIN_PASS tmp/passwords.txt
+	@echo "horizon is at: http://$(shell grep -A6 openstack_horizon_ $(TMPDIR)/.ssh/config | tail -n1 | awk -F'-W' '{print $$2;}' | awk '{print $$1;}' | awk -F':' '{print $$1;}')/horizon/"
+	@echo "midonet manager is at: http://$(shell grep -A6 midonet_manager_ $(TMPDIR)/.ssh/config | tail -n1 | awk -F'-W' '{print $$2;}' | awk '{print $$1;}' | awk -F':' '{print $$1;}')/midonet-cp2/"
 
 clean: cleanlocks
 	test -n "$(TMPDIR)" && rm -rfv "$(TMPDIR)"/.SUCCESS_*

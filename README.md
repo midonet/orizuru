@@ -1,13 +1,12 @@
 折鶴
 ====
-
 Test drive Midonet.org or MEM (with Midonet Manager) together with Openstack on Ubuntu.
 
 The installation of the services will take place on top of Docker Ubuntu images.
 
 You only have to provide a list of (virtual or physical) servers which you define in a simple yaml file.
 
-To do this you can cd into the project directory, create a yaml file and export two environment variables, one for the config, one for the root password of the containers and the hosts:
+To do this you cd into the project directory, create a yaml file and export two environment variables, one for the config, one for the root password of the containers and the hosts:
 ```
 export CONFIGFILE="$(pwd)/conf/alex.yaml"
 export OS_MIDOKURA_ROOT_PASSWORD="new root password"
@@ -28,4 +27,7 @@ export OS_MIDOKURA_REPOSITORY_PASS="your password"
 ```
 
 After enabling these the Midonet Manager will automatically be installed and you can use it for managing your Midonet solution.
+
+Please also make sure that to use horizon and vnc consoles you need to enable routing of the docker networks via the openstack hosts.
+Alternatively you can use ssh port forwarding to port 80 of horizon and port 6080 of the compute nodes of course.
 
