@@ -403,6 +403,7 @@ set -x
 REPO="%s"
 KEYSTONE_IP="%s"
 MIDONET_API_IP="%s"
+MIDONET_API_OUTER_IP="%s"
 ZOOKEEPER_HOSTS="%s"
 
 PUPPET_NODE_DEFINITION="$(mktemp)"
@@ -424,7 +425,7 @@ node $(hostname) {
   midonet_api::tomcat6 {"$(hostname)":
     keystone_admin_token => "${ADMIN_TOKEN}",
     keystone_service_host => "${KEYSTONE_IP}",
-    rest_api_base_url => "http://${MIDONET_API_IP}:8080/midonet-api",
+    rest_api_base_url => "http://${MIDONET_API_OUTER_IP}:8080/midonet-api",
     zookeeper_hosts => "${ZOOKEEPER_HOSTS}"
   }
 }
@@ -439,6 +440,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         metadata.config["midonet_puppet_modules"],
         metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"],
         metadata.containers[env.host_string]["ip"],
+        metadata.servers[metadata.roles["midonet_api"][0]]["ip"],
         ",".join(map(lambda zk: str(metadata.containers[zk]["ip"]), sorted(metadata.roles["container_zookeeper"])))
     ))
 
@@ -464,6 +466,9 @@ set -x
 # initialize the puppet modules
 #
 REPO="%s"
+API_IP="%s"
+API_OUTER_IP="%s"
+
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
 cd "$(mktemp -d)"; git clone "${REPO}"
@@ -476,7 +481,7 @@ PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
 cat>"${PUPPET_NODE_DEFINITION}"<<EOF
 node $(hostname) {
   midonet_manager::apache2 {"$(hostname)":
-    rest_api_base => "http://%s:8080",
+    rest_api_base => "http://${API_OUTER_IP}:8080",
   }
 }
 EOF
@@ -489,6 +494,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
+        metadata.servers[metadata.roles["midonet_api"][0]]["ip"]
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")

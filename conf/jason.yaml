@@ -1,0 +1,95 @@
+config:
+
+    fake_transfer_net: 1.1.1
+
+    verbose: True
+    debug: False
+
+    domain: jason.midokura.de
+
+    # if you enable MEM here you should also set two environment variables:
+    # OS_MIDOKURA_REPOSITORY_USER
+    # OS_MIDOKURA_REPOSITORY_PASS
+    midonet_repo: OSS # can be OSS or MEM
+
+    midonet_mem_version: 1.7
+    midonet_mem_openstack_plugin_version: icehouse
+
+    midonet_oss_version: 2014.11
+    midonet_oss_openstack_plugin_version: juno
+
+    openstack_release: juno
+
+    newrelic_license_key: 5bb3df5f1f18a73de737a37e17690c58252bd183
+
+    # must be a file under /usr/share/zoneinfo
+    timezone: Europe/Berlin
+
+    vpn_base: 2.2.2
+
+    HEAP_INITIAL: 1024M
+    MAX_HEAPSIZE: 2048M
+    HEAP_NEWSIZE: 512M
+
+vpnclients:
+    - alex101
+    - alex102
+    - alex103
+    - alex104
+
+roles:
+    zookeeper:
+    - os001
+
+    cassandra:
+    - os001
+
+    midonet_gateway:
+    - os003
+
+    midonet_api:
+    - os002
+
+    midonet_manager:
+    - os002
+
+    midonet_cli:
+    - os001
+
+    openstack_rabbitmq:
+    - os001
+
+    openstack_mysql:
+    - os001
+
+    openstack_keystone:
+    - os001
+
+    openstack_glance:
+    - os001
+
+    openstack_neutron:
+    - os001
+
+    openstack_horizon:
+    - os001
+
+    openstack_controller:
+    - os001
+
+    openstack_compute:
+    - os002
+
+servers:
+    os001:
+        ip: 188.166.34.127
+        dockernet: 3.3.3.0/24
+
+    os002:
+        ip: 188.166.34.155
+        dockernet: 4.4.4.0/24
+
+    os003:
+        ip: 188.166.33.201
+        dockernet: 5.5.5.0/24
+

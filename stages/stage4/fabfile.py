@@ -204,9 +204,9 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     fi
 
     #
-    # if this is a host with a compute container we must forward 6080 to the inner ip of the container
+    # if this is a host with a controller container we must forward 6080 to the inner ip of the container
     #
-    if [[ "openstack_compute" == "${CONTAINER_ROLE}" ]]; then
+    if [[ "openstack_controller" == "${CONTAINER_ROLE}" ]]; then
         iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
         iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 6080 -j ACCEPT
     fi
@@ -219,6 +219,21 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
         iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
     fi
 
+    #
+    # midonet manager
+    #
+    if [[ "midonet_manager" == "${CONTAINER_ROLE}" ]]; then
+        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
+        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
+    fi
+
+    #
+    # midonet api
+    #
+    if [[ "midonet_api" == "${CONTAINER_ROLE}" ]]; then
+        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 8080 -j DNAT --to "${CONTAINER_IP}:8080"
+        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 8080 -j ACCEPT
+    fi
 
     sleep 2
 else
