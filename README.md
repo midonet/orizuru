@@ -28,6 +28,3 @@ export OS_MIDOKURA_REPOSITORY_PASS="your password"
 
 After enabling these the Midonet Manager will automatically be installed and you can use it for managing your Midonet solution.
 
-Please also make sure that to use horizon and vnc consoles you need to enable routing of the docker networks via the openstack hosts.
-Alternatively you can use ssh port forwarding to port 80 of horizon and port 6080 of the compute nodes of course.
-
