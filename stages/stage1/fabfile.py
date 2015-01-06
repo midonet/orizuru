@@ -38,14 +38,6 @@ def stage1hostsfile():
     # do not remove this.
     sys.exit(0)
 
-def stage1sshconfig():
-    metadata = Config(os.environ["CONFIGFILE"])
-
-    Orizuru(metadata).sshconfig()
-
-    # do not remove this.
-    sys.exit(0)
-
 def stage1sshcheck():
     metadata = Config(os.environ["CONFIGFILE"])
 

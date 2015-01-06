@@ -19,9 +19,11 @@ passwordcache:
 
 preflight: pipinstalled pipdeps
 
-stage1:
+stage1sshconfig:
 	mkdir -pv $(shell dirname $(SSHCONFIG))
-	$(FAB)sshconfig > $(SSHCONFIG)
+	$(FAB) > $(SSHCONFIG)
+
+stage1: stage1sshconfig
 	mkdir -pv $(shell dirname $(ZONEFILE))
 	cat $(ZONEFILE_TEMPLATE) > $(ZONEFILE)
 	$(FAB)zonefile >> $(ZONEFILE)
@@ -83,4 +85,4 @@ distclean: removedestroycontainerslock destroycontainers clean
 	test -n "$(TMPDIR)" && rm -rfv "$(TMPDIR)"
 	mkdir -pv "$(TMPDIR)"
 	find $(SRCDIR) -type f -path '*.pyc' -delete
-
+	make stage1sshconfig
