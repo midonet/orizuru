@@ -345,6 +345,10 @@ update-rc.d newrelic-sysmond defaults
 
     def cloud_repository(self):
         cuisine.package_ensure(["python-software-properties", "software-properties-common"])
+
+        # prevent the error about juno cloud archive not available
+        self.dist_upgrade()
+
         run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
     @classmethod
