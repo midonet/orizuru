@@ -207,7 +207,7 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     # if this is a host with a compute container we must forward 6080 to the inner ip of the container
     #
     if [[ "openstack_compute" == "${CONTAINER_ROLE}" ]]; then
-        iptables -I PREROUTING -t nat -i "${DEFAULT_GW_IFACE}" -p tcp --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
+        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
         iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 6080 -j ACCEPT
     fi
 
@@ -215,7 +215,7 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     # if this is a host with a horizon dashboard we must forward 80 to the inner ip of the container
     #
     if [[ "openstack_horizon" == "${CONTAINER_ROLE}" ]]; then
-        iptables -I PREROUTING -t nat -i "${DEFAULT_GW_IFACE}" -p tcp --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
+        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
         iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
     fi
 
