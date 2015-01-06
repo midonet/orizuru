@@ -321,21 +321,28 @@ fi
         cuisine.package_ensure("newrelic-sysmond")
 
         run("""
+
 SERVER_NAME="%s"
 DOMAIN_NAME="%s"
 LICENSE_KEY="%s"
 
+cat>/etc/newrelic/nrsysmond.cfg<<EOF
+license_key=${LICENSE_KEY}
+loglevel=info
+logfile=/var/log/newrelic/nrsysmond.log
+hostname=${SERVER_NAME}.${DOMAIN_NAME}
+EOF
+
 nrsysmond-config --set license_key="${LICENSE_KEY}"
-
-NEWRELIC_CONF="/etc/newrelic/nrsysmond.cfg"
-
-grep -v '^hostname=' "${NEWRELIC_CONF}" >"${NEWRELIC_CONF}.NEW"
-echo "hostname=${SERVER_NAME}.${DOMAIN_NAME}" >>"${NEWRELIC_CONF}.NEW"
-mv "${NEWRELIC_CONF}.NEW" "${NEWRELIC_CONF}"
 
 update-rc.d newrelic-sysmond defaults
 
-/etc/init.d/newrelic-sysmond start || /etc/init.d/newrelic-sysmond restart || true
+/etc/init.d/newrelic-sysmond start || true
+/etc/init.d/newrelic-sysmond restart || true
+
+sleep 10
+
+ps axufwwwwwwwww | grep -v grep | grep nrsysmond
 
 """ % (
         env.host_string,
