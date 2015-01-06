@@ -13,6 +13,9 @@ def stage2():
     metadata = Config(os.environ["CONFIGFILE"])
 
     env.warn_only = True
+    env.connection_attempts = 2
+    env.timeout = 2
+    env.skip_bad_hosts = True
     execute(reboot_stage2)
     env.warn_only = False
 
