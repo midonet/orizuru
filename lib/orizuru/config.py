@@ -167,6 +167,18 @@ class Config(object):
 
         self._config["region"] = "regionOne" # RHEL uses RegionOne
 
+        if "container_os" not in self._config:
+            self._config["container_os"] = "ubuntu"
+
+        if "container_os_version" not in self._config:
+            self._config["container_os_version"] = "14.04"
+
+        if "container_os_release_codename" not in self._config:
+            self._config["container_os_release_codename"] = "trusty"
+
+        if "os_release_codename" not in self._config:
+            self._config["os_release_codename"] = "trusty"
+
     def __prepare_roles(self):
         self._roles['all_servers'] = []
 

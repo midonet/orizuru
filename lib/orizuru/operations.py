@@ -22,7 +22,7 @@ class Configure(object):
 
     def configure(self):
         self.name_resolution()
-        self.trusty()
+        self.os_release()
         self.newrelic()
         self.datastax()
         self.midonet()
@@ -172,8 +172,11 @@ fi
         repo_flavor.upper()
     ))
 
-    def trusty(self):
-        self.__lib_orizuru_operations_ubuntu_repo("trusty")
+    def os_release(self):
+        if env.host_string in self._metadata.containers:
+            self.__lib_orizuru_operations_ubuntu_repo(self._metadata.config["container_os_release_codename"])
+        else:
+           self.__lib_orizuru_operations_ubuntu_repo(self._metadata.config["os_release_codename"])
 
     @classmethod
     def __lib_orizuru_operations_ubuntu_repo(cls, codename, archive_country="us"):
@@ -356,7 +359,14 @@ ps axufwwwwwwwww | grep -v grep | grep nrsysmond
         # prevent the error about juno cloud archive not available
         self.dist_upgrade()
 
-        run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
+        if env.host_string in self._metadata.containers:
+            if self._metadata.config["openstack_release"] == "juno":
+                if self._metadata.config["container_os_release_codename"] == "trusty":
+                    run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
+
+            if self._metadata.config["openstack_release"] == "icehouse":
+                if self._metadata.config["container_os_release_codename"] == "precise":
+                    run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
     @classmethod
     def dist_upgrade(cls):

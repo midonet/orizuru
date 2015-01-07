@@ -39,19 +39,10 @@ def docker_containers_for_roles_stage4():
 #
 # sshd
 #
-# VERSION               0.0.2
+# VERSION               0.0.1
 #
 
-FROM ubuntu:14.04
-
-#
-# this is the original maintainer from the dockerfile we used as a basis for the logic below: Sven Dowideit <SvenDowideit@docker.com>
-
-#
-# the whole concept of running and maintaining ubuntu in a container is not the true docker spirit of doing things.  i know.
-# we simply abuse docker as a hipsteresque replacement for good old chroots.
-# in the future, when OpenStack provides docker images for their stuff we will rely on to those
-#
+FROM %s:%s
 
 MAINTAINER Alexander Gabert <alexander.gabert@gmail.com>
 
@@ -77,7 +68,11 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 EXPOSE 22
 CMD ["/usr/sbin/sshd", "-D"]
 
-""" % os.environ["OS_MIDOKURA_ROOT_PASSWORD"])
+""" % (
+        metadata.config["container_os"],
+        metadata.config["container_os_version"],
+        os.environ["OS_MIDOKURA_ROOT_PASSWORD"]
+        ))
 
                 run("""
 
