@@ -10,7 +10,7 @@
 # Run Midonet Openstack on top of Ubuntu Docker ssh images.
 #
 
-all: start passwordcache preflight stage1 stage3 stage4 stage5 stage6 stage7 success finish
+all: info start passwordcache preflight stage1 stage3 stage4 stage5 stage6 stage7 success finish
 
 include include/$(shell basename $(PWD)).mk
 
@@ -36,8 +36,15 @@ stage1: stage1sshconfig
 
 reboot: stage2
 
+info:
+	@clear
+	@$(RUNSTAGE)
+	@rm $(TMPDIR)/.SUCCESS_$(@)
+	@sleep 10
+
 stage2:
 	$(RUNSTAGE)
+	rm $(TMPDIR)/.SUCCESS_$(@)
 
 stage3:
 	mkdir -pv "$(TMPDIR)/etc/tinc"
