@@ -158,27 +158,31 @@ class Config(object):
         if 'additional_packages' in self._config:
             common_packages = "%s %s" % (common_packages, self._config['additional_packages'])
 
-        self._config["common_packages"] = common_packages
+        defaults = {}
 
-        self._config["constrictor"] = "/usr/share/orizuru/bin/constrictor.py"
+        defaults["constrictor"] = "/usr/share/orizuru/bin/constrictor.py"
 
-        # will be renamed to puppet-midonet some day
-        self._config["midonet_puppet_modules"] = "http://github.com/midonet/Arrakis"
-        self._config["midonet_puppet_modules_branch"] = "containerspirit"
+        defaults["common_packages"] = common_packages
 
-        self._config["region"] = "regionOne" # RHEL uses RegionOne
+        defaults["midonet_puppet_modules"] = "http://github.com/midonet/Arrakis"
+        defaults["midonet_puppet_modules_branch"] = "master"
 
-        if "container_os" not in self._config:
-            self._config["container_os"] = "ubuntu"
+        defaults["region"] = "regionOne" # RHEL uses RegionOne
 
-        if "container_os_version" not in self._config:
-            self._config["container_os_version"] = "14.04"
+        # these two values are used for launching the respective ubuntu base image in the Dockerfile for the containers
+        defaults["container_os"] = "ubuntu"
+        defaults["container_os_version"] = "14.04"
 
-        if "container_os_release_codename" not in self._config:
-            self._config["container_os_release_codename"] = "trusty"
+        # used for setting up sources.list on the containers
+        defaults["container_os_release_codename"] = "trusty"
 
-        if "os_release_codename" not in self._config:
-            self._config["os_release_codename"] = "trusty"
+        # used for setting up sources.list on the host
+        defaults["os_release_codename"] = "trusty"
+
+        for overloading_key in defaults:
+            if overloading_key not in self._config:
+                overloading_value = defaults[overloading_key]
+                self._config[overloading_key] = overloading_value
 
     def __prepare_roles(self):
         self._roles['all_servers'] = []
