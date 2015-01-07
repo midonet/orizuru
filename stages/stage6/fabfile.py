@@ -470,7 +470,7 @@ source /etc/keystone/KEYSTONERC_ADMIN
 SERVICE_TENANT_ID="$(keystone tenant-list | grep 'service' | awk -F'|' '{print $2;}' | xargs -n1 echo)"
 
 #
-# this loop is for future use
+# neutron controller
 #
 for XSERVICE in "${SERVICE}"; do
     CONFIGFILE="/etc/${SERVICE}/${XSERVICE}.conf"
@@ -484,6 +484,9 @@ for XSERVICE in "${SERVICE}"; do
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rpc_backend" "rabbit"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_host" "${RABBIT_IP}"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_user" "osrabbit"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_username" "osrabbit"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_userid" "osrabbit"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_password" "${RABBIT_PASS}"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "core_plugin" "midonet.neutron.plugin.MidonetPluginV2"
@@ -693,6 +696,9 @@ for XSERVICE in "${SERVICE}"; do
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rpc_backend" "rabbit"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_host" "${RABBIT_IP}"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_user" "osrabbit"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_username" "osrabbit"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_userid" "osrabbit"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_password" "${RABBIT_PASS}"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "my_ip" "${CONTROLLER_IP}"
@@ -834,6 +840,9 @@ for XSERVICE in "${SERVICE}"; do
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rpc_backend" "rabbit"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_host" "${RABBIT_IP}"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_user" "osrabbit"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_username" "osrabbit"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_userid" "osrabbit"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_password" "${RABBIT_PASS}"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "my_ip" "${COMPUTE_IP}"
@@ -1420,11 +1429,20 @@ set -x
 #
 %s
 
+RABBIT_USER="osrabbit"
+
 /etc/init.d/rabbitmq-server stop || true
 
 /etc/init.d/rabbitmq-server start
 
 rabbitmqctl change_password guest "${RABBIT_PASS}"
+
+rabbitmqctl set_permissions -p / "guest" ".*" ".*" ".*"
+
+rabbitmqctl change_password "${RABBIT_USER}" "${RABBIT_PASS}" || \
+    rabbitmqctl add_user "${RABBIT_USER}" "${RABBIT_PASS}"
+
+rabbitmqctl set_permissions -p / "${RABBIT_USER}" ".*" ".*" ".*"
 
 """ % (
         open(os.environ["PASSWORDCACHE"]).read()
