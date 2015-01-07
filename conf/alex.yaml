@@ -1,6 +1,6 @@
 config:
 
-    midonet_puppet_modules_branch: containerspirit
+    # midonet_puppet_modules_branch: containerspirit
 
     container_os: ubuntu
     container_os_version: "14.10"
