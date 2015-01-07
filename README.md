@@ -17,7 +17,19 @@ export OS_MIDOKURA_ROOT_PASSWORD="new root password"
 make
 ```
 
+If you do not want to change anything and install on your localhost right away, make sure that ssh root@localhost works and the ssh key is saved and then do this:
+```
+git clone https://github.com/midonet/orizuru.git
+cd orizuru
+export OS_MIDOKURA_ROOT_PASSWORD="new root password"
+make
+```
+
 The conf directory in the project contains a lot of files we created for testing this installer, you can look at them to see how they work.
+
+If you want to look at an example for a single host, localhost installation you can look at conf/localhost.yaml.
+
+You can also change the ip in there to another machine and start using it.
 
 Please make sure you use an ssh-agent for your ssh key passphrase so that fabric can login as root to the ips of the servers you defined without asking you for the passphrase.
 
