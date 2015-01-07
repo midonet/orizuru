@@ -68,7 +68,6 @@ set -x
 REPO="%s"
 BRANCH="%s"
 MY_ID="%s"
-ENSEMBLE="%s"
 
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
@@ -86,7 +85,7 @@ node $(hostname) {
     ->
     hadoop-zookeeper::configure {"$(hostname)":
         myid => "${MY_ID}",
-        ensemble => [${ENSEMBLE}]
+        ensemble => [%s]
     }
     ->
     hadoop-zookeeper::start {"$(hostname)":
