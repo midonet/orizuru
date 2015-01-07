@@ -47,6 +47,7 @@ FROM %s:%s
 MAINTAINER Alexander Gabert <alexander.gabert@gmail.com>
 
 RUN apt-get update 1>/dev/null
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -u dist-upgrade
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server
 RUN mkdir /var/run/sshd
 RUN echo "root:%s" | chpasswd
