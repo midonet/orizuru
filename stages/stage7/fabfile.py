@@ -63,12 +63,16 @@ set -x
 %s
 
 #
-# initialize the puppet modules
+# initialize the puppet module for setting up zookeeper
 #
 REPO="%s"
+BRANCH="%s"
+MY_ID="%s"
+ENSEMBLE="%s"
+
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
-cd "$(mktemp -d)"; git clone "${REPO}"
+cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
 
 PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
 
@@ -77,10 +81,16 @@ PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
 #
 cat>"${PUPPET_NODE_DEFINITION}"<<EOF
 node $(hostname) {
-  hadoop-zookeeper::server {"$(hostname)":
-    myid => "%s",
-    ensemble => [%s]
-  }
+    hadoop-zookeeper::install {"$(hostname)":
+    }
+    ->
+    hadoop-zookeeper::configure {"$(hostname)":
+        myid => "${MY_ID}",
+        ensemble => [${ENSEMBLE}]
+    }
+    ->
+    hadoop-zookeeper::start {"$(hostname)":
+    }
 }
 EOF
 
@@ -94,6 +104,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 """ % (
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
+        self._metadata.config["midonet_puppet_modules_branch"],
         my_id,
         ",".join(zkhosts)
     ))
@@ -263,9 +274,10 @@ set -x
 %s
 
 #
-# initialize the puppet modules
+# initialize the puppet module for installing the midonet agent (midolman)
 #
 REPO="%s"
+BRANCH="%s"
 
 ZOOKEEPERS="%s"
 CASSANDRAS="%s"
@@ -274,9 +286,11 @@ XMS="%s"
 XMX="%s"
 XMN="%s"
 
+OPENSTACK_RELEASE="%s"
+
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
-cd "$(mktemp -d)"; git clone "${REPO}"
+cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
 
 PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
 
@@ -285,12 +299,22 @@ PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
 #
 cat>"${PUPPET_NODE_DEFINITION}"<<EOF
 node $(hostname) {
-  midolman::agent {"$(hostname)":
-    zookeepers => "${ZOOKEEPERS}",
-    cassandras => "${CASSANDRAS}"
-  }
+    midolman::install {$(hostname):
+        openstack_version => "${OPENSTACK_RELEASE}"
+    }
+    ->
+    midolman::configure {"$(hostname)":
+        zookeepers => "${ZOOKEEPERS}",
+        cassandras => "${CASSANDRAS}",
+        max_heap_size => "${XMX}",
+        heap_newsize => "${XMN}"
+    }
+    ->
+    midolman::start {$(hostname):
+    }
 }
 EOF
+
 #
 # do the puppet run
 #
@@ -311,11 +335,13 @@ ps axufwwwwwwwwwwwww | grep -v grep | grep midolman
 """ % (
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
+        self._metadata.config["midonet_puppet_modules_branch"],
         ",".join(sorted(metadata.roles["container_zookeeper"])),
         ",".join(sorted(metadata.roles["container_cassandra"])),
         metadata.config["HEAP_INITIAL"],
         metadata.config["MAX_HEAPSIZE"],
-        metadata.config["HEAP_NEWSIZE"]
+        metadata.config["HEAP_NEWSIZE"],
+        metadata.config["openstack_release"]
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
@@ -398,9 +424,10 @@ set -x
 %s
 
 #
-# initialize the puppet modules
+# initialize the puppet module for midonet api
 #
 REPO="%s"
+BRANCH="%s"
 KEYSTONE_IP="%s"
 MIDONET_API_IP="%s"
 MIDONET_API_OUTER_IP="%s"
@@ -408,7 +435,7 @@ ZOOKEEPER_HOSTS="%s"
 
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
-cd "$(mktemp -d)"; git clone "${REPO}"
+cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
 
 PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
 
@@ -422,14 +449,21 @@ ps axufww | grep -v grep | grep ^tomcat | awk '{print $2;}' | xargs -n1 kill -9
 #
 cat>"${PUPPET_NODE_DEFINITION}"<<EOF
 node $(hostname) {
-  midonet_api::tomcat6 {"$(hostname)":
-    keystone_admin_token => "${ADMIN_TOKEN}",
-    keystone_service_host => "${KEYSTONE_IP}",
-    rest_api_base_url => "http://${MIDONET_API_OUTER_IP}:8080/midonet-api",
-    zookeeper_hosts => "${ZOOKEEPER_HOSTS}"
-  }
+    midonet_api::install {"$(hostname)":
+    }
+    ->
+    midonet_api::configure {"$(hostname)":
+        keystone_admin_token => "${ADMIN_TOKEN}",
+        keystone_service_host => "${KEYSTONE_IP}",
+        rest_api_base_url => "http://${MIDONET_API_OUTER_IP}:8080/midonet-api",
+        zookeeper_hosts => "${ZOOKEEPER_HOSTS}"
+    }
+    ->
+    midonet_api::start {"$(hostname)":
+    }
 }
 EOF
+
 #
 # do the puppet run
 #
@@ -438,6 +472,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 """ % (
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
+        self._metadata.config["midonet_puppet_modules_branch"],
         metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"],
         metadata.containers[env.host_string]["ip"],
         metadata.servers[metadata.roles["midonet_api"][0]]["ip"],
@@ -463,15 +498,16 @@ set -x
 %s
 
 #
-# initialize the puppet modules
+# initialize the puppet module for the midonet manager
 #
 REPO="%s"
+BRANCH="%s"
 API_IP="%s"
 API_OUTER_IP="%s"
 
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
-cd "$(mktemp -d)"; git clone "${REPO}"
+cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
 
 PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
 
@@ -480,11 +516,18 @@ PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
 #
 cat>"${PUPPET_NODE_DEFINITION}"<<EOF
 node $(hostname) {
-  midonet_manager::apache2 {"$(hostname)":
-    rest_api_base => "http://${API_OUTER_IP}:8080",
-  }
+    midonet_manager::install {"$(hostname)":
+    }
+    ->
+    midonet_manager::configure {"$(hostname)":
+        rest_api_base => "http://${API_OUTER_IP}:8080",
+    }
+    ->
+    midonet_manager::start {"$(hostname)":
+    }
 }
 EOF
+
 #
 # do the puppet run
 #
@@ -493,6 +536,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 """ % (
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
+        self._metadata.config["midonet_puppet_modules_branch"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
         metadata.servers[metadata.roles["midonet_api"][0]]["ip"]
     ))

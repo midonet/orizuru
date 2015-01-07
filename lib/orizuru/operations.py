@@ -111,60 +111,45 @@ set -x
 %s
 
 #
-# initialize the puppet modules
+# initialize the puppet module for midonet repository
 #
 REPO="%s"
+BRANCH="%s"
 
 USERNAME="%s"
 PASSWORD="%s"
 
 MIDONET_VERSION="%s"
-OPENSTACK_RELEASE="%s"
+OPENSTACK_PLUGIN_VERSION="%s"
 
 REPO_FLAVOR="%s"
 
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
-cd "$(mktemp -d)"; git clone "${REPO}"
+cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
 
 PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
 
-if [[ "${REPO_FLAVOR}" == "OSS" ]]; then
-    cat>"${PUPPET_NODE_DEFINITION}"<<EOF
+cat>"${PUPPET_NODE_DEFINITION}"<<EOF
 node $(hostname) {
-  midonet_repository::ubuntu_${REPO_FLAVOR} {"$(hostname)":
-    midonet_version => "${MIDONET_VERSION}",
-    midonet_openstack_plugin_version => "${OPENSTACK_RELEASE}"
-  }
+    midonet_repository::install{"$(hostname)": }
+    ->
+    midonet_repository::configure{"$(hostname)":
+        username => "${USERNAME}",
+        password => "${PASSWORD}",
+        midonet_flavor => "${REPO_FLAVOR}",
+        midonet_version => "${MIDONET_VERSION}",
+        midonet_openstack_plugin_version => "${OPENSTACK_PLUGIN_VERSION}"
+    }
 }
 EOF
 
-    puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
-fi
-
-if [[ "${REPO_FLAVOR}" == "MEM" ]]; then
-    if [[ "${USERNAME}" == "" || "${PASSWORD}" == "" ]]; then
-        echo "MEM can only be installed by providing repo credentials"
-        echo "set the environment variables OS_MIDOKURA_REPOSITORY_USER and OS_MIDOKURA_REPOSITORY_PASS"
-    else
-        cat>"${PUPPET_NODE_DEFINITION}"<<EOF
-node $(hostname) {
-  midonet_repository::ubuntu_${REPO_FLAVOR} {"$(hostname)":
-    username => "${USERNAME}",
-    password => "${PASSWORD}",
-    midonet_version => "${MIDONET_VERSION}",
-    midonet_openstack_plugin_version => "${OPENSTACK_RELEASE}"
-  }
-}
-EOF
-
-        puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
-    fi
-fi
+puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
 
 """ % (
         open(os.environ["PASSWORDCACHE"]).read(),
         self._metadata.config["midonet_puppet_modules"],
+        self._metadata.config["midonet_puppet_modules_branch"],
         username,
         password,
         self._metadata.config["midonet_%s_version" % repo_flavor.lower()],

@@ -164,6 +164,7 @@ class Config(object):
 
         # will be renamed to puppet-midonet some day
         self._config["midonet_puppet_modules"] = "http://github.com/midonet/Arrakis"
+        self._config["midonet_puppet_modules_branch"] = "containerspirit"
 
         self._config["region"] = "regionOne" # RHEL uses RegionOne
 
