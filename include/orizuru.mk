@@ -4,7 +4,7 @@ INCLUDE = include
 PROJECT = $(shell basename $(PWD))
 
 ifeq "$(CONFIGFILE)" ""
-CONFIGFILE = $(PWD)/conf/alex.yaml
+CONFIGFILE = $(PWD)/conf/localhost.yaml
 endif
 
 SRCDIR = .

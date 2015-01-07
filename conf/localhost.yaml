@@ -1,18 +1,19 @@
+#
+# localhost config
+#
+# make sure you allow ssh root@localhost for this
+#
+# also make sure you have at least 8GB of free memory on this machine
+#
 config:
 
-    midonet_puppet_modules_branch: containerspirit
-
-    container_os: ubuntu
-    container_os_version: "14.10"
-    container_os_release_codename: utopic
-
-    # this network will be used for the veth pair
-    fake_transfer_net: 23.23.23
+    # used for the midonet gateway veth pair
+    fake_transfer_net: 192.168.254
 
     verbose: True
     debug: False
 
-    domain: benningen.midokura.de
+    domain: orizuru.midonet.org
 
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
@@ -32,8 +33,8 @@ config:
     # must be a file under /usr/share/zoneinfo
     timezone: Europe/Berlin
 
-    # this is a class C network for the vpn spanning all hosts
-    vpn_base: 192.168.3
+    # used for the vpn between different testbed hosts
+    vpn_base: 192.168.253
 
     HEAP_INITIAL: 1024M
     MAX_HEAPSIZE: 2048M
@@ -47,77 +48,50 @@ vpnclients:
 
 roles:
     zookeeper:
-    - zk001
-    - zk002
-    - zk003
+    - os001
 
     cassandra:
-    - zk001
-    - zk002
-    - zk003
+    - os001
 
     midonet_gateway:
-    - zk001
-    #- zk002
-    #- zk003
+    - os001
 
     midonet_api:
-    - os002
+    - os001
 
     midonet_manager:
-    - os003
+    - os001
 
     midonet_cli:
-    - os002
+    - os001
 
     openstack_rabbitmq:
-    - os003
+    - os001
 
     openstack_mysql:
-    - os002
+    - os001
 
     openstack_keystone:
-    - os003
+    - os001
 
     openstack_glance:
-    - os002
+    - os001
 
     openstack_neutron:
-    - os003
+    - os001
 
     openstack_horizon:
-    - os002
+    - os001
 
     openstack_controller:
-    - os003
+    - os001
 
     openstack_compute:
     - os001
-    - os002
-    - os003
 
 servers:
-    zk001:
-        ip: 192.168.4.203
-        dockernet: 192.168.21.0/24
-
-    zk002:
-        ip: 192.168.4.207
-        dockernet: 192.168.22.0/24
-
-    zk003:
-        ip: 192.168.4.208
-        dockernet: 192.168.23.0/24
-
     os001:
-        ip: 192.168.4.206
-        dockernet: 192.168.31.0/24
-
-    os002:
-        ip: 192.168.4.202
-        dockernet: 192.168.32.0/24
-
-    os003:
-        ip: 192.168.4.209
-        dockernet: 192.168.33.0/24
+        ip: 127.0.0.1
+        # used for the containers on this host
+        dockernet: 192.168.252.0/24
 

@@ -144,8 +144,12 @@ exit 0
 ConnectTo = %s
 """ % server)
 
-            if server in metadata.roles["midonet_gateway"]:
-                cuisine.file_append("/etc/tinc/%s/tinc-up" % metadata.config["domain"], """
+            # if you are not host with a midonet gateway on yourself
+            if env.host_string not in metadata.roles["midonet_gateway"]:
+                # and if the current server we want to route to is a midonet gateway (we can have multiple of them)
+                if server in metadata.roles["midonet_gateway"]:
+                    # route the fip network traffic to this midonet gateway
+                    cuisine.file_append("/etc/tinc/%s/tinc-up" % metadata.config["domain"], """
 #
 # tinc routing configuration: forward floating ip range packets to %s
 # where they will be further forwarded to the midonet_gateway docker container
@@ -169,7 +173,6 @@ fi
     ))
 
             cuisine.file_append("/etc/tinc/%s/tinc-up" % metadata.config["domain"], """
-
 #
 # tinc routing configuration: forward packets for the docker network ips on server %s
 #

@@ -68,7 +68,6 @@ set -x
 REPO="%s"
 BRANCH="%s"
 MY_ID="%s"
-ENSEMBLE="%s"
 
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
@@ -86,7 +85,7 @@ node $(hostname) {
     ->
     hadoop-zookeeper::configure {"$(hostname)":
         myid => "${MY_ID}",
-        ensemble => [${ENSEMBLE}]
+        ensemble => [%s]
     }
     ->
     hadoop-zookeeper::start {"$(hostname)":
@@ -104,7 +103,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 """ % (
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
-        self._metadata.config["midonet_puppet_modules_branch"],
+        metadata.config["midonet_puppet_modules_branch"],
         my_id,
         ",".join(zkhosts)
     ))
@@ -335,7 +334,7 @@ ps axufwwwwwwwwwwwww | grep -v grep | grep midolman
 """ % (
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
-        self._metadata.config["midonet_puppet_modules_branch"],
+        metadata.config["midonet_puppet_modules_branch"],
         ",".join(sorted(metadata.roles["container_zookeeper"])),
         ",".join(sorted(metadata.roles["container_cassandra"])),
         metadata.config["HEAP_INITIAL"],
@@ -472,7 +471,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 """ % (
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
-        self._metadata.config["midonet_puppet_modules_branch"],
+        metadata.config["midonet_puppet_modules_branch"],
         metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"],
         metadata.containers[env.host_string]["ip"],
         metadata.servers[metadata.roles["midonet_api"][0]]["ip"],
@@ -536,7 +535,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 """ % (
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
-        self._metadata.config["midonet_puppet_modules_branch"],
+        metadata.config["midonet_puppet_modules_branch"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
         metadata.servers[metadata.roles["midonet_api"][0]]["ip"]
     ))
