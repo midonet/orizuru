@@ -206,11 +206,12 @@ class Install(object):
         self.ntp()
         self.dist_upgrade()
         self.constrictor()
-        self.openvswitchdkms()
+        self.kmod("openvswitch")
+        self.kmod("nbd")
 
-    def openvswitchdkms(self):
+    def kmod(self, module_name):
         if env.host_string not in self._metadata.roles["all_containers"]:
-            run("modprobe openvswitch")
+            run("modprobe %s" % module_name)
 
     def constrictor(self):
         constrictor_bin = self._metadata.config["constrictor"]

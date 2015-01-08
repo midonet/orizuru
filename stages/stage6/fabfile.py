@@ -583,7 +583,7 @@ chown -R neutron:root /var/log/neutron
 [ -r /etc/default/neutron-server ] && . /etc/default/neutron-server
 [ -r "$NEUTRON_PLUGIN_CONFIG" ] && CONF_ARG="--config-file $NEUTRON_PLUGIN_CONFIG"
 
-chmod 0775 /var/run/screen
+chmod 0777 /var/run/screen
 
 for DAEMON in dhcp-agent metadata-agent; do
     ps axufwwwww | grep -v grep | grep "neutron-${DAEMON}" || \
@@ -741,6 +741,8 @@ chown -R nova:root /var/run/nova/
 
 mkdir -p /var/lock/nova
 chown -R nova:root /var/lock/nova/
+
+chmod 0777 /var/run/screen
 
 for SUBSERVICE in "api" "cert" "consoleauth" "scheduler" "conductor" "novncproxy"; do
     if [[ "${SUBSERVICE}" == "novncproxy" ]]; then
@@ -923,6 +925,8 @@ modprobe nbd
 
 service libvirt-bin restart
 
+chmod 0777 /var/run/screen
+
 ps axufwwwww | grep -v grep | grep nova-compute || \
     screen -S nova-compute -d -m -- start-stop-daemon --start --chuid nova --exec /usr/bin/nova-compute -- --config-file=/etc/nova/nova.conf --config-file=/etc/nova/nova-compute.conf
 
@@ -1009,7 +1013,7 @@ CONFIGFILE="/etc/${SERVICE}/${SERVICE}-${SUBSERVICE}.conf"
 
 glance-manage db_sync
 
-chmod 0775 /var/run/screen
+chmod 0777 /var/run/screen
 
 chown -R glance:adm /var/log/glance
 
@@ -1385,7 +1389,7 @@ keystone-manage db_sync
 
 rm -fv /var/lib/keystone/keystone.db
 
-chmod 0775 /var/run/screen
+chmod 0777 /var/run/screen
 
 sync
 

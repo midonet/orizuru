@@ -34,12 +34,14 @@ def docker_containers_for_roles_stage4():
                 puts(green("creating/configuring container on server %s with ip %s for role %s" % (
                     env.host_string, container_ip, role)))
 
-                cuisine.file_write("/tmp/Dockerfile_%s_%s" % (role, env.host_string),
+                dockerfile = "/tmp/Dockerfile_orizuru_%s" % env.host_string
+
+                cuisine.file_write(dockerfile,
 """
 #
-# sshd
+# orizuru base image for all Midonet and Openstack services
 #
-# VERSION               0.0.1
+# VERSION               0.1.0
 #
 
 FROM %s:%s
@@ -48,7 +50,10 @@ MAINTAINER Alexander Gabert <alexander.gabert@gmail.com>
 
 RUN apt-get update 1>/dev/null
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -u dist-upgrade
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server puppet screen %s
+RUN mkdir /var/run/screen
+RUN chmod 0777 /var/run/screen
+RUN chmod 0755 /usr/bin/screen
 RUN mkdir /var/run/sshd
 RUN echo "root:%s" | chpasswd
 RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
@@ -67,11 +72,13 @@ ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
 
 EXPOSE 22
+
 CMD ["/usr/sbin/sshd", "-D"]
 
 """ % (
         metadata.config["container_os"],
         metadata.config["container_os_version"],
+        metadata.config["common_packages"],
         os.environ["OS_MIDOKURA_ROOT_PASSWORD"]
         ))
 
@@ -79,7 +86,7 @@ CMD ["/usr/sbin/sshd", "-D"]
 
 SERVER_NAME="%s"
 CONTAINER_ROLE="%s"
-DOCKERFILE="/tmp/Dockerfile_${CONTAINER_ROLE}_${SERVER_NAME}"
+DOCKERFILE="/tmp/Dockerfile_orizuru_${SERVER_NAME}"
 
 cd "$(mktemp -d)"
 
@@ -89,7 +96,7 @@ mkdir -pv root/.ssh
 
 cat /root/.ssh/authorized_keys > root/.ssh/authorized_keys
 
-docker images | grep "template_${CONTAINER_ROLE}_${SERVER_NAME}" || docker build --no-cache=true -t "template_${CONTAINER_ROLE}_${SERVER_NAME}" .
+docker images | grep "template_${SERVER_NAME}" || docker build --no-cache=true -t "template_${SERVER_NAME}" .
 
 mkdir -pv /etc/rc.local.d
 
@@ -132,7 +139,7 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     #
     # start the container in a screen session
     #
-    screen -d -m -- docker run -h "${CONTAINER_ROLE}_${SERVER_NAME}" --privileged=true -i -t --rm --net="none" --name "${CONTAINER_VETH}_${CONTAINER_ROLE}_${SERVER_NAME}" "template_${CONTAINER_ROLE}_${SERVER_NAME}"
+    screen -d -m -- docker run -h "${CONTAINER_ROLE}_${SERVER_NAME}" --privileged=true -i -t --rm --net="none" --name "${CONTAINER_VETH}_${CONTAINER_ROLE}_${SERVER_NAME}" "template_${SERVER_NAME}"
 
     for i in $(seq 1 120); do
         CONTAINER_ID="$(docker ps | grep "${CONTAINER_VETH}_${CONTAINER_ROLE}_${SERVER_NAME}" | awk '{print $1;}')"

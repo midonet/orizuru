@@ -76,5 +76,15 @@ removedestroycontainerslock:
 	rm -f "$(TMPDIR)/.SUCCESS_destroycontainers"
 
 destroycontainers: removedestroycontainerslock
+	@echo
+	@echo this will DESTROY all running containers and intermediate images on your hosts
+	@echo
+	@echo PRESS CTRL-C NOW
+	@echo
+	@sleep 10
+	@echo
+	@echo LAST CHANCE.
+	@echo
+	@sleep 10
 	$(RUNSTAGE_IGNORE_FAILURES)
 

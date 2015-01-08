@@ -32,7 +32,7 @@ def fabric_docker_rm_role_containers():
 SERVER_NAME="%s"
 CONTAINER_ROLE="%s"
 
-TEMPLATE_NAME="template_${CONTAINER_ROLE}_${SERVER_NAME}"
+TEMPLATE_NAME="template_${SERVER_NAME}"
 
 for CONTAINER in $(docker ps | grep "${CONTAINER_ROLE}_${SERVER_NAME}" | awk '{print $1;}' | grep -v CONTAINER); do
     docker kill $CONTAINER || true;
@@ -47,7 +47,9 @@ exit 0
 
 """ % (env.host_string, role))
 
+    #
+    # brute force remove all containers and images
+    #
     run("docker ps --no-trunc -aq | xargs -n1 --no-run-if-empty docker rm -f")
-
     run("docker images | grep '^<none>' | awk '{print $3}' | xargs -n1 --no-run-if-empty docker rmi -f")
 

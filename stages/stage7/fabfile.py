@@ -325,6 +325,8 @@ ps axufwwwwwwwwwwwww | grep -v grep | grep midolman && exit 0
 
 /usr/share/midolman/midolman-prepare
 
+chmod 0777 /var/run/screen
+
 screen -S midolman -d -m -- /usr/share/midolman/midolman-start
 
 sleep 30
