@@ -7,7 +7,7 @@ config:
     verbose: True
     debug: False
 
-    domain: digitalocean.midokura.de
+    domain: inception.benningen.midokura.de
 
     midonet_repo: OSS
 
