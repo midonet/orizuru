@@ -7,10 +7,7 @@ config:
 
     domain: digitalocean.midokura.de
 
-    # if you enable MEM here you should also set two environment variables:
-    # OS_MIDOKURA_REPOSITORY_USER
-    # OS_MIDOKURA_REPOSITORY_PASS
-    midonet_repo: OSS # can be OSS or MEM
+    midonet_repo: OSS
 
     midonet_mem_version: 1.7
     midonet_mem_openstack_plugin_version: icehouse
@@ -82,6 +79,6 @@ roles:
 
 servers:
     os001:
-        ip: 188.166.34.127
+        ip: 188.166.33.201
         dockernet: 192.168.21.0/24
 
