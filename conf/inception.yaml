@@ -1,6 +1,8 @@
 config:
 
-    fake_transfer_net: 24.24.24
+    fip_base: 192.168.198
+
+    fake_transfer_net: 192.168.197
 
     verbose: True
     debug: False
@@ -22,7 +24,7 @@ config:
     # must be a file under /usr/share/zoneinfo
     timezone: Europe/Berlin
 
-    vpn_base: 192.168.4
+    vpn_base: 192.168.196
 
     HEAP_INITIAL: 1024M
     MAX_HEAPSIZE: 2048M
@@ -79,8 +81,6 @@ roles:
 
 servers:
     os001:
-        # will be port forwarded to the digitalocean setup:
-        # root@brigg:~# ssh -L192.168.4.123:22:200.200.200.3:22 root@188.166.33.201 -v
-        ip: 192.168.4.123
-        dockernet: 192.168.22.0/24
+        ip: 200.200.200.4
+        dockernet: 192.168.195.0/24
 

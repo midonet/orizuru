@@ -1,9 +1,15 @@
-roadmap
-=======
+roadmap (or what we learned when building this installer)
+=========================================================
+
+This installer is acollective effort learning from the mistakes when building our Midonet installers (like the infamous midokura/deployment-tools) and looking at how github/agabert/openstack-standalone-installer created a havana cloud cluster.
+
+Keeping it simple was a smart decision back then.
+
+Add some fabric and cuisine magic (thanks Daniel :)) plus the official Midokura puppet modules for automating all the things: you end up with this project.
+
+Here are the goals for the next couple of months:
 
 short term (1 day to 1 month):
-
-- make the 200.200.200 hardcoding into a config var
 
 - replace fakeuplink with code to talk to a physical or dockerized quagga daemon (if dockerized it will SNAT then)
 
@@ -33,5 +39,19 @@ long term (6 months to 12 months):
 
 - wait for OpenStack to provide Docker images for all the OpenStack services, then replace our logic with those
 
+- ipv6 testbed
+
 - RHEL and CentOS support (might not happen because RHEL OSP Installer might get done before that)
+
+- partition the installer into three phases (might not happen and be done in the next project):
+
+Phase1: parallel: prepare host operating systems (dist upgrade, install packages)
+
+Phase2: parallel: docker build (but do not configure anything specific)
+
+Phase3: parallel: install openstack and midonet software (or build the appropriate containers cold)
+
+Phase4: parallel: log into all openstack and midonet containers, configure them cold (alternatively docker run and configure with RUN commands doing puppet)
+
+Phase5: start all the things sequential and in order (dependencies are important, otherwise certain services will fall down again)
 

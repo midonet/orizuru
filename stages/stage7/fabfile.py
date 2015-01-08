@@ -380,6 +380,8 @@ PHYSICAL_IP="%s"
 # this will be bound to the provider router
 OVERLAY_BINDING_IP="%s"
 
+FIP_BASE="%s"
+
 ip a | grep veth1 || \
     ip link add type veth
 
@@ -397,7 +399,7 @@ ifconfig fakeuplink "${PHYSICAL_IP}/24" up
 brctl addif fakeuplink veth0 # veth1 will be used by midonet
 
 # change this to the ext range for more authentic testing
-ip route add 200.200.200.0/24 via "${OVERLAY_BINDING_IP}"
+ip route add ${FIP_BASE}.0/24 via "${OVERLAY_BINDING_IP}"
 
 # enable routing
 echo 1 > /proc/sys/net/ipv4/ip_forward
@@ -406,7 +408,8 @@ iptables -v -t nat -o eth0 -I POSTROUTING -j MASQUERADE
 """ % (
         metadata.config["debug"],
         "%s.%s" % (metadata.config["fake_transfer_net"], str(server_idx)),
-        "%s.%s" % (metadata.config["fake_transfer_net"], str(overlay_ip_idx))
+        "%s.%s" % (metadata.config["fake_transfer_net"], str(overlay_ip_idx)),
+        metadata.config["fip_base"]
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
@@ -625,7 +628,6 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 
 CONTAINER_NAME="%s"
 CONTAINER_IP="%s"
-
 /usr/bin/expect<<EOF
 set timeout 10
 spawn midonet-cli
@@ -646,6 +648,8 @@ EOF
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
+FIP_BASE="%s"
+
 source /etc/keystone/KEYSTONERC_ADMIN
 
 neutron net-list | grep public || \
@@ -653,7 +657,7 @@ neutron net-list | grep public || \
 
 # this is the pseudo FIP subnet
 neutron subnet-list | grep extsubnet || \
-    neutron subnet-create public 200.200.200.0/24 --name extsubnet --enable_dhcp False
+    neutron subnet-create public "${FIP_BASE}.0/24" --name extsubnet --enable_dhcp False
 
 # create one example tenant router for the admin tenant
 neutron router-list | grep ext-to-int || \
@@ -720,7 +724,10 @@ nova boot \
     --nic net-id="$(neutron net-list | grep internal | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
     "test$(date +%%s)"
 
-""" % metadata.config["debug"])
+""" % (
+        metadata.config["debug"],
+        metadata.config["fip_base"]
+    ))
 
     # provider router has been created now. we can set up the static routing logic.
     # note that we might also change this role loop to include compute nodes
@@ -786,11 +793,13 @@ def stage7_container_test_connectivity():
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
+FIP_BASE="%s"
+
 source /etc/keystone/KEYSTONERC_ADMIN
 
-neutron floatingip-list | grep 200.200.200 || neutron floatingip-create public
+neutron floatingip-list | grep "${FIP_BASE}" || neutron floatingip-create public
 
-FIP_ID="$(neutron floatingip-list | grep 200.200.200 | awk -F'|' '{print $2;}' | xargs -n1 echo)"
+FIP_ID="$(neutron floatingip-list | grep "${FIP_BASE}" | awk -F'|' '{print $2;}' | xargs -n1 echo)"
 
 INSTANCE_IP=""
 
@@ -828,7 +837,10 @@ ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /root/.ssh/id_rsa_nov
 
 ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- ping -c3 www.midokura.com
 
-""" % metadata.config["debug"])
+""" % (
+        metadata.config["debug"],
+        metadata.config["fip_base"]
+    ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

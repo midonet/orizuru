@@ -181,6 +181,8 @@ class Config(object):
 
         defaults["nova_compute_outside_of_container"] = "no"
 
+        defaults["fip_base"] = "200.200.200"
+
         for overloading_key in defaults:
             if overloading_key not in self._config:
                 overloading_value = defaults[overloading_key]

@@ -71,7 +71,7 @@ roles:
     - zk003
 
     midonet_cli:
-    - zk001
+    - zk003
 
     openstack_mysql:
     - zk002
@@ -89,7 +89,7 @@ roles:
     - zk003
 
     openstack_controller:
-    - zk001
+    - zk003
 
     openstack_horizon:
     - zk002

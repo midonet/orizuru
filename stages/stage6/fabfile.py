@@ -904,13 +904,23 @@ for XSERVICE in "${SERVICE}"; do
 
 done
 
-#
-# always switch to qemu (containers cannot access kvm even in privileged mode)
-#
-#if [[ "$(grep -c vmx /proc/cpuinfo)" == "0" ]]; then echo 'the system supports hardware virt'; fi
+if [[ "$(grep -c vmx /proc/cpuinfo)" == "0" ]]; then
+    CONFIGFILE="/etc/${SERVICE}/${SERVICE}-compute.conf"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "libvirt" "virt_type" "qemu"
+else
 
-CONFIGFILE="/etc/${SERVICE}/${SERVICE}-compute.conf"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "libvirt" "virt_type" "qemu"
+    if [ ! -e /dev/kvm ]; then
+        KVM_NODE="$(grep 'kvm' /proc/misc | awk '{print $2;}')"
+        mknod /dev/kvm c 10 "${KVM_NODE}"
+    fi
+
+    if [ ! -e /dev/net/tun ]; then
+        TUN_NODE="$(grep 'tun' /proc/misc | awk '{print $2;}')"
+        mkdir -pv /dev/net
+        mknod /dev/net/tun c 10 "${TUN_NODE}"
+    fi
+
+fi
 
 cat>/etc/libvirt/qemu.conf<<EOF
 

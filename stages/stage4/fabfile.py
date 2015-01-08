@@ -120,6 +120,8 @@ CONTAINER_NETMASK="%s"
 CONTAINER_NETWORK="%s"
 DOMAIN_NAME="%s"
 SERVER_IP="%s"
+FIP_BASE="%s"
+
 CONTAINER_VETH="${RANDOM}"
 
 NETNS_NAME="docker_${CONTAINER_VETH}_${CONTAINER_ROLE}_${SERVER_NAME}"
@@ -193,62 +195,64 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     ip netns exec "${NETNS_NAME}" ip addr add "${CONTAINER_IP}/${CONTAINER_NETMASK}" dev eth0
     ip netns exec "${NETNS_NAME}" ip route add default via "${CONTAINER_DEFAULT_GW}"
 
-    sleep 2
+    #
+    # SNAT
+    #
+    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" ! -d "${CONTAINER_NETWORK}/${CONTAINER_NETMASK}" -j MASQUERADE
+
+    #
+    # midonet gateway
+    #
+    if [[ "midonet_gateway" == "${CONTAINER_ROLE}" ]]; then
+        ip route add "${FIP_BASE}.0/24" via "${CONTAINER_IP}"
+
+        if [[ ! "$?" == "0" ]]; then
+            echo "could not add route, this is bad"
+            exit 1
+        fi
+    fi
+
+    #
+    # openstack controller VNC proxy
+    #
+    if [[ "openstack_controller" == "${CONTAINER_ROLE}" ]]; then
+        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
+        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 6080 -j ACCEPT
+    fi
+
+    #
+    # horizon dashboard
+    #
+    if [[ "openstack_horizon" == "${CONTAINER_ROLE}" ]]; then
+        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
+        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
+    fi
+
+    #
+    # midonet manager
+    #
+    if [[ "midonet_manager" == "${CONTAINER_ROLE}" ]]; then
+        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 81 -j DNAT --to "${CONTAINER_IP}:80"
+        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
+    fi
+
+    #
+    # midonet api
+    #
+    if [[ "midonet_api" == "${CONTAINER_ROLE}" ]]; then
+        iptables -t nat -I PREROUTING -p tcp --dport 8080 -j DNAT --to "${CONTAINER_IP}:8080"
+        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 8080 -j ACCEPT
+    fi
+
 else
     CONTAINER_ID="$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_NAME}" | awk '{print $1;}' | head -n1)"
 fi
 
 #
-# hard-wire the /etc/hosts to the container
+# the /etc/hosts could have been updated in the meantime, add it to the container even when its already running
 #
-
 CONTAINER_HOSTS_PATH="$(docker ps | grep -v ^CONTAINER | grep "^${CONTAINER_ID}" | awk '{print $1;}' | xargs -n1 --no-run-if-empty docker inspect --format "{{ .HostsPath }}")"
-
 cat "${CONTAINER_ETC_HOSTS}" >"${CONTAINER_HOSTS_PATH}"
-
-#
-# SNAT
-#
-iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" ! -d "${CONTAINER_NETWORK}/${CONTAINER_NETMASK}" -j MASQUERADE
-
-#
-# midonet gateway
-#
-if [[ "midonet_gateway" == "${CONTAINER_ROLE}" ]]; then
-    ip route add 200.200.200.0/24 via "${CONTAINER_IP}"
-fi
-
-#
-# openstack controller VNC proxy
-#
-if [[ "openstack_controller" == "${CONTAINER_ROLE}" ]]; then
-    iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
-    iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 6080 -j ACCEPT
-fi
-
-#
-# horizon dashboard
-#
-if [[ "openstack_horizon" == "${CONTAINER_ROLE}" ]]; then
-    iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
-    iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
-fi
-
-#
-# midonet manager
-#
-if [[ "midonet_manager" == "${CONTAINER_ROLE}" ]]; then
-    iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
-    iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
-fi
-
-#
-# midonet api
-#
-if [[ "midonet_api" == "${CONTAINER_ROLE}" ]]; then
-    iptables -t nat -I PREROUTING -p tcp --dport 8080 -j DNAT --to "${CONTAINER_IP}:8080"
-    iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 8080 -j ACCEPT
-fi
 
 sync
 
@@ -262,7 +266,8 @@ exit 0
         CIDR(metadata.servers[env.host_string]["dockernet"]).netmask,
         CIDR(metadata.servers[env.host_string]["dockernet"])[0],
         metadata.config["domain"],
-        metadata.servers[env.host_string]["ip"]
+        metadata.servers[env.host_string]["ip"],
+        metadata.config["fip_base"]
     ))
 
                 run("""

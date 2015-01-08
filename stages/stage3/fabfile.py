@@ -157,7 +157,7 @@ ConnectTo = %s
 VPN_BASE="%s"
 GW="${VPN_BASE}.%s"
 
-NET="200.200.200.0"
+NET="%s.0"
 NETMASK="255.255.255.0"
 
 if [[ "$(uname -o 2>/dev/null)" == "GNU/Linux" ]]; then
@@ -169,7 +169,8 @@ fi
 """ % (
     server,
     metadata.config["vpn_base"],
-    metadata.config["idx"][server]
+    metadata.config["idx"][server],
+    metadata.config["fip_base"]
     ))
 
             cuisine.file_append("/etc/tinc/%s/tinc-up" % metadata.config["domain"], """

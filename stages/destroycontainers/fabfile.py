@@ -43,6 +43,10 @@ docker images | grep "${TEMPLATE_NAME}" && docker rmi -f "${TEMPLATE_NAME}" || t
 
 rm -fv /var/run/netns/docker_*_${SERVER_NAME} || true;
 
+rm -rfv /etc/rc.local.d
+
+mkdir -pv /etc/rc.local.d
+
 exit 0
 
 """ % (env.host_string, role))
