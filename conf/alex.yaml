@@ -63,38 +63,36 @@ roles:
 
     midonet_gateway:
     - zk001
-    #- zk002
-    #- zk003
 
     midonet_api:
-    - os002
+    - zk002
 
     midonet_manager:
-    - os003
+    - zk003
 
     midonet_cli:
-    - os002
-
-    openstack_rabbitmq:
-    - os003
+    - zk001
 
     openstack_mysql:
-    - os002
+    - zk002
+
+    openstack_rabbitmq:
+    - zk003
 
     openstack_keystone:
-    - os003
-
-    openstack_glance:
-    - os002
+    - zk001
 
     openstack_neutron:
-    - os003
+    - zk002
 
-    openstack_horizon:
-    - os002
+    openstack_glance:
+    - zk003
 
     openstack_controller:
-    - os003
+    - zk001
+
+    openstack_horizon:
+    - zk002
 
     openstack_compute:
     - os001
@@ -102,26 +100,32 @@ roles:
     - os003
 
 servers:
+    # 4GB RAM
     zk001:
         ip: 192.168.4.203
         dockernet: 192.168.21.0/24
 
+    # 4GB RAM
     zk002:
         ip: 192.168.4.207
         dockernet: 192.168.22.0/24
 
+    # 4GB RAM
     zk003:
         ip: 192.168.4.208
         dockernet: 192.168.23.0/24
 
+    # 6GB RAM
     os001:
         ip: 192.168.4.206
         dockernet: 192.168.31.0/24
 
+    # 8GB RAM
     os002:
         ip: 192.168.4.202
         dockernet: 192.168.32.0/24
 
+    # 32GB RAM
     os003:
         ip: 192.168.4.209
         dockernet: 192.168.33.0/24
