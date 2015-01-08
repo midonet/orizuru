@@ -51,10 +51,10 @@ MAINTAINER Alexander Gabert <alexander.gabert@gmail.com>
 RUN apt-get update 1>/dev/null
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -u dist-upgrade
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server puppet screen %s
-RUN mkdir /var/run/screen
+RUN mkdir -pv /var/run/screen
 RUN chmod 0777 /var/run/screen
 RUN chmod 0755 /usr/bin/screen
-RUN mkdir /var/run/sshd
+RUN mkdir -pv /var/run/sshd
 RUN echo "root:%s" | chpasswd
 RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 RUN echo 'LANG="en_US.UTF-8"' | tee /etc/default/locale
@@ -63,7 +63,7 @@ RUN locale-gen en_US.UTF-8
 # SSH login fix. Otherwise user is kicked off after login
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 
-RUN mkdir -p /root/.ssh
+RUN mkdir -pv /root/.ssh
 RUN chmod 0755 /root/.ssh
 
 COPY /root/.ssh/authorized_keys /root/.ssh/authorized_keys
