@@ -46,7 +46,7 @@ def docker_containers_for_roles_stage4():
 
 FROM %s:%s
 
-MAINTAINER Alexander Gabert <alexander.gabert@gmail.com>
+MAINTAINER Alexander Gabert <alexander@midokura.com>
 
 RUN apt-get update 1>/dev/null
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -u dist-upgrade
