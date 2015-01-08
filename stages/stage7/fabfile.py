@@ -55,7 +55,7 @@ def stage7_container_zookeeper():
         zkid = zkid + 1
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -101,6 +101,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 /etc/init.d/zookeeper restart
 
 """ % (
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
         metadata.config["midonet_puppet_modules_branch"],
@@ -265,7 +266,7 @@ def stage7_container_midonet_agent():
         return
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -334,6 +335,7 @@ sleep 30
 ps axufwwwwwwwwwwwww | grep -v grep | grep midolman
 
 """ % (
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
         metadata.config["midonet_puppet_modules_branch"],
@@ -360,7 +362,7 @@ def stage7_container_midonet_gateway():
     overlay_ip_idx = 255 - server_idx
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # fakeuplink logic for midonet gateways without binding a dedicated virtual edge NIC
@@ -402,6 +404,7 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 iptables -v -t nat -o eth0 -I POSTROUTING -j MASQUERADE
 
 """ % (
+        metadata.config["debug"],
         "%s.%s" % (metadata.config["fake_transfer_net"], str(server_idx)),
         "%s.%s" % (metadata.config["fake_transfer_net"], str(overlay_ip_idx))
     ))
@@ -417,7 +420,7 @@ def stage7_container_midonet_api():
         return
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -471,6 +474,7 @@ EOF
 puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
 
 """ % (
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
         metadata.config["midonet_puppet_modules_branch"],
@@ -491,7 +495,7 @@ def stage7_container_midonet_manager():
         return
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -535,6 +539,7 @@ EOF
 puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
 
 """ % (
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
         metadata.config["midonet_puppet_modules_branch"],
@@ -561,7 +566,7 @@ def stage7_container_midonet_cli():
         ])
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -582,6 +587,7 @@ project_id = admin
 EOF
 
 """ % (
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"]
     ))
@@ -599,7 +605,7 @@ def stage7_container_midonet_tunnelzone():
     cuisine.package_ensure("expect")
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # create tunnel-zone
@@ -608,14 +614,14 @@ midonet-cli -e 'tunnel-zone list name gre' | \
     grep '^tzone' | grep 'name gre type gre' || \
         midonet-cli -e 'tunnel-zone create name gre type gre'
 
-""")
+""" % metadata.config["debug"])
 
     for role in ['container_midonet_gateway', 'container_openstack_neutron', 'container_openstack_controller', 'container_openstack_compute']:
         for container in metadata.containers:
             if container in metadata.roles[role]:
                 puts(green("enrolling container %s in tunnel-zone gre" % container))
                 run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 CONTAINER_NAME="%s"
 CONTAINER_IP="%s"
@@ -632,12 +638,13 @@ expect "midonet> " { send "quit\r" }
 EOF
 
 """ %(
+        metadata.config["debug"],
         container,
         metadata.containers[container]["ip"]
     ))
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 source /etc/keystone/KEYSTONERC_ADMIN
 
@@ -711,9 +718,9 @@ nova boot \
     --key-name "$(nova keypair-list | grep "$(hostname)_root_ssh_id_rsa_nova" | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
     --security-groups "$(neutron security-group-list | grep testing | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
     --nic net-id="$(neutron net-list | grep internal | head -n1 | awk -F'|' '{print $2;}' | xargs -n1 echo)" \
-    "test$(date +%s)"
+    "test$(date +%%s)"
 
-""")
+""" % metadata.config["debug"])
 
     # provider router has been created now. we can set up the static routing logic.
     # note that we might also change this role loop to include compute nodes
@@ -732,7 +739,7 @@ nova boot \
                 # We might some day change this to proper BGP peer (which will be in another container or on a different host of course).
                 #
                 run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 CONTAINER_NAME="%s"
 FAKEUPLINK_VETH1_IP="%s"
@@ -754,12 +761,12 @@ expect "midonet> " { send "host list name ${CONTAINER_NAME}\r" }
 expect "midonet> " { send "host host0 add binding port router router0 port port0 interface veth1\r" }
 
 expect "midonet> " { send "router router0 add route type normal weight 0 src 0.0.0.0/0 dst 0.0.0.0/0 gw ${FAKEUPLINK_VETH0_IP} port port0\r" }
-
 expect "midonet> " { send "quit\r" }
 
 EOF
 
 """ % (
+        metadata.config["debug"],
         container,
         "%s.%s" % (metadata.config["fake_transfer_net"], str(overlay_ip_idx)),
         metadata.config["fake_transfer_net"],
@@ -777,6 +784,7 @@ def stage7_container_test_connectivity():
         return
 
     run("""
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 source /etc/keystone/KEYSTONERC_ADMIN
 
@@ -820,7 +828,7 @@ ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /root/.ssh/id_rsa_nov
 
 ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- ping -c3 www.midokura.com
 
-""")
+""" % metadata.config["debug"])
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

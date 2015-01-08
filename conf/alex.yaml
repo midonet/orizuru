@@ -35,8 +35,13 @@ config:
     # this is a class C network for the vpn spanning all hosts
     vpn_base: 192.168.3
 
+    # currently not used
     HEAP_INITIAL: 1024M
-    MAX_HEAPSIZE: 2048M
+
+    # this becomes Xms and Xmx in midolman-env.sh
+    MAX_HEAPSIZE: 1024M
+
+    # this becomes Xmn in midolman-env.sh
     HEAP_NEWSIZE: 512M
 
 vpnclients:

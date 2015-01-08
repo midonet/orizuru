@@ -35,7 +35,12 @@ def stage6():
     execute(stage6_container_openstack_neutron)
 
     execute(stage6_container_openstack_nova_controller)
-    execute(stage6_container_openstack_nova_compute)
+
+    # do not enable this yet (it is not implemented yet in stage7 midolman setup and tunnel-zone host adding)
+    if metadata.config["nova_compute_outside_of_container"] == "yes":
+        execute(stage6_openstack_nova_compute)
+    else:
+        execute(stage6_container_openstack_nova_compute)
 
     execute(stage6_container_openstack_horizon)
 
@@ -52,7 +57,7 @@ def stage6_container_openstack_horizon():
     run("apt-get -y remove openstack-dashboard-ubuntu-theme")
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -409,6 +414,7 @@ service apache2 restart
 service memcached restart
 
 """ % (
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"]
     ))
@@ -439,7 +445,7 @@ def stage6_container_openstack_neutron():
     service = "neutron"
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 VERBOSE="%s"
 DEBUG="%s"
@@ -611,6 +617,7 @@ sleep 12
 ps axufwwwww | grep -v grep | grep neutron-server
 
 """ % (
+        metadata.config["debug"],
         metadata.config["verbose"],
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
@@ -646,7 +653,7 @@ def stage6_container_openstack_nova_controller():
     service = "nova"
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 VERBOSE="%s"
 DEBUG="%s"
@@ -762,6 +769,7 @@ done
 rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
 """ % (
+        metadata.config["debug"],
         metadata.config["verbose"],
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
@@ -782,6 +790,14 @@ rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 @parallel
 @roles('container_openstack_compute')
 def stage6_container_openstack_nova_compute():
+    stage6_openstack_nova_compute_impl()
+
+@parallel
+@roles('openstack_compute')
+def stage6_openstack_nova_compute():
+    stage6_openstack_nova_compute_impl()
+
+def stage6_openstack_nova_compute_impl():
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
@@ -792,7 +808,7 @@ def stage6_container_openstack_nova_compute():
     service = "nova"
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 VERBOSE="%s"
 DEBUG="%s"
@@ -935,6 +951,7 @@ sleep 12
 ps axufwwwww | grep -v grep | grep nova-compute
 
 """ % (
+        metadata.config["debug"],
         metadata.config["verbose"],
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
@@ -966,7 +983,7 @@ def stage6_container_openstack_glance():
     service = "glance"
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 VERBOSE="%s"
 DEBUG="%s"
@@ -1031,6 +1048,7 @@ done
 rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
 """ % (
+        metadata.config["debug"],
         metadata.config["verbose"],
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
@@ -1072,7 +1090,7 @@ def stage6_container_openstack_keystone_keystonerc():
         return
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -1103,6 +1121,7 @@ chmod 0700 /etc/keystone/KEYSTONERC*
 chown root:root /etc/keystone/KEYSTONERC*
 
 """ % (
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"]
     ))
@@ -1132,7 +1151,7 @@ def stage6_container_openstack_keystone_create_service_entity_api_endpoints():
                 service_ip = metadata.containers[metadata.roles["container_openstack_%s" % service_alias][0]]["ip"]
 
             run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -1172,6 +1191,7 @@ if not [x for x in keystone.services.list() if x.name == "${SERVICE}"]:
 EOF
 
 """ % (
+    metadata.config["debug"],
     open(os.environ["PASSWORDCACHE"]).read(),
     keystone_ip,
     service,
@@ -1199,7 +1219,7 @@ def stage6_container_openstack_keystone_create_tenants_users_roles():
     service = 'keystone'
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -1267,6 +1287,7 @@ for create_user in passwords:
 EOF
 
 """ % (
+    metadata.config["debug"],
     open(os.environ["PASSWORDCACHE"]).read(),
     keystone_ip,
     metadata.config["region"],
@@ -1280,7 +1301,7 @@ EOF
     for service in metadata.services:
         if not service == 'keystone':
             run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -1325,6 +1346,7 @@ for create_user in passwords:
 EOF
 
 """ % (
+    metadata.config["debug"],
     open(os.environ["PASSWORDCACHE"]).read(),
     keystone_ip,
     service,
@@ -1344,7 +1366,7 @@ def stage6_container_openstack_keystone():
     cuisine.package_ensure(["keystone", "python-keystoneclient"])
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 VERBOSE="%s"
 DEBUG="%s"
@@ -1406,8 +1428,9 @@ sleep 2
 ps axufwwwwwwwwwww | grep -v grep | grep keystone
 
 """ % (
-	metadata.config["verbose"],
-	metadata.config["debug"],
+        metadata.config["debug"],
+        metadata.config["verbose"],
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["constrictor"],
         metadata.containers[metadata.roles["container_openstack_mysql"][0]]["ip"]
@@ -1426,7 +1449,7 @@ def stage6_container_openstack_rabbitmq():
     cuisine.package_ensure(["rabbitmq-server"])
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -1449,6 +1472,7 @@ rabbitmqctl change_password "${RABBIT_USER}" "${RABBIT_PASS}" || \
 rabbitmqctl set_permissions -p / "${RABBIT_USER}" ".*" ".*" ".*"
 
 """ % (
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read()
     ))
 
@@ -1466,7 +1490,7 @@ def stage6_container_openstack_mysql_create_databases():
         puts(green("creating database for service %s" % service))
 
         run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -1487,6 +1511,7 @@ GRANT ALL PRIVILEGES ON ${SERVICE_ACCOUNT}.* TO '${SERVICE_ACCOUNT}'@'%%' IDENTI
 EOF
 
 """ % (
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         service,
         service.upper()
@@ -1503,7 +1528,7 @@ def stage6_container_openstack_mysql():
         return
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -1531,6 +1556,7 @@ mysql-server-5.6 mysql-server/root_password_again password ${MYSQL_PASSWORD}
 EOF
 
 """ % (
+        metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read()
     ))
 
@@ -1594,7 +1620,7 @@ key_buffer = 16M
 """ % metadata.containers[metadata.roles["container_openstack_mysql"][0]]["ip"])
 
     run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -1613,7 +1639,10 @@ fi
 
 service mysql restart
 
-""" % open(os.environ["PASSWORDCACHE"]).read())
+""" % (
+        metadata.config["debug"],
+        open(os.environ["PASSWORDCACHE"]).read()
+    ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

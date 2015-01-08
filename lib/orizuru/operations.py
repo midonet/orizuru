@@ -103,7 +103,7 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
             repo_flavor = self._metadata.config["midonet_repo"]
 
         run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
 # initialize the password cache
@@ -147,6 +147,7 @@ EOF
 puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
 
 """ % (
+        self._metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         self._metadata.config["midonet_puppet_modules"],
         self._metadata.config["midonet_puppet_modules_branch"],
@@ -163,10 +164,9 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         else:
            self.__lib_orizuru_operations_ubuntu_repo(self._metadata.config["os_release_codename"])
 
-    @classmethod
-    def __lib_orizuru_operations_ubuntu_repo(cls, codename, archive_country="us"):
+    def __lib_orizuru_operations_ubuntu_repo(self, codename, archive_country="us"):
         run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 XC="%s" # ubuntu release
 XD="%s" # country code
@@ -188,7 +188,7 @@ for TYPE in 'deb' 'deb-src'; do
 
 done | tee -a /etc/apt/sources.list
 
-""" % (codename, archive_country, sys._getframe().f_code.co_name))
+""" % (self._metadata.config["debug"], codename, archive_country, sys._getframe().f_code.co_name))
 
 class Install(object):
 

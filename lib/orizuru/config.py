@@ -179,6 +179,8 @@ class Config(object):
         # used for setting up sources.list on the host
         defaults["os_release_codename"] = "trusty"
 
+        defaults["nova_compute_outside_of_container"] = "no"
+
         for overloading_key in defaults:
             if overloading_key not in self._config:
                 overloading_value = defaults[overloading_key]

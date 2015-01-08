@@ -266,7 +266,7 @@ exit 0
     ))
 
                 run("""
-set -x
+if [[ "%s" == "True" ]] ; then set -x; fi
 
 SERVER_NAME="%s"
 CONTAINER_ROLE="%s"
@@ -274,7 +274,7 @@ chmod 0755 /etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}
 
 /etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}
 
-""" % (env.host_string, role))
+""" % (metadata.config["debug"], env.host_string, role))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
