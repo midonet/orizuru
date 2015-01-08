@@ -1,4 +1,6 @@
 
+import re
+
 import os
 import sys
 
@@ -34,17 +36,28 @@ def info():
     )))
 
     puts(white("""
-    Containers:
+    Containers (and fakeuplink configuration):
 """))
 
     for server in sorted(metadata.servers):
         for role in sorted(metadata.config["docker_ips"][server]):
-            puts(white("    host: %s physical ip: [%s] >> tinc vpn ip: [%s] >>>> %s >>>>>> docker container ip: [%s]" % (
+            if role == "midonet_gateway":
+                server_idx = int(re.sub(r"\D", "", server))
+                overlay_ip_idx = 255 - server_idx
+
+                fakeuplink = ">> >> >> >> veth_A: %s ++ veth_B: %s" % (
+                    "%s.%s" % (metadata.config["fake_transfer_net"], str(server_idx)),
+                    "%s.%s" % (metadata.config["fake_transfer_net"], str(overlay_ip_idx))
+                    )
+            else:
+                fakeuplink = ""
+            puts(white("    host: %s physical ip: [%s] >> tinc vpn ip: [%s] >> >> %s >> >> >> docker container ip: [%s] %s" % (
                 server,
                 metadata.servers[server]["ip"],
                 "%s.%s" % (metadata.config["vpn_base"], metadata.config["idx"][server]),
                 role,
-                metadata.config["docker_ips"][server][role]
+                metadata.config["docker_ips"][server][role],
+                fakeuplink
                 )))
         puts("")
 
