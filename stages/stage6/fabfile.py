@@ -904,7 +904,7 @@ for XSERVICE in "${SERVICE}"; do
 
 done
 
-if [[ "$(grep -c vmx /proc/cpuinfo)" == "0" ]]; then
+if [[ "$(egrep -c 'vmx|svm' /proc/cpuinfo)" == "0" ]]; then
     CONFIGFILE="/etc/${SERVICE}/${SERVICE}-compute.conf"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "libvirt" "virt_type" "qemu"
 else
