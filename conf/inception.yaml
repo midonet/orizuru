@@ -79,6 +79,8 @@ roles:
 
 servers:
     os001:
-        ip: 200.200.200.3
+        # will be port forwarded to the digitalocean setup:
+        # root@brigg:~# ssh -L192.168.4.123:22:200.200.200.3:22 root@188.166.33.201 -v
+        ip: 192.168.4.123
         dockernet: 192.168.22.0/24
 
