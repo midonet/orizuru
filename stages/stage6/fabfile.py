@@ -79,7 +79,7 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 #
 %s
 
-OPENSTACK_CONTROLLER="%s"
+OPENSTACK_KEYSTONE="%s"
 
 CONFIGFILE="/etc/openstack-dashboard/local_settings.py"
 
@@ -121,7 +121,7 @@ CACHES = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-OPENSTACK_HOST = "${OPENSTACK_CONTROLLER}"
+OPENSTACK_HOST = "${OPENSTACK_KEYSTONE}"
 
 OPENSTACK_KEYSTONE_URL = "http://%%s:5000/v2.0" %% OPENSTACK_HOST
 
