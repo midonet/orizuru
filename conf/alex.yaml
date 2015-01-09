@@ -63,36 +63,38 @@ roles:
 
     midonet_gateway:
     - zk001
+    - zk002
+    - zk003
 
     midonet_api:
-    - zk002
+    - os001
 
     midonet_manager:
-    - zk003
+    - os001
 
     midonet_cli:
-    - zk003
+    - os001
 
     openstack_mysql:
-    - zk002
+    - os002
 
     openstack_rabbitmq:
-    - zk003
+    - os002
 
     openstack_keystone:
-    - zk001
+    - os002
 
     openstack_neutron:
-    - zk002
+    - os002
 
     openstack_glance:
-    - zk003
+    - os002
 
     openstack_controller:
-    - zk003
+    - os002
 
     openstack_horizon:
-    - zk002
+    - os002
 
     openstack_compute:
     - os001
