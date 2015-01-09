@@ -273,7 +273,7 @@ fi
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
 @parallel
-@roles('container_midonet_gateway', 'container_openstack_neutron', 'container_openstack_controller', 'container_openstack_compute')
+@roles('container_midonet_gateway', 'container_openstack_neutron', 'container_openstack_compute')
 def stage7_container_midonet_agent():
     metadata = Config(os.environ["CONFIGFILE"])
 

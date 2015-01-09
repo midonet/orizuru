@@ -45,7 +45,7 @@ class Config(object):
         env.connection_attempts = 100
         env.timeout = 30
 
-        env.parallel = True
+        env.parallel = self._config["parallel"]
 
         env.roledefs = self._roles
 
@@ -175,6 +175,8 @@ class Config(object):
             common_packages = "%s %s" % (common_packages, self._config['additional_packages'])
 
         defaults = {}
+
+        defaults["parallel"] = True
 
         defaults["archive_country"] = "us"
         defaults["apt-cacher"] = "http:/"
