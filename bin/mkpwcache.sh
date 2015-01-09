@@ -40,7 +40,11 @@ for PASS in MYSQL_DATABASE_PASSWORD \
   MIDONET_PASS \
   NEUTRON_METADATA_SHARED_SECRET
 do
-  echo "export ${PASS}=$(openssl rand -hex 10)"
+  if [[ ! "$(env | grep "^${PASS}")" == "" ]]; then
+    echo "export $(env | grep "^${PASS}")"
+  else
+    echo "export ${PASS}=$(openssl rand -hex 10)"
+  fi
 done
 
 exit 0
