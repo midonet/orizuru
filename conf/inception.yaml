@@ -4,6 +4,7 @@ config:
 
     fake_transfer_net: 192.168.197
 
+    parallel: False
     verbose: True
     debug: False
 
