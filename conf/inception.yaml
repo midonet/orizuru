@@ -39,48 +39,78 @@ vpnclients:
 roles:
     zookeeper:
     - os001
+    - os002
+    - os003
 
     cassandra:
     - os001
+    - os002
+    - os003
 
     midonet_gateway:
     - os001
+    - os002
+    - os003
 
     midonet_api:
-    - os001
+    - os004
 
     midonet_manager:
-    - os001
+    - os005
 
     midonet_cli:
-    - os001
+    - os005
 
     openstack_rabbitmq:
-    - os001
+    - os004
 
     openstack_mysql:
-    - os001
+    - os004
 
     openstack_keystone:
-    - os001
+    - os004
 
     openstack_glance:
-    - os001
+    - os004
 
     openstack_neutron:
-    - os001
+    - os005
 
     openstack_horizon:
-    - os001
+    - os005
 
     openstack_controller:
-    - os001
+    - os005
 
     openstack_compute:
-    - os001
+    - os006
+    - os007
+    - os008
 
+# all machines have 4G and are running inside the openstack cloud installed by conf/alex.yaml
 servers:
     os001:
         ip: 200.200.200.4
         dockernet: 192.168.195.0/24
+    os002:
+        ip: 200.200.200.5
+        dockernet: 192.168.194.0/24
+    os003:
+        ip: 200.200.200.6
+        dockernet: 192.168.193.0/24
+    os004:
+        ip: 200.200.200.7
+        dockernet: 192.168.192.0/24
+    os005:
+        ip: 200.200.200.8
+        dockernet: 192.168.191.0/24
+    os006:
+        ip: 200.200.200.9
+        dockernet: 192.168.190.0/24
+    os007:
+        ip: 200.200.200.10
+        dockernet: 192.168.189.0/24
+    os008:
+        ip: 200.200.200.11
+        dockernet: 192.168.188.0/24
 
