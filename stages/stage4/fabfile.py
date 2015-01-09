@@ -224,20 +224,37 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     ip netns exec "${NETNS_NAME}" ip route add default via "${CONTAINER_DEFAULT_GW}"
 
     #
-    # SNAT
+    # SNAT the containers talking to the outside world
     #
-    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" ! -d "${CONTAINER_NETWORK}/${CONTAINER_NETMASK}" -j MASQUERADE
+    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -j MASQUERADE
 
     #
     # midonet gateway
     #
     if [[ "midonet_gateway" == "${CONTAINER_ROLE}" ]]; then
+
+        #
+        # SNAT the dummy FIP range traffic that is going to the internet
+        #
+        iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -j MASQUERADE
+
+        #
+        # but do not SNAT for RFC1918 networks
+        #
+        iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "10.0.0.0/8" -j ACCEPT
+        iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "172.16.0.0/12" -j ACCEPT
+        iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "192.168.0.0/16" -j ACCEPT
+
+        #
+        # route incoming packets to the FIP network through the midonet container ip, it will know what to do
+        #
         ip route add "${FIP_BASE}.0/24" via "${CONTAINER_IP}"
 
         if [[ ! "$?" == "0" ]]; then
             echo "could not add route, this is bad"
             exit 1
         fi
+
     fi
 
     #

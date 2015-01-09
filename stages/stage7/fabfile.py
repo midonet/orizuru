@@ -418,7 +418,6 @@ ip route add ${FIP_BASE}.0/24 via "${OVERLAY_BINDING_IP}"
 
 # enable routing
 echo 1 > /proc/sys/net/ipv4/ip_forward
-iptables -v -t nat -o eth0 -I POSTROUTING -j MASQUERADE
 
 """ % (
         metadata.config["debug"],

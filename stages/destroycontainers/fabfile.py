@@ -46,6 +46,7 @@ def fabric_docker_rm_role_containers():
 
 SERVER_NAME="%s"
 CONTAINER_ROLE="%s"
+DOMAIN="%s"
 
 TEMPLATE_NAME="template_${SERVER_NAME}"
 
@@ -62,9 +63,13 @@ rm -rfv /etc/rc.local.d
 
 mkdir -pv /etc/rc.local.d
 
+rm -rf "/etc/tinc/${DOMAIN}"
+
+pidof tincd | xargs -n1 --no-run-if-empty kill -9
+
 exit 0
 
-""" % (env.host_string, role))
+""" % (env.host_string, role, metadata.config["domain"]))
 
     #
     # brute force remove all containers and images
