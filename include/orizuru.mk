@@ -58,7 +58,7 @@ FABFABFILE = --fabfile $(STAGES)/$(@)/fabfile.py
 FAB = $(PP) $(CC) $(TT) $(PW) fab $(FABSSHCONFIG) $(FABFABFILE) $(@)
 
 RUNSTAGE_CHECK = test -f "$(TMPDIR)/.SUCCESS_$(@)"
-RUNSTAGE_TOUCH = touch "$(TMPDIR)/.SUCCESS_$(@)"
+RUNSTAGE_TOUCH = date | tee "$(TMPDIR)/.SUCCESS_$(@)"
 
 RUNSTAGE = $(RUNSTAGE_CHECK) || $(FAB) && $(RUNSTAGE_TOUCH)
 

@@ -180,12 +180,18 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         else:
            self.__lib_orizuru_operations_ubuntu_repo(self._metadata.config["os_release_codename"])
 
-    def __lib_orizuru_operations_ubuntu_repo(self, codename, archive_country="us"):
+    def __lib_orizuru_operations_ubuntu_repo(self, codename):
+
+        archive_country = self._metadata.config["archive_country"]
+
+        apt_cacher = self._metadata.config["apt-cacher"]
+
         run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
 XC="%s" # ubuntu release
 XD="%s" # country code
+XX="%s" # apt-cacher
 
 cat>/etc/apt/sources.list<<EOF
 #
@@ -195,16 +201,16 @@ EOF
 
 for TYPE in 'deb' 'deb-src'; do
     for realm in "main restricted" "universe" "multiverse"; do
-        echo "${TYPE} http://${XD}.archive.ubuntu.com/ubuntu/ ${XC} ${realm}"
-        echo "${TYPE} http://${XD}.archive.ubuntu.com/ubuntu/ ${XC}-updates ${realm}"
+        echo "${TYPE} ${XX}/${XD}.archive.ubuntu.com/ubuntu/ ${XC} ${realm}"
+        echo "${TYPE} ${XX}/${XD}.archive.ubuntu.com/ubuntu/ ${XC}-updates ${realm}"
         echo "${TYPE} http://security.archive.ubuntu.com/ubuntu/ ${XC}-security ${realm}"
     done
 
-    echo "${TYPE} http://${XD}.archive.ubuntu.com/ubuntu/ ${XC}-backports main restricted universe multiverse"
+    echo "${TYPE} ${XX}/${XD}.archive.ubuntu.com/ubuntu/ ${XC}-backports main restricted universe multiverse"
 
 done | tee -a /etc/apt/sources.list
 
-""" % (self._metadata.config["debug"], codename, archive_country, sys._getframe().f_code.co_name))
+""" % (self._metadata.config["debug"], codename, archive_country, apt_cacher, sys._getframe().f_code.co_name))
 
 class Install(object):
 
@@ -386,7 +392,7 @@ yes | dpkg --configure -a
 
 apt-get -y -u --force-yes install
 
-apt-get -y -u --force-yes dist-upgrade
+apt-get -y -u --force-yes dist-upgrade 1>/dev/null
 
 """)
 

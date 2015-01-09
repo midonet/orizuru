@@ -176,6 +176,9 @@ class Config(object):
 
         defaults = {}
 
+        defaults["archive_country"] = "us"
+        defaults["apt-cacher"] = "http:/"
+
         defaults["constrictor"] = "/usr/share/orizuru/bin/constrictor.py"
 
         defaults["common_packages"] = common_packages

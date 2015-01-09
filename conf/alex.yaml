@@ -1,5 +1,8 @@
 config:
 
+    archive_country: de
+    apt-cacher: http://192.168.4.23:3142
+
     # midonet_puppet_modules_branch: containerspirit
 
     container_os: ubuntu
