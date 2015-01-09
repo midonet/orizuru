@@ -270,6 +270,9 @@ fi
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
+#
+# midolman must be on the neutron controller to work with dhcp and metadata service
+#
 @roles('container_midonet_gateway', 'container_openstack_neutron', 'container_openstack_compute')
 def stage7_container_midonet_agent():
     metadata = Config(os.environ["CONFIGFILE"])
