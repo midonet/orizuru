@@ -33,7 +33,7 @@ def stage4():
 
     execute(docker_containers_for_roles_stage4)
 
-@parallel
+#@parallel
 @roles('all_servers')
 def docker_containers_for_roles_stage4():
     metadata = Config(os.environ["CONFIGFILE"])
