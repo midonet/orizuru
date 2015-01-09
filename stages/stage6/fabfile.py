@@ -59,7 +59,6 @@ def stage6():
 
     execute(stage6_container_openstack_horizon)
 
-@parallel
 @roles('container_openstack_horizon')
 def stage6_container_openstack_horizon():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -441,7 +440,6 @@ service memcached restart
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_openstack_neutron')
 def stage6_container_openstack_neutron():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -648,7 +646,6 @@ ps axufwwwww | grep -v grep | grep neutron-server
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_openstack_controller')
 def stage6_container_openstack_nova_controller():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -802,12 +799,10 @@ rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_openstack_compute')
 def stage6_container_openstack_nova_compute():
     stage6_openstack_nova_compute_impl()
 
-@parallel
 @roles('openstack_compute')
 def stage6_openstack_nova_compute():
     stage6_openstack_nova_compute_impl()
@@ -995,7 +990,6 @@ ps axufwwwww | grep -v grep | grep nova-compute
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_openstack_glance')
 def stage6_container_openstack_glance():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -1106,7 +1100,6 @@ glance image-list
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('all_containers')
 def stage6_container_openstack_keystone_keystonerc():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -1153,7 +1146,6 @@ chown root:root /etc/keystone/KEYSTONERC*
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_openstack_keystone')
 def stage6_container_openstack_keystone_create_service_entity_api_endpoints():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -1231,7 +1223,6 @@ EOF
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_openstack_keystone')
 def stage6_container_openstack_keystone_create_tenants_users_roles():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -1380,7 +1371,6 @@ EOF
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_openstack_keystone')
 def stage6_container_openstack_keystone():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -1463,7 +1453,6 @@ ps axufwwwwwwwwwww | grep -v grep | grep keystone
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_openstack_rabbitmq')
 def stage6_container_openstack_rabbitmq():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -1503,7 +1492,6 @@ rabbitmqctl set_permissions -p / "${RABBIT_USER}" ".*" ".*" ".*"
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_openstack_mysql')
 def stage6_container_openstack_mysql_create_databases():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -1544,7 +1532,6 @@ EOF
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_openstack_mysql')
 def stage6_container_openstack_mysql():
     metadata = Config(os.environ["CONFIGFILE"])

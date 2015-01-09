@@ -47,7 +47,6 @@ def stage7():
 
     execute(stage7_container_test_connectivity)
 
-@parallel
 @roles('container_zookeeper')
 def stage7_container_zookeeper():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -126,7 +125,6 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_cassandra')
 def stage7_container_cassandra():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -272,7 +270,6 @@ fi
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_midonet_gateway', 'container_openstack_neutron', 'container_openstack_compute')
 def stage7_container_midonet_agent():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -364,7 +361,6 @@ ps axufwwwwwwwwwwwww | grep -v grep | grep midolman
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_midonet_gateway')
 def stage7_container_midonet_gateway():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -428,7 +424,6 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_midonet_api')
 def stage7_container_midonet_api():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -503,7 +498,6 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_midonet_manager')
 def stage7_container_midonet_manager():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -566,7 +560,6 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_midonet_cli')
 def stage7_container_midonet_cli():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -611,7 +604,6 @@ EOF
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_midonet_cli')
 def stage7_container_midonet_tunnelzone():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -796,7 +788,6 @@ EOF
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('container_midonet_cli')
 def stage7_container_test_connectivity():
     metadata = Config(os.environ["CONFIGFILE"])

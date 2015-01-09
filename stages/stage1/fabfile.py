@@ -77,7 +77,6 @@ def stage1():
 
     sys.exit(0)
 
-@parallel
 @roles('all_servers')
 def configure_stage1():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -89,7 +88,6 @@ def configure_stage1():
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@parallel
 @roles('all_servers')
 def install_stage1():
     metadata = Config(os.environ["CONFIGFILE"])

@@ -32,7 +32,6 @@ def stage3():
 
     execute(tinc_stage3)
 
-@parallel
 @roles('all_servers')
 def prepare_tinc_stage3():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -54,7 +53,6 @@ test -f "${PRIVKEY}.pub" || openssl rsa -in "${PRIVKEY}" -pubout 2>/dev/null >"$
         env.host_string
     ))
 
-@parallel
 @roles('all_servers')
 def tinc_stage3():
     metadata = Config(os.environ["CONFIGFILE"])
