@@ -58,8 +58,6 @@ roles:
 
     midonet_manager:
     - os001
-    - os002
-    - os003
 
     midonet_cli:
     - os001
@@ -81,14 +79,11 @@ roles:
 
     openstack_horizon:
     - os001
-    - os002
-    - os003
 
     openstack_controller:
     - os001
 
     openstack_compute:
-    - os001
     - os002
     - os003
 
