@@ -1,6 +1,6 @@
 config:
 
-    archive_country: de
+    archive_country: us
     apt-cacher: http://192.168.4.23:3142
 
     container_os: ubuntu
