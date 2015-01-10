@@ -6,7 +6,7 @@ A video of the installer running (30 minutes) is available here: https://asciine
 
 The only thing you have to do is to provide a list of (virtual or physical) servers which you define in a simple yaml file.
 
-Midonet Openstack will then install inside Docker containers on these servers and use a tinc vpn for communication between this containers.
+Midonet Openstack will then install inside Docker containers on these servers and use a tinc vpn for secure communication between all containers.
 
 For this reason it is also possible to use multiple independent Hetzner rootservers or Digitalocean instances without you having to set up private networking between them.
 
