@@ -48,7 +48,10 @@ class Configure(object):
             run("hostname %s" % env.host_string.split(".")[0])
             cuisine.file_write("/etc/hostname", env.host_string.split(".")[0])
 
-            cuisine.file_write("/etc/resolv.conf", "nameserver %s" % self._metadata.config["nameserver"])
+            cuisine.file_write("/etc/resolv.conf", """
+nameserver %s
+options single-request
+""" % self._metadata.config["nameserver"])
 
             if "local_ip_behind_nat" in self._metadata.servers[env.host_string]:
                 local_ip = self._metadata.servers[env.host_string]["local_ip_behind_nat"]

@@ -54,70 +54,57 @@ roles:
     - os003
 
     midonet_api:
-    - os004
+    - os001
 
     midonet_manager:
-    - os004
+    - os001
+    - os002
+    - os003
 
     midonet_cli:
-    - os004
+    - os001
 
     openstack_rabbitmq:
-    - os005
+    - os001
 
     openstack_mysql:
-    - os005
+    - os001
 
     openstack_keystone:
-    - os005
+    - os001
 
     openstack_glance:
-    - os005
+    - os001
 
     openstack_neutron:
-    - os004
+    - os001
 
     openstack_horizon:
-    - os005
+    - os001
+    - os002
+    - os003
 
     openstack_controller:
-    - os005
+    - os001
 
     openstack_compute:
-    - os006
-    - os007
-    - os008
+    - os001
+    - os002
+    - os003
 
 servers:
     os001:
-        ip: 104.131.78.6
+        zone: sfo1
+        ip: 104.236.130.186
         dockernet: 192.168.21.0/24
 
     os002:
-        ip: 104.236.186.189
+        zone: nyc2
+        ip: 192.241.169.190
         dockernet: 192.168.22.0/24
 
     os003:
-        ip: 128.199.91.102
-        dockernet: 192.168.23.0/24
-
-    os004:
-        ip: 178.62.38.220
-        dockernet: 192.168.24.0/24
-
-    os005:
-        ip: 188.166.33.201
-        dockernet: 192.168.25.0/24
-
-    os006:
-        ip: 104.131.124.107
-        dockernet: 192.168.26.0/24
-
-    os007:
-        ip: 104.236.130.186
-        dockernet: 192.168.27.0/24
-
-    os008:
+        zone: sgp1
         ip: 128.199.91.104
-        dockernet: 192.168.28.0/24
+        dockernet: 192.168.23.0/24
 

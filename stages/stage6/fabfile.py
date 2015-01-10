@@ -954,17 +954,16 @@ for XSERVICE in "${SERVICE}"; do
 
 done
 
-if [[ "$(egrep -c 'vmx|svm' /proc/cpuinfo)" == "0" ]]; then
+if [[ "$(egrep -c 'vmx|svm' /proc/cpuinfo)" == "0" || "$(grep kvm /proc/misc)" == "" ]]; then
+
     CONFIGFILE="/etc/${SERVICE}/${SERVICE}-compute.conf"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "libvirt" "virt_type" "qemu"
+
 else
 
     if [ ! -e /dev/kvm ]; then
         KVM_NODE="$(grep 'kvm' /proc/misc | awk '{print $2;}')"
-
-        if [[ ! "${KVM_NODE}" == "" ]]; then
-            mknod /dev/kvm c 10 "${KVM_NODE}"
-        fi
+        mknod /dev/kvm c 10 "${KVM_NODE}"
     fi
 
     if [ ! -e /dev/net/tun ]; then

@@ -280,6 +280,34 @@ def stage7_container_midonet_agent():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
+    server = metadata.servers[metadata.containers[env.host_string]["server"]]
+
+    if "zone" not in server:
+        zookeepers = sorted(metadata.roles["container_zookeeper"])
+        cassandras = sorted(metadata.roles["container_cassandra"])
+    else:
+        my_zone = server["zone"]
+
+        #
+        # find all zookeepers in the zone of the host of our container
+        #
+        zookeepers = []
+        for zookeeper in sorted(metadata.roles["container_zookeeper"]):
+            if "zone" in metadata.servers[metadata.containers[zookeeper]["server"]]:
+                zk_zone = metadata.servers[metadata.containers[zookeeper]["server"]]["zone"]
+                if my_zone == zk_zone:
+                    zookeepers.append(zookeeper)
+
+        #
+        # find all cassandras in our zone
+        #
+        cassandras = []
+        for cassandra in sorted(metadata.roles["container_cassandra"]):
+            if "zone" in metadata.servers[metadata.containers[cassandra]["server"]]:
+                cs_zone = metadata.servers[metadata.containers[cassandra]["server"]]["zone"]
+                if my_zone == cs_zone:
+                    cassandras.append(cassandra)
+
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
@@ -360,8 +388,8 @@ ps axufwwwwwwwwwwwww | grep -v grep | grep midolman
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["midonet_puppet_modules"],
         metadata.config["midonet_puppet_modules_branch"],
-        ",".join(sorted(metadata.roles["container_zookeeper"])),
-        ",".join(sorted(metadata.roles["container_cassandra"])),
+        ",".join(zookeepers),
+        ",".join(cassandras),
         metadata.config["HEAP_INITIAL"],
         metadata.config["MAX_HEAPSIZE"],
         metadata.config["HEAP_NEWSIZE"],
