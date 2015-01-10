@@ -2,11 +2,13 @@
 ====
 Test drive Midonet.org or MEM (with Midonet Manager) together with Openstack on Ubuntu.
 
-A video of the installer (30 minutes) is available here: https://asciinema.org/a/15332 .
+A video of the installer running (30 minutes) is available here: https://asciinema.org/a/15332 .
 
-The installation of the services will take place on top of Docker Ubuntu images.
+The only thing you have to do is to provide a list of (virtual or physical) servers which you define in a simple yaml file.
 
-You only have to provide a list of (virtual or physical) servers which you define in a simple yaml file.
+Midonet Openstack will then install inside Docker containers on these servers and use a tinc vpn for communication between this containers.
+
+For this reason it is also possible to use multiple independent Hetzner rootservers or Digitalocean instances without you having to set up private networking between them.
 
 Please note that you need at least one server with 8 GB for a single-host installation when you decide that all services should go into containers on one machine.
 
