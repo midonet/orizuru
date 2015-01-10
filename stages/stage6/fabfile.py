@@ -1144,7 +1144,7 @@ cd /tmp
 
 wget --continue http://cdn.download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img
 
-glamce image-list | grep cirros || \
+glance image-list | grep cirros || \
     glance image-create \
         --name "cirros-0.3.3-x86_64" \
         --file "cirros-0.3.3-x86_64-disk.img" \
