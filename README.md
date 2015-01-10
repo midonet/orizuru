@@ -2,6 +2,8 @@
 ====
 Test drive Midonet.org or MEM (with Midonet Manager) together with Openstack on Ubuntu.
 
+A video of the installer (30 minutes) is available here: https://asciinema.org/a/15332 .
+
 The installation of the services will take place on top of Docker Ubuntu images.
 
 You only have to provide a list of (virtual or physical) servers which you define in a simple yaml file.
