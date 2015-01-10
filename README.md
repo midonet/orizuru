@@ -8,8 +8,6 @@ The only thing you have to do is to provide a list of (virtual or physical) serv
 
 Midonet Openstack will then install inside Docker containers on these servers and use a tinc vpn for secure communication between all containers.
 
-For this reason it is also possible to use multiple independent Hetzner rootservers or Digitalocean instances without you having to set up private networking between them.
-
 Please note that you need at least one server with 8 GB for a single-host installation when you decide that all services should go into containers on one machine.
 
 To set up the installation you should cd into the project directory, create a yaml file in the ./conf directory and export two environment variables, one for the config, one for the root password of the containers and the hosts:
@@ -28,12 +26,6 @@ cd orizuru
 export OS_MIDOKURA_ROOT_PASSWORD="new root password"
 make
 ```
-
-The conf directory in the project contains a lot of files we created for testing this installer, you can look at them to see how they work.
-
-If you want to look at an example for a single host, localhost installation you can look at conf/localhost.yaml.
-
-You can also change the ip in there to another machine and start using it.
 
 Please make sure you use an ssh-agent for your ssh key passphrase so that fabric can login as root to the ips of the servers you defined without asking you for the passphrase.
 
