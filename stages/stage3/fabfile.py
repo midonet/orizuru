@@ -60,21 +60,20 @@ def tinc_stage3():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
+    run("mkdir -pv /etc/tinc")
     cuisine.file_write("/etc/tinc/nets.boot", metadata.config["domain"])
 
     run("""
-CONFIG="%s"
+DOMAIN="%s"
 
-mkdir -pv "/etc/tinc/${CONFIG}/hosts"
+mkdir -pv "/etc/tinc/${DOMAIN}/hosts"
 
 for CMD in up down; do
-    touch "/etc/tinc/${CONFIG}/tinc-${CMD}"
-    chmod 0755 "/etc/tinc/${CONFIG}/tinc-${CMD}"
+    touch "/etc/tinc/${DOMAIN}/tinc-${CMD}"
+    chmod 0755 "/etc/tinc/${DOMAIN}/tinc-${CMD}"
 done
 
-PRIVKEY="/etc/tinc/${CONFIG}/rsa_key.priv"
-
-# chmod 0600 "${PRIVKEY}"
+PRIVKEY="/etc/tinc/${DOMAIN}/rsa_key.priv"
 
 """ % metadata.config["domain"])
 
@@ -123,18 +122,14 @@ TINC_NETWORK="%s"
 TINC_BROADCAST="%s"
 TINC_NETMASK="%s"
 
-if [[ "$(uname -o 2>/dev/null)" == "GNU/Linux" ]]; then
-    /sbin/ifconfig "${INTERFACE}" "${LOCAL_IP}" netmask "${NETMASK}"
-    echo 1 >/proc/sys/net/ipv4/ip_forward
+ifconfig "${INTERFACE}" "${LOCAL_IP}" netmask "${NETMASK}"
 
-    brctl show | grep "${TINC_INTERFACE}" || brctl addbr "${TINC_INTERFACE}"
+echo 1 >/proc/sys/net/ipv4/ip_forward
 
-    /sbin/ifconfig "${TINC_INTERFACE}" "${LOCAL_TINC_IP}" netmask "${TINC_NETMASK}"
+brctl show | grep "${TINC_INTERFACE}" || brctl addbr "${TINC_INTERFACE}"
 
-    /sbin/ifconfig "${TINC_INTERFACE}" up
-else
-    /sbin/ifconfig "${INTERFACE}" "${LOCAL_IP}" "${BROADCAST}" netmask "${NETMASK}"
-fi
+ifconfig "${TINC_INTERFACE}" "${LOCAL_TINC_IP}" netmask "${TINC_NETMASK}"
+ifconfig "${TINC_INTERFACE}" up
 
 """ % (
         metadata.config["vpn_base"],
@@ -147,8 +142,6 @@ fi
 
     cuisine.file_write("/etc/tinc/%s/tinc-down" % metadata.config["domain"], """#!/bin/bash
 /sbin/ifconfig "${INTERFACE}" down
-
-exit 0
 """)
 
     for server in sorted(metadata.servers):

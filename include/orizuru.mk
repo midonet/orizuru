@@ -60,9 +60,7 @@ FAB = $(PP) $(CC) $(TT) $(PW) fab $(FABSSHCONFIG) $(FABFABFILE) $(@)
 RUNSTAGE_CHECK = test -f "$(TMPDIR)/.SUCCESS_$(@)"
 RUNSTAGE_TOUCH = date | tee "$(TMPDIR)/.SUCCESS_$(@)"
 
-RUNSTAGE = $(RUNSTAGE_CHECK) || $(FAB) && $(RUNSTAGE_TOUCH)
-
-RUNSTAGE_IGNORE_FAILURES = $(RUNSTAGE_CHECK) || $(FAB) || true && $(RUNSTAGE_TOUCH)
+RUNSTAGE = figlet "running $(@)" || echo "running $(@)"; $(RUNSTAGE_CHECK) || $(FAB) && $(RUNSTAGE_TOUCH)
 
 REQUIREMENTS = $(INCLUDE)/requirements.txt
 
@@ -87,19 +85,16 @@ pipdeps: $(TMPDIR)
 		sudo pip install --upgrade -r "$(REQUIREMENTS)" && \
 		touch "$(TMPDIR)/.SUCCESS_pipinstall"
 
-removedestroycontainerslock:
-	rm -f "$(TMPDIR)/.SUCCESS_destroycontainers"
-
-destroycontainers: removedestroycontainerslock
+cleanup:
 	@echo
 	@echo this will DESTROY all running containers and intermediate images on your hosts
 	@echo
 	@echo PRESS CTRL-C NOW
 	@echo
-	@sleep 10
+	@sleep 2
 	@echo
 	@echo LAST CHANCE.
 	@echo
-	@sleep 10
-	$(RUNSTAGE_IGNORE_FAILURES)
+	@sleep 2
+	$(FAB); echo
 

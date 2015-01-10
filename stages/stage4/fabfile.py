@@ -67,6 +67,8 @@ RUN echo "root:%s" | chpasswd
 RUN sed -i 's,deb http://archive.ubuntu.com,deb %s/%s.archive.ubuntu.com,g;' /etc/apt/sources.list
 RUN sed -i 's,deb-src http://archive.ubuntu.com,deb-src %s/%s.archive.ubuntu.com,g;' /etc/apt/sources.list
 
+RUN sync
+
 RUN cat /etc/apt/sources.list
 
 RUN apt-get update 1>/dev/null
@@ -92,7 +94,10 @@ RUN chmod 0755 /root/.ssh
 COPY /root/.ssh/authorized_keys /root/.ssh/authorized_keys
 
 ENV NOTVISIBLE "in users profile"
+
 RUN echo "export VISIBLE=now" >> /etc/profile
+
+RUN sync
 
 EXPOSE 22
 
@@ -148,6 +153,9 @@ CONTAINER_NETWORK="%s"
 DOMAIN_NAME="%s"
 SERVER_IP="%s"
 FIP_BASE="%s"
+
+MIDONET_API_IP="%s"
+MIDONET_API_OUTER_IP="%s"
 
 CONTAINER_VETH="${RANDOM}"
 
@@ -222,72 +230,6 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     ip netns exec "${NETNS_NAME}" ip addr add "${CONTAINER_IP}/${CONTAINER_NETMASK}" dev eth0
     ip netns exec "${NETNS_NAME}" ip route add default via "${CONTAINER_DEFAULT_GW}"
 
-    #
-    # SNAT the containers talking to the outside world
-    #
-    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -j MASQUERADE
-
-    #
-    # midonet gateway
-    #
-    if [[ "midonet_gateway" == "${CONTAINER_ROLE}" ]]; then
-
-        #
-        # SNAT the dummy FIP range traffic that is going to the internet
-        #
-        iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -j MASQUERADE
-
-        #
-        # but do not SNAT for RFC1918 networks
-        #
-        iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "10.0.0.0/8" -j ACCEPT
-        iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "172.16.0.0/12" -j ACCEPT
-        iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "192.168.0.0/16" -j ACCEPT
-
-        #
-        # route incoming packets to the FIP network through the midonet container ip, it will know what to do
-        #
-        ip route add "${FIP_BASE}.0/24" via "${CONTAINER_IP}"
-
-        if [[ ! "$?" == "0" ]]; then
-            echo "could not add route, this is bad"
-            exit 1
-        fi
-
-    fi
-
-    #
-    # openstack controller VNC proxy
-    #
-    if [[ "openstack_controller" == "${CONTAINER_ROLE}" ]]; then
-        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
-        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 6080 -j ACCEPT
-    fi
-
-    #
-    # horizon dashboard
-    #
-    if [[ "openstack_horizon" == "${CONTAINER_ROLE}" ]]; then
-        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
-        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
-    fi
-
-    #
-    # midonet manager
-    #
-    if [[ "midonet_manager" == "${CONTAINER_ROLE}" ]]; then
-        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp --dport 81 -j DNAT --to "${CONTAINER_IP}:80"
-        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
-    fi
-
-    #
-    # midonet api
-    #
-    if [[ "midonet_api" == "${CONTAINER_ROLE}" ]]; then
-        iptables -t nat -I PREROUTING -p tcp --dport 8080 -j DNAT --to "${CONTAINER_IP}:8080"
-        iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 8080 -j ACCEPT
-    fi
-
 else
     CONTAINER_ID="$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_NAME}" | awk '{print $1;}' | head -n1)"
 fi
@@ -298,9 +240,123 @@ fi
 CONTAINER_HOSTS_PATH="$(docker ps | grep -v ^CONTAINER | grep "^${CONTAINER_ID}" | awk '{print $1;}' | xargs -n1 --no-run-if-empty docker inspect --format "{{ .HostsPath }}")"
 cat "${CONTAINER_ETC_HOSTS}" >"${CONTAINER_HOSTS_PATH}"
 
-sync
+""" % (
+        env.host_string,
+        container_ip,
+        role,
+        CIDR(metadata.servers[env.host_string]["dockernet"])[1],
+        CIDR(metadata.servers[env.host_string]["dockernet"]).netmask,
+        CIDR(metadata.servers[env.host_string]["dockernet"])[0],
+        metadata.config["domain"],
+        metadata.servers[env.host_string]["ip"],
+        metadata.config["fip_base"],
+        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
+        metadata.servers[metadata.roles["midonet_api"][0]]["ip"]
+    ))
 
-exit 0
+                cuisine.file_write("/etc/rc.local.d/docker_%s_%s_NAT" % (role, env.host_string),
+"""#!/bin/bash
+#
+# adapted from https://docs.docker.com/articles/networking/#building-your-own-bridge
+#
+
+DOCKER_BRIDGE="dockertinc"
+SERVER_NAME="%s"
+CONTAINER_IP="%s"
+CONTAINER_ROLE="%s"
+CONTAINER_DEFAULT_GW="%s"
+CONTAINER_NETMASK="%s"
+CONTAINER_NETWORK="%s"
+DOMAIN_NAME="%s"
+SERVER_IP="%s"
+FIP_BASE="%s"
+
+MIDONET_API_IP="%s"
+MIDONET_API_OUTER_IP="%s"
+
+CONTAINER_VETH="${RANDOM}"
+
+NETNS_NAME="docker_${CONTAINER_VETH}_${CONTAINER_ROLE}_${SERVER_NAME}"
+
+CONTAINER_VETH_A="${CONTAINER_VETH}A"
+CONTAINER_VETH_B="${CONTAINER_VETH}B"
+
+CONTAINER_ETC_HOSTS="/etc/hosts"
+
+DEFAULT_GW_IFACE="$(ip route show | grep 'default via' | awk -Fdev '{print $2;}' | xargs -n1 echo)"
+
+if [[ "${DEFAULT_GW_IFACE}" == "" ]]; then
+    exit 1
+fi
+
+
+#
+# SNAT the container talking to the outside world
+#
+iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -j MASQUERADE
+
+iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -d "10.0.0.0/8" -j ACCEPT
+iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -d "172.16.0.0/12" -j ACCEPT
+iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -d "192.168.0.0/16" -j ACCEPT
+
+#
+# midonet gateway
+#
+if [[ "midonet_gateway" == "${CONTAINER_ROLE}" ]]; then
+
+    #
+    # SNAT the dummy FIP range traffic that is going to the internet
+    #
+    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -j MASQUERADE
+
+    #
+    # but do not SNAT for RFC1918 networks
+    #
+    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "10.0.0.0/8" -j ACCEPT
+    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "172.16.0.0/12" -j ACCEPT
+    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "192.168.0.0/16" -j ACCEPT
+
+    #
+    # route incoming packets to the FIP network through the midonet container ip, it will know what to do
+    #
+    ip route add "${FIP_BASE}.0/24" via "${CONTAINER_IP}" || true
+
+fi
+
+#
+# openstack controller VNC proxy
+#
+if [[ "openstack_controller" == "${CONTAINER_ROLE}" ]]; then
+    iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${SERVER_IP}" --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
+    iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 6080 -j ACCEPT
+fi
+
+#
+# horizon dashboard
+#
+if [[ "openstack_horizon" == "${CONTAINER_ROLE}" ]]; then
+    iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${SERVER_IP}" --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
+    iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
+fi
+
+#
+# midonet manager
+#
+if [[ "midonet_manager" == "${CONTAINER_ROLE}" ]]; then
+    iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${SERVER_IP}" --dport 81 -j DNAT --to "${CONTAINER_IP}:80"
+    iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 80 -j ACCEPT
+fi
+
+#
+# midonet api
+#
+if [[ "midonet_api" == "${CONTAINER_ROLE}" ]]; then
+    iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${MIDONET_API_OUTER_IP}" --dport 8080 -j DNAT --to "${CONTAINER_IP}:8080"
+    iptables -I FORWARD -p tcp -d "${CONTAINER_IP}" --dport 8080 -j ACCEPT
+else
+    iptables -t nat -I PREROUTING -i dockertinc -p tcp -d "${MIDONET_API_OUTER_IP}" --dport 8080 -j DNAT --to "${MIDONET_API_IP}:8080"
+    iptables -I FORWARD -p tcp -d "${MIDONET_API_IP}" --dport 8080 -j ACCEPT
+fi
 
 """ % (
         env.host_string,
@@ -311,7 +367,9 @@ exit 0
         CIDR(metadata.servers[env.host_string]["dockernet"])[0],
         metadata.config["domain"],
         metadata.servers[env.host_string]["ip"],
-        metadata.config["fip_base"]
+        metadata.config["fip_base"],
+        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
+        metadata.servers[metadata.roles["midonet_api"][0]]["ip"]
     ))
 
                 run("""
@@ -319,9 +377,12 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 
 SERVER_NAME="%s"
 CONTAINER_ROLE="%s"
-chmod 0755 /etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}
 
-/etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}
+chmod 0755 /etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}
+chmod 0755 /etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}_NAT
+
+"/etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}"
+"/etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}_NAT"
 
 """ % (metadata.config["debug"], env.host_string, role))
 

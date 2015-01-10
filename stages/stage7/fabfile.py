@@ -335,7 +335,10 @@ EOF
 #
 puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
 
-sleep 12
+for i in $(seq 1 12); do
+    ps axufwwwww | grep -v grep | grep "midolman" && break || true
+    sleep 1
+done
 
 ps axufwwwwwwwwwwwww | grep -v grep | grep midolman && exit 0
 
@@ -345,7 +348,10 @@ chmod 0777 /var/run/screen
 
 screen -S midolman -d -m -- /usr/share/midolman/midolman-start
 
-sleep 30
+for i in $(seq 1 24); do
+    ps axufwwwww | grep -v grep | grep "midolman" && break || true
+    sleep 1
+done
 
 ps axufwwwwwwwwwwwww | grep -v grep | grep midolman
 
@@ -834,21 +840,60 @@ neutron floatingip-list --field fixed_ip_address | grep "${INSTANCE_IP}" || neut
 
 neutron floatingip-list
 
-echo "sleeeping 120 seconds before trying to ping and ssh login into instance"
-sleep 120
-
-FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
-
-ping -c3 "${FIP}"
-
-ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- wget -O/dev/null http://www.midokura.com
-
-ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- ping -c3 www.midokura.com
-
 """ % (
         metadata.config["debug"],
         metadata.config["fip_base"]
     ))
+
+    run("""
+
+source /etc/keystone/KEYSTONERC_ADMIN
+
+FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
+
+for i in $(seq 1 30); do
+    ping -c1 "${FIP}" && break || true
+    sleep 1
+done
+
+ping -c3 "${FIP}"
+
+""")
+
+    run("""
+
+source /etc/keystone/KEYSTONERC_ADMIN
+
+FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
+
+for i in $(seq 1 30); do
+    ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=2 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" uptime && break || true
+    sleep 1
+done
+
+ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- wget -O/dev/null http://www.midokura.com
+
+""")
+
+    run("""
+
+source /etc/keystone/KEYSTONERC_ADMIN
+
+FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
+
+ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- ping -c3 www.midokura.com
+
+""")
+
+    run("""
+
+source /etc/keystone/KEYSTONERC_ADMIN
+
+FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
+
+ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- ping -c3 www.google.com
+
+""")
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

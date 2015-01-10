@@ -73,6 +73,8 @@ def stage6_container_openstack_horizon():
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
+set -e
+
 #
 # initialize the password cache
 #
@@ -460,6 +462,8 @@ def stage6_container_openstack_neutron():
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
+set -e
+
 VERBOSE="%s"
 DEBUG="%s"
 
@@ -533,6 +537,7 @@ done
 
 MIDONET_PLUGIN="/etc/neutron/plugins/midonet/midonet.ini"
 mkdir -pv "$(dirname ${MIDONET_PLUGIN})"
+touch "${MIDONET_PLUGIN}"
 
 for CONFIGFILE in "${MIDONET_PLUGIN}" "/etc/neutron/dhcp_agent.ini" "/etc/neutron/metadata_agent.ini"; do
     test -f "${CONFIGFILE}.DISTRIBUTION" || cp "${CONFIGFILE}" "${CONFIGFILE}.DISTRIBUTION" || true
@@ -587,7 +592,42 @@ EOF
 
 chown -R neutron: /etc/neutron
 
+sync
+
+""" % (
+        metadata.config["debug"],
+        metadata.config["verbose"],
+        metadata.config["debug"],
+        open(os.environ["PASSWORDCACHE"]).read(),
+        metadata.config["constrictor"],
+        service,
+        metadata.containers[metadata.roles["container_openstack_mysql"][0]]["ip"],
+        metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"],
+        metadata.containers[metadata.roles["container_openstack_rabbitmq"][0]]["ip"],
+        metadata.containers[metadata.roles["container_openstack_controller"][0]]["ip"],
+        metadata.config["region"],
+        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"]
+    ))
+
+    puts(green("running neutron-db-manage"))
+
+    run("""
+
+set -e
+
+source /etc/keystone/KEYSTONERC_ADMIN
+
 neutron-db-manage --config-file /etc/neutron/neutron.conf upgrade juno
+
+""")
+
+    run("""
+
+source /etc/keystone/KEYSTONERC_ADMIN
+
+SERVICE="neutron"
+
+set -e
 
 rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
@@ -613,7 +653,10 @@ for DAEMON in dhcp-agent metadata-agent; do
                     --config-file="/etc/neutron/$(echo "${DAEMON}" | sed 's,-,_,g;').ini" \
                     --log-file="/var/log/neutron/${DAEMON}.log"
 
-    sleep 12
+    for i in $(seq 1 12); do
+        ps axufwwwww | grep -v grep | grep "neutron-${DAEMON}" && break || true
+        sleep 1
+    done
 
     ps axufwwwww | grep -v grep | grep "neutron-${DAEMON}"
 done
@@ -625,24 +668,16 @@ ps axufwwwww | grep -v grep | grep neutron-server || \
             --config-file /etc/neutron/neutron.conf \
             --log-file /var/log/neutron/server.log $CONF_ARG
 
-sleep 12
+DAEMON="server"
 
-ps axufwwwww | grep -v grep | grep neutron-server
+for i in $(seq 1 12); do
+    ps axufwwwww | grep -v grep | grep "neutron-${DAEMON}" && break || true
+    sleep 1
+done
 
-""" % (
-        metadata.config["debug"],
-        metadata.config["verbose"],
-        metadata.config["debug"],
-        open(os.environ["PASSWORDCACHE"]).read(),
-        metadata.config["constrictor"],
-        service,
-        metadata.containers[metadata.roles["container_openstack_mysql"][0]]["ip"],
-        metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"],
-        metadata.containers[metadata.roles["container_openstack_rabbitmq"][0]]["ip"],
-        metadata.containers[metadata.roles["container_openstack_controller"][0]]["ip"],
-        metadata.config["region"],
-        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"]
-    ))
+ps axufwwwww | grep -v grep | grep "neutron-${DAEMON}"
+
+""")
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
@@ -666,6 +701,8 @@ def stage6_container_openstack_nova_controller():
 
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
+
+set -e
 
 VERBOSE="%s"
 DEBUG="%s"
@@ -773,7 +810,10 @@ for SUBSERVICE in "api" "cert" "consoleauth" "scheduler" "conductor" "novncproxy
             start-stop-daemon --start --chuid nova \
                 --exec "/usr/bin/nova-${SUBSERVICE}" -- --config-file=/etc/nova/nova.conf ${SUBSERVICE_PARAMS}
 
-    sleep 12
+    for i in $(seq 1 12); do
+        ps axufwwwww | grep -v grep | grep "${SERVICE}-${SUBSERVICE}" && break || true
+        sleep 1
+    done
 
     ps axufwwwwww | grep -v grep | grep -- "${SERVICE}-${SUBSERVICE}"
 done
@@ -921,13 +961,19 @@ else
 
     if [ ! -e /dev/kvm ]; then
         KVM_NODE="$(grep 'kvm' /proc/misc | awk '{print $2;}')"
-        mknod /dev/kvm c 10 "${KVM_NODE}"
+
+        if [[ ! "${KVM_NODE}" == "" ]]; then
+            mknod /dev/kvm c 10 "${KVM_NODE}"
+        fi
     fi
 
     if [ ! -e /dev/net/tun ]; then
         TUN_NODE="$(grep 'tun' /proc/misc | awk '{print $2;}')"
-        mkdir -pv /dev/net
-        mknod /dev/net/tun c 10 "${TUN_NODE}"
+
+        if [[ ! "${TUN_NODE}" == "" ]]; then
+            mkdir -pv /dev/net
+            mknod /dev/net/tun c 10 "${TUN_NODE}"
+        fi
     fi
 
 fi
@@ -966,7 +1012,10 @@ chmod 0777 /var/run/screen
 ps axufwwwww | grep -v grep | grep nova-compute || \
     screen -S nova-compute -d -m -- start-stop-daemon --start --chuid nova --exec /usr/bin/nova-compute -- --config-file=/etc/nova/nova.conf --config-file=/etc/nova/nova-compute.conf
 
-sleep 12
+for i in $(seq 1 12); do
+    ps axufwwwww | grep -v grep | grep "nova-compute" && break || true
+    sleep 1
+done
 
 ps axufwwwww | grep -v grep | grep nova-compute
 
@@ -1003,6 +1052,8 @@ def stage6_container_openstack_glance():
 
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
+
+set -e
 
 VERBOSE="%s"
 DEBUG="%s"
@@ -1060,7 +1111,12 @@ rm -rfv /tmp/keystone-signing*
 for SUBSERVICE in "registry" "api"; do
     ps axufwwwwww | grep -v grep | grep -- "/usr/bin/glance-${SUBSERVICE}" || \
         screen -S glance-${SUBSERVICE} -d -m -- start-stop-daemon --start --chuid glance --chdir /var/lib/glance --name glance-${SUBSERVICE} --exec /usr/bin/glance-${SUBSERVICE}
-    sleep 10
+
+    for i in $(seq 1 12); do
+        ps axufwwwww | grep -v grep | grep "glance-${SUBSERVICE}" && break || true
+        sleep 1
+    done
+
     ps axufwwwwww | grep -v grep | grep -- "/usr/bin/glance-${SUBSERVICE}"
 done
 
@@ -1083,18 +1139,19 @@ rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
 source /etc/keystone/KEYSTONERC_ADMIN
 
+set -e
+
 cd /tmp
 
 wget --continue http://cdn.download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img
 
-glance image-create \
-    --name "cirros-0.3.3-x86_64" \
-    --file "cirros-0.3.3-x86_64-disk.img" \
-    --disk-format qcow2 \
-    --container-format bare \
-    --is-public True
-
-glance image-list
+glamce image-list | grep cirros || \
+    glance image-create \
+        --name "cirros-0.3.3-x86_64" \
+        --file "cirros-0.3.3-x86_64-disk.img" \
+        --disk-format qcow2 \
+        --container-format bare \
+        --is-public True
 
 """)
 
@@ -1170,6 +1227,8 @@ def stage6_container_openstack_keystone_create_service_entity_api_endpoints():
             run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
+set -e
+
 #
 # initialize the password cache
 #
@@ -1236,6 +1295,8 @@ def stage6_container_openstack_keystone_create_tenants_users_roles():
 
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
+
+set -e
 
 #
 # initialize the password cache
@@ -1319,6 +1380,8 @@ EOF
             run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
+set -e
+
 #
 # initialize the password cache
 #
@@ -1382,6 +1445,8 @@ def stage6_container_openstack_keystone():
 
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
+
+set -e
 
 VERBOSE="%s"
 DEBUG="%s"
@@ -1465,6 +1530,8 @@ def stage6_container_openstack_rabbitmq():
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
+set -e
+
 #
 # initialize the password cache
 #
@@ -1504,6 +1571,8 @@ def stage6_container_openstack_mysql_create_databases():
 
         run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
+
+set -e
 
 #
 # initialize the password cache

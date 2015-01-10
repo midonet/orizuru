@@ -32,7 +32,7 @@ import cuisine
 
 from netaddr import IPNetwork as CIDR
 
-def stage1sshconfig():
+def sshconfig():
     metadata = Config(os.environ["CONFIGFILE"])
 
     Orizuru(metadata).sshconfig()

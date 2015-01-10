@@ -48,6 +48,8 @@ class Configure(object):
             run("hostname %s" % env.host_string.split(".")[0])
             cuisine.file_write("/etc/hostname", env.host_string.split(".")[0])
 
+            cuisine.file_write("/etc/resolv.conf", "nameserver %s" % self._metadata.config["nameserver"])
+
             if "local_ip_behind_nat" in self._metadata.servers[env.host_string]:
                 local_ip = self._metadata.servers[env.host_string]["local_ip_behind_nat"]
             else:
@@ -314,7 +316,7 @@ hardstatus string '%%{= kG} %s [%%= %%{= kw}%%?%%-Lw%%?%%{r}[%%{W}%%n*%%f %%t%%?
 apt-get update 1>/dev/null
 
 #
-# Round 2: something went wrong
+# Round 2: clean cache and update again
 #
 if [[ ! "${?}" == "0" ]]; then
     rm -rf /var/lib/apt/lists/*
@@ -352,7 +354,10 @@ update-rc.d newrelic-sysmond defaults
 /etc/init.d/newrelic-sysmond start || true
 /etc/init.d/newrelic-sysmond restart || true
 
-sleep 10
+for i in $(seq 1 12); do
+    ps axufwwwww | grep -v grep | grep "nrsysmond" && break || true
+    sleep 1
+done
 
 ps axufwwwwwwwww | grep -v grep | grep nrsysmond
 

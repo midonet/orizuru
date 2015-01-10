@@ -34,11 +34,11 @@ passwordcache:
 
 preflight: pipinstalled pipdeps
 
-stage1sshconfig:
+sshconfig:
 	mkdir -pv $(shell dirname $(SSHCONFIG))
 	$(FAB) > $(SSHCONFIG)
 
-stage1: stage1sshconfig
+stage1: sshconfig
 	mkdir -pv $(shell dirname $(ZONEFILE))
 	cat $(ZONEFILE_TEMPLATE) > $(ZONEFILE)
 	$(FAB)zonefile >> $(ZONEFILE)
@@ -51,34 +51,35 @@ stage1: stage1sshconfig
 
 reboot: stage2
 
-info:
+info: sshconfig
 	@clear
 	@$(RUNSTAGE)
 	@rm $(TMPDIR)/.SUCCESS_$(@)
-	@sleep 10
+	@test -f $(TMPDIR)/.SUCCESS_stage1 || sleep 10
 
-stage2:
+stage2: sshconfig
 	$(RUNSTAGE)
 	rm $(TMPDIR)/.SUCCESS_$(@)
 
-stage3:
+stage3: sshconfig
 	mkdir -pv "$(TMPDIR)/etc/tinc"
 	$(RUNSTAGE)
 
-stage4:
+stage4: sshconfig
 	$(RUNSTAGE)
+	test -f $(TMPDIR)/.SUCCESS_stage5 || sleep 30
 
-stage5:
+stage5: sshconfig
 	test -f "$(TMPDIR)/.SUCCESS_$(@)" || $(FAB)pingcheck
 	$(RUNSTAGE)
 
-stage6:
+stage6: sshconfig
 	mkdir -pv $(TMPDIR)/img
 	cp img/favicon.ico $(TMPDIR)/img/favicon.ico
 	cp img/midokura.png $(TMPDIR)/img/midokura.png
 	$(RUNSTAGE)
 
-stage7:
+stage7: sshconfig
 	$(RUNSTAGE)
 
 start:
@@ -97,17 +98,17 @@ success:
 	@echo "horizon is at: http://$(shell grep -A6 openstack_horizon_ $(TMPDIR)/.ssh/config | tail -n1 | awk -F'root@' '{print $$2;}')/horizon/"
 	@echo
 
-clean: cleanlocks
+clean: sshconfig cleanlocks
 	test -n "$(TMPDIR)" && rm -rfv "$(TMPDIR)"/.SUCCESS_*
 
-cleanlocks:
+cleanlocks: sshconfig
 	$(FAB) || true
 
-cleancontainerlocks:
+cleancontainerlocks: sshconfig
 	$(FAB) || true
 
-distclean: removedestroycontainerslock destroycontainers clean
+distclean: sshconfig cleanup clean
 	test -n "$(TMPDIR)" && rm -rfv "$(TMPDIR)"
 	mkdir -pv "$(TMPDIR)"
 	find $(SRCDIR) -type f -path '*.pyc' -delete
-	make stage1sshconfig
+	make sshconfig

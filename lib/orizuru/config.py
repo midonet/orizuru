@@ -176,6 +176,13 @@ class Config(object):
 
         defaults = {}
 
+        #
+        # if you change this you must make sure that this ip is reachable and routable also from the networks of the containers
+        # that means you must provide routing to the container networks yourself.
+        # if you leave this at 8.8.8.8 (or any other non RFC1918 IP) you have to do nothing because it will be SNATed from the hosts to the ip if it is a public one
+        #
+        defaults["nameserver"] = "8.8.8.8"
+
         defaults["parallel"] = True
 
         defaults["archive_country"] = "us"

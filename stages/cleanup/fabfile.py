@@ -28,14 +28,14 @@ import cuisine
 
 from netaddr import IPNetwork as CIDR
 
-def destroycontainers():
+def cleanup():
     metadata = Config(os.environ["CONFIGFILE"])
 
-    execute(fabric_docker_rm_role_containers)
+    execute(fabric_docker_rm_role_containers_and_cleanup)
 
 @parallel
 @roles('all_servers')
-def fabric_docker_rm_role_containers():
+def fabric_docker_rm_role_containers_and_cleanup():
     metadata = Config(os.environ["CONFIGFILE"])
 
     for role in sorted(metadata.roles):
@@ -46,8 +46,6 @@ def fabric_docker_rm_role_containers():
 
 SERVER_NAME="%s"
 CONTAINER_ROLE="%s"
-DOMAIN="%s"
-
 TEMPLATE_NAME="template_${SERVER_NAME}"
 
 for CONTAINER in $(docker ps | grep "${CONTAINER_ROLE}_${SERVER_NAME}" | awk '{print $1;}' | grep -v CONTAINER); do
@@ -57,23 +55,47 @@ done
 
 docker images | grep "${TEMPLATE_NAME}" && docker rmi -f "${TEMPLATE_NAME}" || true;
 
-rm -fv /var/run/netns/docker_*_${SERVER_NAME} || true;
-
-rm -rfv /etc/rc.local.d
-
-mkdir -pv /etc/rc.local.d
-
-rm -rf "/etc/tinc/${DOMAIN}"
-
-pidof tincd | xargs -n1 --no-run-if-empty kill -9
+rm -fv /var/run/netns/docker_*_"${SERVER_NAME}"
 
 exit 0
 
-""" % (env.host_string, role, metadata.config["domain"]))
+""" % (env.host_string, role))
 
-    #
-    # brute force remove all containers and images
-    #
-    run("docker ps --no-trunc -aq | xargs -n1 --no-run-if-empty docker rm -f")
-    run("docker images | grep '^<none>' | awk '{print $3}' | xargs -n1 --no-run-if-empty docker rmi -f")
+    run("""
+
+DOMAIN="%s"
+
+rm -rfv /etc/rc.local.d
+mkdir -pv /etc/rc.local.d
+
+rm -rf "/etc/tinc/${DOMAIN}"
+mkdir -pv "/etc/tinc/${DOMAIN}/hosts"
+
+pidof tincd | xargs -n1 --no-run-if-empty kill -9
+
+ifconfig dockertinc down || true
+brctl delbr dockertinc || true
+
+iptables -t nat --flush
+
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+
+iptables --flush
+
+docker ps --no-trunc -aq | xargs -n1 --no-run-if-empty docker rm -f
+
+docker images | grep '^<none>' | awk '{print $3}' | xargs -n1 --no-run-if-empty docker rmi -f
+
+#
+# this will restore the iptables NAT rules for docker build
+#
+service docker.io restart
+
+sync
+
+exit 0
+
+""" % metadata.config["domain"])
 

@@ -143,6 +143,14 @@ Host %s.%s
                         container_ip = self._metadata.config["docker_ips"][server][role]
                         puts("""
 
+Host %s
+    User root
+    ServerAliveInterval 2
+    KeepAlive yes
+    ConnectTimeout 30
+    TCPKeepAlive yes
+    ProxyCommand /usr/bin/ssh -F%s -W%s:22 root@%s
+
 Host %s.%s
     User root
     ServerAliveInterval 2
@@ -160,15 +168,8 @@ Host %s_%s
     ProxyCommand /usr/bin/ssh -F%s -W%s:22 root@%s
 
 """ % (
-        role,
-        server,
-        "%s/.ssh/config" % os.environ["TMPDIR"],
-        container_ip,
-        self._metadata.servers[server]["ip"],
-        role,
-        server,
-        "%s/.ssh/config" % os.environ["TMPDIR"],
-        container_ip,
-        self._metadata.servers[server]["ip"]
+        role, "%s/.ssh/config" % os.environ["TMPDIR"], container_ip, self._metadata.servers[server]["ip"],
+        role, server, "%s/.ssh/config" % os.environ["TMPDIR"], container_ip, self._metadata.servers[server]["ip"],
+        role, server, "%s/.ssh/config" % os.environ["TMPDIR"], container_ip, self._metadata.servers[server]["ip"]
     ))
 
