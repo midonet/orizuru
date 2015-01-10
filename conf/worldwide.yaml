@@ -5,7 +5,7 @@ config:
     verbose: True
     debug: False
 
-    domain: worldwide.digitalocean.midokura.de
+    domain: worldwide.midokura.de
 
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
