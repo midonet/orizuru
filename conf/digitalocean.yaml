@@ -5,7 +5,7 @@ config:
     verbose: True
     debug: False
 
-    domain: worldwide.midokura.de
+    domain: digitalocean.midokura.de
 
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
@@ -94,17 +94,17 @@ roles:
 
 servers:
     os001:
-        zone: sfo1
+        # zone: sfo1
         ip: 104.236.130.186
         dockernet: 192.168.21.0/24
 
     os002:
-        zone: nyc2
-        ip: 192.241.169.190
+        # zone: sfo1
+        ip: 104.131.154.192
         dockernet: 192.168.22.0/24
 
     os003:
-        zone: sgp1
-        ip: 128.199.91.104
+        # zone: sfo1
+        ip: 107.170.231.246
         dockernet: 192.168.23.0/24
 
