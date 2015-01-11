@@ -117,7 +117,10 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
         else:
             password = ""
 
-        repo_flavor = self._metadata.config["midonet_repo"]
+        if "midonet_repo" in self._metadata.config:
+            repo_flavor = self._metadata.config["midonet_repo"]
+        else:
+            repo_flavor = "OSS"
 
         # midonet manager can only be installed when using MEM
         if str(env.host_string).startswith("midonet_manager"):
