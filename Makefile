@@ -53,8 +53,7 @@ reboot: stage2
 
 info: sshconfig
 	@clear
-	@$(RUNSTAGE)
-	@rm $(TMPDIR)/.SUCCESS_$(@)
+	@$(FAB):admin_password="$(shell grep ADMIN_PASS $(PASSWORDCACHE) | awk -F'=' '{print $$2;}')"
 	@test -f $(TMPDIR)/.SUCCESS_stage1 || sleep 10
 
 stage2: sshconfig
@@ -93,9 +92,7 @@ success:
 	@echo
 	@echo your system is ready.
 	@echo
-	@grep ADMIN_PASS tmp/passwords.txt
-	@echo
-	@echo "horizon is at: http://$(shell grep -A6 openstack_horizon_ $(TMPDIR)/.ssh/config | tail -n1 | awk -F'root@' '{print $$2;}')/horizon/"
+	@echo run \'make info\' to see the urls and admin password
 	@echo
 
 clean: sshconfig cleanlocks

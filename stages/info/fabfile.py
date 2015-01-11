@@ -25,11 +25,11 @@ from fabric.api import *
 from fabric.colors import red, green, yellow, white
 from fabric.utils import puts
 
-def info():
+def info(admin_password="test"):
     metadata = Config(os.environ["CONFIGFILE"])
 
-    puts(red("""
-    The current configuration will install a Midonet powered Openstack Cluster using the following information:"""))
+    puts(yellow("""
+    This is the current configuration for your MidoNet powered OpenStack Demo Cluster:"""))
 
     puts(green("""
     container operating system: Ubuntu %s (%s)
@@ -41,17 +41,25 @@ def info():
     Midonet Openstack plugin version: %s
 
     Openstack version: %s
+
+    Admin password: %s
+
+    Horizon url: http://%s/horizon/
+
+    MidoNet Manager url: http://%s:81/midonet-cp2/
 """ % (
         metadata.config["container_os_release_codename"],
         metadata.config["container_os_version"],
         metadata.config["midonet_repo"],
         metadata.config["midonet_%s_version" % metadata.config["midonet_repo"].lower()],
         metadata.config["midonet_%s_openstack_plugin_version" % metadata.config["midonet_repo"].lower()],
-        metadata.config["openstack_release"]
+        metadata.config["openstack_release"],
+        admin_password,
+        metadata.servers[metadata.roles["openstack_horizon"][0]]["ip"],
+        metadata.servers[metadata.roles["midonet_manager"][0]]["ip"]
     )))
 
-    puts(white("""
-    Containers (and fakeuplink configuration):
+    puts(white("""Containers (and fakeuplink configuration):
 """))
 
     for server in sorted(metadata.servers):
@@ -75,9 +83,5 @@ def info():
                 fakeuplink
                 )))
         puts("")
-
-    puts("""
-press CTRL-C to abort, you have 10 seconds.
-""")
 
     sys.exit(0)

@@ -205,7 +205,13 @@ fi
 
 update-rc.d tinc defaults
 
-/etc/init.d/tinc restart || /etc/init.d/tinc start
+/etc/init.d/tinc stop || true
+
+pidof tincd | xargs -n1 --no-run-if-empty -- kill -9
+
+sleep 20
+
+/etc/init.d/tinc start
 
 """)
 
