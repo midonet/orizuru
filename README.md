@@ -4,7 +4,7 @@ Test drive MidoNet.org or MEM (with MidoNet Manager) together with Openstack on 
 
 A video of the installer running (30 minutes) is available here: http://midonet.github.io/orizuru .
 
-To get starte all you have to do is to provide a list of (virtual or physical) servers which you define in a simple yaml file.
+To get started all you have to do is to provide a list of (virtual or physical) servers which you define in a simple yaml file.
 
 MidoNet and Openstack will then install inside Docker containers on these servers and use a tinc vpn for secure communication between all containers and hosts.
 
