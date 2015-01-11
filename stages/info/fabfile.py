@@ -44,10 +44,7 @@ def info(admin_password="test"):
 
     Admin password: %s
 
-    Horizon url: http://%s/horizon/
-
-    MidoNet Manager url: http://%s:81/midonet-cp2/
-""" % (
+    Horizon url: http://%s/horizon/""" % (
         metadata.config["container_os_release_codename"],
         metadata.config["container_os_version"],
         metadata.config["midonet_repo"],
@@ -55,11 +52,15 @@ def info(admin_password="test"):
         metadata.config["midonet_%s_openstack_plugin_version" % metadata.config["midonet_repo"].lower()],
         metadata.config["openstack_release"],
         admin_password,
-        metadata.servers[metadata.roles["openstack_horizon"][0]]["ip"],
-        metadata.servers[metadata.roles["midonet_manager"][0]]["ip"]
+        metadata.servers[metadata.roles["openstack_horizon"][0]]["ip"]
     )))
 
-    puts(white("""Containers (and fakeuplink configuration):
+    if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
+        puts(green("""
+    MidoNet Manager url: http://%s:81/midonet-cp2/
+""" % metadata.servers[metadata.roles["midonet_manager"][0]]["ip"]))
+
+    puts(white("""    Containers (and fakeuplink configuration):
 """))
 
     for server in sorted(metadata.servers):

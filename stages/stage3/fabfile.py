@@ -25,12 +25,18 @@ import cuisine
 
 from netaddr import IPNetwork as CIDR
 
+from fabric.colors import green
+
+from fabric.utils import puts
+
 def stage3():
     metadata = Config(os.environ["CONFIGFILE"])
 
     execute(prepare_tinc_stage3)
 
     execute(tinc_stage3)
+
+    execute(check_tinc_stage3)
 
 @roles('all_servers')
 def prepare_tinc_stage3():
@@ -209,11 +215,38 @@ update-rc.d tinc defaults
 
 pidof tincd | xargs -n1 --no-run-if-empty -- kill -9
 
-sleep 20
+sleep 2
 
 /etc/init.d/tinc start
 
+sleep 10
+
+ps axufwwwwwwwwwwwwwwwwwww | grep -v grep | grep tincd
+
 """)
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@roles('all_servers')
+def check_tinc_stage3():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    puts(green("checking if the local tinc is up"))
+
+    run("""
+VPN_BASE="%s"
+LOCAL_IP="${VPN_BASE}.%s"
+
+ping -c3 "${LOCAL_IP}"
+
+""" % (
+        metadata.config["vpn_base"],
+        metadata.config["idx"][env.host_string]
+    ))
+
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
