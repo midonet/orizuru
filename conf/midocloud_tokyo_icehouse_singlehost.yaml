@@ -12,7 +12,7 @@ config:
     verbose: True
     debug: False
 
-    domain: benningen.midokura.de
+    domain: tokyo1.midokura.de
 
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
