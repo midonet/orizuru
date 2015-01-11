@@ -25,7 +25,7 @@
 # Run Midonet Openstack on top of Ubuntu Docker ssh images.
 #
 
-all: info start passwordcache preflight stage1 stage3 stage4 stage5 stage6 stage7 success finish
+all: start passwordcache preflight info stage1 stage3 stage4 stage5 stage6 stage7 success finish
 
 include include/$(shell basename $(PWD)).mk
 
