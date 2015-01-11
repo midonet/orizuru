@@ -1,12 +1,12 @@
 折鶴
 ====
-Test drive Midonet.org or MEM (with Midonet Manager) together with Openstack on Ubuntu.
+Test drive MidoNet.org or MEM (with MidoNet Manager) together with Openstack on Ubuntu.
 
 A video of the installer running (30 minutes) is available here: http://midonet.github.io/orizuru .
 
 To get starte all you have to do is to provide a list of (virtual or physical) servers which you define in a simple yaml file.
 
-Midonet Openstack will then install inside Docker containers on these servers and use a tinc vpn for secure communication between all containers and hosts.
+MidoNet and Openstack will then install inside Docker containers on these servers and use a tinc vpn for secure communication between all containers and hosts.
 
 Localhost Quickstart
 ====================
@@ -37,9 +37,9 @@ Please make sure you also use an ssh-agent for your ssh key passphrase so that f
 
 Also you should make sure that all the host fingerprints for the ips are in your .ssh/known_hosts file before you start the installer with multiple hosts.
 
-Midonet Manager
+MidoNet Manager
 ===============
-If you want to look at Midonet Manager you will need a MEM repo account (you can get one from Midokura) and enable the following environment vars:
+If you want to look at MidoNet Manager you will need a MEM repo account (you can get one from Midokura) and enable the following environment vars:
 ```
 git clone https://github.com/midonet/orizuru.git
 cd orizuru
@@ -50,5 +50,19 @@ export OS_MIDOKURA_ROOT_PASSWORD="new root password"
 make
 ```
 
-After enabling these env vars the Midonet Manager will automatically be installed (even when you pick OSS as the midonet repo) and you can use it for managing your Midonet solution.
+After enabling these env vars the MidoNet Manager will automatically be installed (even when you pick OSS as the midonet repo) and you can use it for managing your NVO solution.
+
+Restrictions
+============
+Please do not use this software to set up production clouds.  Running the services inside Docker containers is ok but the startup of all the services is (intentionally) not automated.
+
+This installer should serve as a bootstrapper for a complete OpenStack cloud running MidoNet and for example testing it against newer Operating System releases and different MEM and OSS versions.
+
+For the moment only installations on servers having RFC1918 ip addresses as their main network interface are tested and known to work.
+
+The reason for this is that we want to create a very compact, self-contained demo that does not rely on BGP routing or a secondary NIC that would normally be used for the MidoNet gateways as the virtual edge to the outside world.
+
+For achieving this we do some fairly complicated iptables NAT on the hosts for the floating ip range and the container ip addresses to get internet connectivity.
+
+Also the MidoNet API, horizon, vnc and MidoNet Manager are port forwarded out of their container to go to the ip of the physical server they live on.
 
