@@ -52,8 +52,47 @@ make
 
 After enabling these env vars the MidoNet Manager will automatically be installed (even when you pick OSS as the midonet repo) and you can use it for managing your NVO solution.
 
-Restrictions
-============
+Restrictions on server names
+============================
+All names in the servers section (and therefore also in the role section) must end with XXX where XXX is a number between 001 and 999.
+Please do not use names like 'server' or 'test' as server names.
+
+What works best is naming the servers like this:
+```
+servers:
+    zk001:
+        ip: 192.168.4.203
+        dockernet: 192.168.21.0/24
+
+    zk002:
+        ip: 192.168.4.207
+        dockernet: 192.168.22.0/24
+
+    zk003:
+        ip: 192.168.4.208
+        dockernet: 192.168.23.0/24
+
+    os001:
+        ip: 192.168.4.206
+        dockernet: 192.168.31.0/24
+
+    os002:
+        ip: 192.168.4.202
+        dockernet: 192.168.32.0/24
+
+    os003:
+        ip: 192.168.4.209
+        dockernet: 192.168.33.0/24
+
+```
+
+When you only have one server things become easy: just name it server001 or os001.
+
+The reason for this is that we construct some id fields from the digits of the server names.
+
+Not for production
+==================
+
 Please do not use this software to set up production clouds.  Running the services inside Docker containers is ok but the startup of all the services is (intentionally) not automated.
 
 This installer should serve as a bootstrapper for a complete OpenStack cloud running MidoNet and for example testing it against newer Operating System releases and different MEM and OSS versions.
