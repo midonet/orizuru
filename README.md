@@ -58,11 +58,3 @@ Please do not use this software to set up production clouds.  Running the servic
 
 This installer should serve as a bootstrapper for a complete OpenStack cloud running MidoNet and for example testing it against newer Operating System releases and different MEM and OSS versions.
 
-For the moment only installations on servers having RFC1918 ip addresses as their main network interface are tested and known to work.
-
-The reason for this is that we want to create a very compact, self-contained demo that does not rely on BGP routing or a secondary NIC that would normally be used for the MidoNet gateways as the virtual edge to the outside world.
-
-For achieving this we do some fairly complicated iptables NAT on the hosts for the floating ip range and the container ip addresses to get internet connectivity.
-
-Also the MidoNet API, horizon, vnc and MidoNet Manager are port forwarded out of their container to go to the ip of the physical server they live on.
-
