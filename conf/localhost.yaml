@@ -3,7 +3,7 @@
 #
 # make sure you allow ssh root@localhost for this
 #
-# also make sure you have at least 8GB of free memory on this machine
+# also make sure you have at least 16GB of free memory and a quadcore cpu on this machine
 #
 config:
 
