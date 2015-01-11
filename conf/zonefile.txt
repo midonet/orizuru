@@ -13,6 +13,5 @@ $TTL 86400
 
 @                        IN A       119.15.120.99
 benningen                IN A       119.15.120.64
-infradata2               IN A       119.15.120.219
 www                      IN A       119.15.120.99
 
