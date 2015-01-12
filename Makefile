@@ -81,6 +81,9 @@ stage6: sshconfig
 stage7: sshconfig
 	$(RUNSTAGE)
 
+stage8: sshconfig
+	$(RUNSTAGE)
+
 start:
 	mkdir -pv $(TMPDIR)
 	@date > $(TMPDIR)/.START
