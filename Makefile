@@ -27,7 +27,7 @@
 
 all: start passwordcache preflight stage1 stage3 stage4 stage5 stage6 stage7 success finish
 
-include include/$(shell basename $(PWD)).mk
+include include/orizuru.mk
 
 passwordcache:
 	test -f $(PASSWORDCACHE) || $(BINDIR)/mkpwcache.sh | tee $(PASSWORDCACHE)
