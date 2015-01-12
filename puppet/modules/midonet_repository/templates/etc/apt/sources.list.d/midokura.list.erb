@@ -1,0 +1,11 @@
+#
+# MEM midolman
+#
+
+deb [arch=amd64] http://<%= @username %>:<%= @password %>@apt.midokura.com/midonet/v<%= @midonet_version %>/stable precise main non-free
+
+#
+# MEM midonet neutron plugin
+#
+deb [arch=amd64] http://<%= @username %>:<%= @password %>@apt.midokura.com/openstack/<%= @midonet_openstack_plugin_version %>/stable precise main
+
