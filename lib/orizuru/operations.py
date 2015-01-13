@@ -150,6 +150,8 @@ OPENSTACK_PLUGIN_VERSION="%s"
 
 REPO_FLAVOR="%s"
 
+CONTAINER_OS_RELEASE="%s"
+
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
 cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
@@ -165,7 +167,8 @@ node $(hostname) {
         password => "${PASSWORD}",
         midonet_flavor => "${REPO_FLAVOR}",
         midonet_version => "${MIDONET_VERSION}",
-        midonet_openstack_plugin_version => "${OPENSTACK_PLUGIN_VERSION}"
+        midonet_openstack_plugin_version => "${OPENSTACK_PLUGIN_VERSION}",
+        os_release => "${CONTAINER_OS_RELEASE}"
     }
 }
 EOF
@@ -181,7 +184,8 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         password,
         self._metadata.config["midonet_%s_version" % repo_flavor.lower()],
         self._metadata.config["midonet_%s_openstack_plugin_version" % repo_flavor.lower()],
-        repo_flavor.upper()
+        repo_flavor.upper(),
+        self._metadata.config["container_os_release_codename"]
     ))
 
     def os_release(self):

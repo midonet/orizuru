@@ -1,11 +1,13 @@
 config:
 
+    midonet_puppet_modules_branch: agabert
+
     archive_country: us
     apt-cacher: http://192.168.4.23:3142
 
     container_os: ubuntu
-    container_os_version: "14.10"
-    container_os_release_codename: utopic
+    container_os_version: "14.04"
+    container_os_release_codename: trusty
 
     # this network will be used for the veth pair
     fake_transfer_net: 23.23.23
@@ -18,10 +20,10 @@ config:
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
     # OS_MIDOKURA_REPOSITORY_PASS
-    midonet_repo: OSS # can be OSS or MEM
+    midonet_repo: MEM # can be OSS or MEM
 
     midonet_mem_version: 1.7
-    midonet_mem_openstack_plugin_version: icehouse
+    midonet_mem_openstack_plugin_version: juno
 
     midonet_oss_version: 2014.11
     midonet_oss_openstack_plugin_version: juno

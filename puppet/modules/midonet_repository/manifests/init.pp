@@ -21,7 +21,7 @@ class midonet_repository {
     }
   }
 
-  define configure($username = "unknown", $password = "unknown", $midonet_flavor = 'MEM', $midonet_version = '1.7', $rhel_version = '7', $midonet_openstack_plugin_version = 'icehouse')
+  define configure($username = "unknown", $password = "unknown", $midonet_flavor = 'MEM', $midonet_version = '1.7', $rhel_version = '7', $midonet_openstack_plugin_version = 'juno', $os_release = 'trusty')
   {
     if $midonet_flavor == "MEM"
     {
