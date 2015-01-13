@@ -103,6 +103,9 @@ roles:
     - os002
     - os003
 
+    openstack_tempest:
+    - os002
+
 servers:
     # 4GB RAM
     zk001:

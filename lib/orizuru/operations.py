@@ -385,18 +385,18 @@ ps axufwwwwwwwww | grep -v grep | grep nrsysmond
 
     def cloud_repository(self):
         cuisine.package_ensure(["python-software-properties", "software-properties-common"])
-
-        # prevent the error about juno cloud archive not available
         self.dist_upgrade()
 
         if env.host_string in self._metadata.containers:
-            if self._metadata.config["openstack_release"] == "juno":
-                if self._metadata.config["container_os_release_codename"] == "trusty":
-                    run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
+            if env.host_string not in self._metadata.roles["container_openstack_tempest"]:
 
-            if self._metadata.config["openstack_release"] == "icehouse":
                 if self._metadata.config["container_os_release_codename"] == "precise":
-                    run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
+                    if self._metadata.config["openstack_release"] in ["icehouse", "juno"]:
+                        run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
+
+                if self._metadata.config["container_os_release_codename"] == "trusty":
+                    if self._metadata.config["openstack_release"] == "juno":
+                        run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
     @classmethod
     def dist_upgrade(cls):

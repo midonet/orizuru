@@ -81,6 +81,9 @@ stage6: sshconfig
 stage7: sshconfig
 	$(RUNSTAGE)
 
+#
+# do not run this yet, it is still experimental
+#
 stage8: sshconfig
 	$(RUNSTAGE)
 
