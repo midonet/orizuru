@@ -36,16 +36,10 @@ def stage8():
 def stage8_tempest():
     metadata = Config(os.environ["CONFIGFILE"])
 
-    cuisine.package_ensure("tempest")
-    cuisine.package_ensure("python-pip")
-    cuisine.package_ensure("python-dev")
-    cuisine.package_ensure("libxml2-dev")
-    cuisine.package_ensure("libxslt1-dev")
-    cuisine.package_ensure("zlib1g-dev")
-    # cuisine.package_ensure("libffi-dev") # installing this breaks pip on ubuntu 14
-
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
+
+    # TODO install all the packages needed for tempest runs
 
     run("""
 
@@ -218,8 +212,6 @@ auth_url = http://${MIDONET_API_IP}:5000/v2.0
 
 EOF
 
-
-
 """ % (
         metadata.config["debug"],
         metadata.config["verbose"],
@@ -234,6 +226,8 @@ EOF
         metadata.containers[metadata.roles["container_openstack_mysql"][0]]["ip"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"]
     ))
+
+    # TODO do the tempest run against the freshly installed cloud
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
