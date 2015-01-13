@@ -173,6 +173,9 @@ node $(hostname) {
 }
 EOF
 
+rm -fv -- /etc/apt/sources.list.d/midonet*
+rm -fv -- /etc/apt/sources.list.d/midokura*
+
 puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
 
 """ % (
