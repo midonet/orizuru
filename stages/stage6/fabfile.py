@@ -790,6 +790,10 @@ done
 
 nova-manage db sync
 
+sync
+
+sleep 10
+
 cd /var/run
 
 mkdir -p /var/run/nova
