@@ -388,15 +388,13 @@ ps axufwwwwwwwww | grep -v grep | grep nrsysmond
         self.dist_upgrade()
 
         if env.host_string in self._metadata.containers:
-            if env.host_string not in self._metadata.roles["container_openstack_tempest"]:
+            if self._metadata.config["container_os_release_codename"] == "precise":
+                if self._metadata.config["openstack_release"] in ["icehouse", "juno"]:
+                    run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
-                if self._metadata.config["container_os_release_codename"] == "precise":
-                    if self._metadata.config["openstack_release"] in ["icehouse", "juno"]:
-                        run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
-
-                if self._metadata.config["container_os_release_codename"] == "trusty":
-                    if self._metadata.config["openstack_release"] == "juno":
-                        run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
+            if self._metadata.config["container_os_release_codename"] == "trusty":
+                if self._metadata.config["openstack_release"] == "juno":
+                    run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
     @classmethod
     def dist_upgrade(cls):
