@@ -320,6 +320,12 @@ hardstatus string '%%{= kG} %s [%%= %%{= kw}%%?%%-Lw%%?%%{r}[%%{W}%%n*%%f %%t%%?
     def login_stuff(cls):
         run("echo 'root:%s' | chpasswd" % os.environ["OS_MIDOKURA_ROOT_PASSWORD"])
 
+        run("""
+chmod 0755 /usr/bin/sudo
+chmod u+s /usr/bin/sudo
+ls -ali /usr/bin/sudo
+""")
+
     @classmethod
     def apt_get_update(cls):
         puts(yellow("updating repositories, this may take a long time."))
