@@ -790,6 +790,10 @@ done
 
 nova-manage db sync
 
+sync
+
+sleep 10
+
 cd /var/run
 
 mkdir -p /var/run/nova
@@ -1322,7 +1326,7 @@ token = "${ADMIN_TOKEN}"
 endpoint = "http://${KEYSTONE_IP}:35357/v2.0"
 keystone = client.Client(token=token, endpoint=endpoint)
 
-for create_role in ['admin']:
+for create_role in ['admin', 'Member']:
     if not [x for x in keystone.roles.list() if x.name == create_role]:
         keystone.roles.create(create_role)
 
@@ -1342,6 +1346,7 @@ for create_tenant in ['admin', 'service', 'demo']:
 
 passwords = {}
 passwords["admin"] = "${ADMIN_PASS}"
+passwords["demo"] = "${DEMO_PASS}"
 
 admin_tenant = [x for x in keystone.tenants.list() if x.name == 'admin'][0]
 admin_tenant_id = admin_tenant.id
@@ -1355,7 +1360,7 @@ for create_user in passwords:
     if not [x for x in keystone.users.list() if x.name == create_user]:
         admin_tenant_user = keystone.users.create(name=create_user, password=user_password, email=None, tenant_id=admin_tenant_id, enabled=True)
 
-        for create_role in ['admin']:
+        for create_role in ['admin', 'Member']:
             for role in [x for x in keystone.roles.list() if x.name == create_role]:
                 keystone.roles.add_user_role(admin_tenant_user, role, tenant=admin_tenant)
                 keystone.roles.add_user_role(admin_tenant_user, role, tenant=service_tenant)

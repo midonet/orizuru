@@ -192,7 +192,7 @@ class Config(object):
 
         defaults["common_packages"] = common_packages
 
-        defaults["midonet_puppet_modules"] = "http://github.com/midonet/Arrakis"
+        defaults["midonet_puppet_modules"] = "http://github.com/midonet/orizuru"
         defaults["midonet_puppet_modules_branch"] = "master"
 
         defaults["region"] = "regionOne" # RHEL uses RegionOne

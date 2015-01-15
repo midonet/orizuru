@@ -1,13 +1,10 @@
 config:
 
-    # midonet_puppet_modules_branch: agabert
-
     archive_country: us
-    apt-cacher: http://192.168.4.23:3142
 
     container_os: ubuntu
-    container_os_version: "14.04"
-    container_os_release_codename: trusty
+    container_os_version: "14.10"
+    container_os_release_codename: utopic
 
     # this network will be used for the veth pair
     fake_transfer_net: 23.23.23
@@ -15,20 +12,20 @@ config:
     verbose: True
     debug: False
 
-    domain: benningen.midokura.de
+    domain: tokyo1.midokura.de
 
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
     # OS_MIDOKURA_REPOSITORY_PASS
-    midonet_repo: MEM # can be OSS or MEM
+    midonet_repo: OSS # can be OSS or MEM
 
     midonet_mem_version: 1.7
-    midonet_mem_openstack_plugin_version: juno
+    midonet_mem_openstack_plugin_version: icehouse
 
     midonet_oss_version: 2014.11
-    midonet_oss_openstack_plugin_version: juno
+    midonet_oss_openstack_plugin_version: icehouse
 
-    openstack_release: juno
+    openstack_release: icehouse
 
     newrelic_license_key: 5bb3df5f1f18a73de737a37e17690c58252bd183
 
@@ -47,30 +44,18 @@ config:
     # this becomes Xmn in midolman-env.sh
     HEAP_NEWSIZE: 512M
 
-vpnclients:
-    - alex101
-    - alex102
-    - alex103
-    - alex104
-
 roles:
     zookeeper:
-    - zk001
-    - zk002
-    - zk003
+    - os001
 
     cassandra:
-    - zk001
-    - zk002
-    - zk003
+    - os001
 
     midonet_gateway:
-    - zk001
-    - zk002
-    - zk003
+    - os001
 
     midonet_api:
-    - os002
+    - os001
 
     midonet_manager:
     - os001
@@ -88,7 +73,7 @@ roles:
     - os001
 
     openstack_neutron:
-    - os002
+    - os001
 
     openstack_glance:
     - os001
@@ -100,40 +85,10 @@ roles:
     - os001
 
     openstack_compute:
-    - os002
-    - os003
-
-    openstack_tempest:
-    - os002
+    - os001
 
 servers:
-    # 4GB RAM
-    zk001:
-        ip: 192.168.4.203
-        dockernet: 192.168.21.0/24
-
-    # 4GB RAM
-    zk002:
-        ip: 192.168.4.207
-        dockernet: 192.168.22.0/24
-
-    # 4GB RAM
-    zk003:
-        ip: 192.168.4.208
-        dockernet: 192.168.23.0/24
-
-    # 6GB RAM
     os001:
-        ip: 192.168.4.206
+        ip: 119.15.126.110
         dockernet: 192.168.31.0/24
-
-    # 8GB RAM
-    os002:
-        ip: 192.168.4.202
-        dockernet: 192.168.32.0/24
-
-    # 32GB RAM
-    os003:
-        ip: 192.168.4.209
-        dockernet: 192.168.33.0/24
 

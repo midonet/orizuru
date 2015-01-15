@@ -1,0 +1,163 @@
+config:
+
+    archive_country: us
+
+    container_os: ubuntu
+    container_os_version: "14.10"
+    container_os_release_codename: utopic
+
+    # this network will be used for the veth pair
+    fake_transfer_net: 192.168.254
+
+    verbose: True
+    debug: False
+
+    domain: tokyo3.midokura.de
+
+    # if you enable MEM here you should also set two environment variables:
+    # OS_MIDOKURA_REPOSITORY_USER
+    # OS_MIDOKURA_REPOSITORY_PASS
+    midonet_repo: OSS # can be OSS or MEM
+
+    midonet_mem_version: 1.7
+    midonet_mem_openstack_plugin_version: icehouse
+
+    midonet_oss_version: 2014.11
+    midonet_oss_openstack_plugin_version: juno
+
+    openstack_release: juno
+
+    newrelic_license_key: 5bb3df5f1f18a73de737a37e17690c58252bd183
+
+    # must be a file under /usr/share/zoneinfo
+    timezone: Europe/Berlin
+
+    # this is a class C network for the vpn spanning all hosts
+    vpn_base: 192.168.253
+
+    # currently not used
+    HEAP_INITIAL: 1024M
+
+    # this becomes Xms and Xmx in midolman-env.sh
+    MAX_HEAPSIZE: 1024M
+
+    # this becomes Xmn in midolman-env.sh
+    HEAP_NEWSIZE: 512M
+
+vpnclients:
+    - alex101
+    - alex102
+    - alex103
+    - alex104
+
+roles:
+    zookeeper:
+    - zk001
+    - zk002
+    - zk003
+
+    cassandra:
+    - zk001
+    - zk002
+    - zk003
+
+    midonet_gateway:
+    - zk001
+    - zk002
+    - zk003
+
+    midonet_api:
+    - mn001
+
+    openstack_horizon:
+    - mn002
+
+    midonet_manager:
+    - mn002
+
+    midonet_cli:
+    - mn002
+
+    openstack_mysql:
+    - os001
+
+    openstack_rabbitmq:
+    - os001
+
+    openstack_keystone:
+    - os001
+
+    openstack_glance:
+    - os001
+
+    openstack_neutron:
+    - os002
+
+    openstack_controller:
+    - os003
+
+    openstack_compute:
+    - os004
+    - os005
+    - os006
+    - os007
+    - os008
+    - os009
+
+servers:
+    zk001:
+        ip: 119.15.120.219
+        dockernet: 192.168.252.0/24
+
+    zk002:
+        ip: 119.15.125.51
+        dockernet: 192.168.251.0/24
+
+    zk003:
+        ip: 119.15.126.99
+        dockernet: 192.168.250.0/24
+
+    mn001:
+        ip: 119.15.126.100
+        dockernet: 192.168.249.0/24
+
+    mn002:
+        ip: 119.15.126.101
+        dockernet: 192.168.248.0/24
+
+    os001:
+        ip: 119.15.126.102
+        dockernet: 192.168.247.0/24
+
+    os002:
+        ip: 119.15.126.103
+        dockernet: 192.168.246.0/24
+
+    os003:
+        ip: 119.15.126.104
+        dockernet: 192.168.245.0/24
+
+    os004:
+        ip: 119.15.126.105
+        dockernet: 192.168.244.0/24
+
+    os005:
+        ip: 119.15.126.106
+        dockernet: 192.168.243.0/24
+
+    os006:
+        ip: 119.15.126.107
+        dockernet: 192.168.242.0/24
+
+    os007:
+        ip: 119.15.126.108
+        dockernet: 192.168.241.0/24
+
+    os008:
+        ip: 119.15.126.109
+        dockernet: 192.168.240.0/24
+
+    os009:
+        ip: 119.15.124.185
+        dockernet: 192.168.239.0/24
+

@@ -16,8 +16,6 @@
 
 INCLUDE = include
 
-PROJECT = $(shell basename $(PWD))
-
 ifeq "$(CONFIGFILE)" ""
 CONFIGFILE = $(PWD)/conf/localhost.yaml
 endif

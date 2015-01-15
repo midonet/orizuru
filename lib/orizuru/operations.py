@@ -117,7 +117,10 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
         else:
             password = ""
 
-        repo_flavor = self._metadata.config["midonet_repo"]
+        if "midonet_repo" in self._metadata.config:
+            repo_flavor = self._metadata.config["midonet_repo"]
+        else:
+            repo_flavor = "OSS"
 
         # midonet manager can only be installed when using MEM
         if str(env.host_string).startswith("midonet_manager"):
@@ -147,6 +150,8 @@ OPENSTACK_PLUGIN_VERSION="%s"
 
 REPO_FLAVOR="%s"
 
+CONTAINER_OS_RELEASE="%s"
+
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
 cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
@@ -162,10 +167,14 @@ node $(hostname) {
         password => "${PASSWORD}",
         midonet_flavor => "${REPO_FLAVOR}",
         midonet_version => "${MIDONET_VERSION}",
-        midonet_openstack_plugin_version => "${OPENSTACK_PLUGIN_VERSION}"
+        midonet_openstack_plugin_version => "${OPENSTACK_PLUGIN_VERSION}",
+        os_release => "${CONTAINER_OS_RELEASE}"
     }
 }
 EOF
+
+rm -fv -- /etc/apt/sources.list.d/midonet*
+rm -fv -- /etc/apt/sources.list.d/midokura*
 
 puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
 
@@ -178,7 +187,8 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         password,
         self._metadata.config["midonet_%s_version" % repo_flavor.lower()],
         self._metadata.config["midonet_%s_openstack_plugin_version" % repo_flavor.lower()],
-        repo_flavor.upper()
+        repo_flavor.upper(),
+        self._metadata.config["container_os_release_codename"]
     ))
 
     def os_release(self):
@@ -310,6 +320,12 @@ hardstatus string '%%{= kG} %s [%%= %%{= kw}%%?%%-Lw%%?%%{r}[%%{W}%%n*%%f %%t%%?
     def login_stuff(cls):
         run("echo 'root:%s' | chpasswd" % os.environ["OS_MIDOKURA_ROOT_PASSWORD"])
 
+        run("""
+chmod 0755 /usr/bin/sudo
+chmod u+s /usr/bin/sudo
+ls -ali /usr/bin/sudo
+""")
+
     @classmethod
     def apt_get_update(cls):
         puts(yellow("updating repositories, this may take a long time."))
@@ -375,17 +391,15 @@ ps axufwwwwwwwww | grep -v grep | grep nrsysmond
 
     def cloud_repository(self):
         cuisine.package_ensure(["python-software-properties", "software-properties-common"])
-
-        # prevent the error about juno cloud archive not available
         self.dist_upgrade()
 
         if env.host_string in self._metadata.containers:
-            if self._metadata.config["openstack_release"] == "juno":
-                if self._metadata.config["container_os_release_codename"] == "trusty":
+            if self._metadata.config["container_os_release_codename"] == "precise":
+                if self._metadata.config["openstack_release"] in ["icehouse", "juno"]:
                     run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
-            if self._metadata.config["openstack_release"] == "icehouse":
-                if self._metadata.config["container_os_release_codename"] == "precise":
+            if self._metadata.config["container_os_release_codename"] == "trusty":
+                if self._metadata.config["openstack_release"] == "juno":
                     run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
     @classmethod
