@@ -364,24 +364,38 @@ EOF
 puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
 
 for i in $(seq 1 12); do
-    ps axufwwwww | grep -v grep | grep "midolman" && break || true
+     ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && break || true
     sleep 1
 done
 
-ps axufwwwwwwwwwwwww | grep -v grep | grep midolman && exit 0
+ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && exit 0
 
 /usr/share/midolman/midolman-prepare
 
 chmod 0777 /var/run/screen
 
-screen -S midolman -d -m -- /usr/share/midolman/midolman-start
+mkdir -pv /etc/rc.local.d
+
+cat>/etc/rc.local.d/midolman<<EOF
+#!/bin/bash
+
+while(true); do
+    ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' || /usr/share/midolman/midolman-start
+    sleep 10
+done
+
+EOF
+
+chmod 0755 /etc/rc.local.d/midolman
+
+screen -S midolman -d -m -- /etc/rc.local.d/midolman
 
 for i in $(seq 1 24); do
-    ps axufwwwww | grep -v grep | grep "midolman" && break || true
+    ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && break || true
     sleep 1
 done
 
-ps axufwwwwwwwwwwwww | grep -v grep | grep midolman
+ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf'
 
 """ % (
         metadata.config["debug"],
