@@ -21,7 +21,7 @@ config:
     midonet_repo: OSS # can be OSS or MEM
 
     midonet_mem_version: 1.7
-    midonet_mem_openstack_plugin_version: icehouse
+    midonet_mem_openstack_plugin_version: juno
 
     midonet_oss_version: 2014.11
     midonet_oss_openstack_plugin_version: juno

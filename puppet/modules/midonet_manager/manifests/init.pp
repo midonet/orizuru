@@ -14,10 +14,8 @@
 # limitations under the License.
 #
 class midonet_manager {
-  define install($install_dir = "/var/www/html/midonet-cp2")
+  define install($package_name = "midonet-cp2", $install_dir = "/var/www/html/midonet-cp2")
   {
-    $package_name = "midonet-cp2" # change this later to midonet-manager
-
     package {"$package_name":
       ensure => "latest"
     }

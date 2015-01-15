@@ -556,6 +556,12 @@ def stage7_container_midonet_manager():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
+    package_name = "midonet-cp2"
+
+    if metadata.config["midonet_repo"] == "MEM":
+        if metadata.config["midonet_mem_version"] == "1.8":
+            package_name = "midonet-manager"
+
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
@@ -571,6 +577,7 @@ REPO="%s"
 BRANCH="%s"
 API_IP="%s"
 API_OUTER_IP="%s"
+PACKAGE_NAME="%s"
 
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
@@ -584,6 +591,7 @@ PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
 cat>"${PUPPET_NODE_DEFINITION}"<<EOF
 node $(hostname) {
     midonet_manager::install {"$(hostname)":
+        package_name => "${PACKAGE_NAME}"
     }
     ->
     midonet_manager::configure {"$(hostname)":
@@ -606,7 +614,8 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         metadata.config["midonet_puppet_modules"],
         metadata.config["midonet_puppet_modules_branch"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
-        metadata.servers[metadata.roles["midonet_api"][0]]["ip"]
+        metadata.servers[metadata.roles["midonet_api"][0]]["ip"],
+        package_name
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
