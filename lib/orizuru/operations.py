@@ -390,7 +390,7 @@ ps axufwwwwwwwww | grep -v grep | grep nrsysmond
     ))
 
     def cloud_repository(self):
-        cuisine.package_ensure(["python-software-properties", "software-properties-common"])
+        cuisine.package_ensure(["python-software-properties", "software-properties-common", "ubuntu-cloud-keyring"])
         self.dist_upgrade()
 
         if env.host_string in self._metadata.containers:
