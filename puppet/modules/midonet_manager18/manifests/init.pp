@@ -36,7 +36,7 @@ class midonet_manager18 {
     file {"$install_dir/config/client.js":
       ensure => "file",
       path => "$install_dir/config/client.js",
-      content => template("midonet_manager/var/www/html/midonet-manager/config/client.js.erb"),
+      content => template("midonet_manager18/var/www/html/midonet-manager/config/client.js.erb"),
       mode => "0644",
       owner => "root",
       group => "root",

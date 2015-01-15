@@ -559,7 +559,7 @@ def stage7_container_midonet_manager():
     puppet_module_name = "midonet_manager"
 
     if metadata.config["midonet_repo"] == "MEM":
-        if metadata.config["midonet_mem_version"] == "1.8":
+        if str(metadata.config["midonet_mem_version"]) == "1.8":
             puppet_module_name = "midonet_manager18"
 
     run("""
