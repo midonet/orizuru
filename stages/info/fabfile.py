@@ -57,7 +57,7 @@ def info(admin_password="test"):
 
     if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
         puts(green("""
-    MidoNet Manager url: http://%s:81/midonet-cp2/
+    MidoNet Manager url: http://%s:81/midonet-manager/ (or /midonet-cp2 for systems older than 1.8)
 """ % metadata.servers[metadata.roles["midonet_manager"][0]]["ip"]))
 
     puts(white("""    Containers (and fakeuplink configuration):
