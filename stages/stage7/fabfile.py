@@ -901,12 +901,12 @@ source /etc/keystone/KEYSTONERC_ADMIN
 
 FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
 
-for i in $(seq 1 30); do
-    ping -c1 "${FIP}" && break || true
+for i in $(seq 1 120); do
+    ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=2 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" uptime && break || true
     sleep 1
 done
 
-ping -c3 "${FIP}"
+ping -c9 "${FIP}"
 
 """)
 
@@ -915,11 +915,6 @@ ping -c3 "${FIP}"
 source /etc/keystone/KEYSTONERC_ADMIN
 
 FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
-
-for i in $(seq 1 30); do
-    ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=2 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" uptime && break || true
-    sleep 1
-done
 
 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- wget -O/dev/null http://www.midokura.com
 
