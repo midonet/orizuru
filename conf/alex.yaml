@@ -3,7 +3,7 @@ config:
     # midonet_puppet_modules_branch: agabert
 
     archive_country: us
-    apt-cacher: http://192.168.4.23:3142
+    apt-cacher: http://192.168.5.1:3142
 
     container_os: ubuntu
     container_os_version: "14.04"
@@ -47,12 +47,6 @@ config:
     # this becomes Xmn in midolman-env.sh
     HEAP_NEWSIZE: 512M
 
-vpnclients:
-    - alex101
-    - alex102
-    - alex103
-    - alex104
-
 roles:
     zookeeper:
     - zk001
@@ -70,7 +64,7 @@ roles:
     - zk003
 
     midonet_api:
-    - os002
+    - os001
 
     midonet_manager:
     - os001
@@ -88,7 +82,7 @@ roles:
     - os001
 
     openstack_neutron:
-    - os002
+    - os001
 
     openstack_glance:
     - os001
@@ -102,38 +96,41 @@ roles:
     openstack_compute:
     - os002
     - os003
-
-    openstack_tempest:
-    - os002
+    - os004
 
 servers:
     # 4GB RAM
     zk001:
-        ip: 192.168.4.203
+        ip: 192.168.5.103
         dockernet: 192.168.21.0/24
 
     # 4GB RAM
     zk002:
-        ip: 192.168.4.207
+        ip: 192.168.5.104
         dockernet: 192.168.22.0/24
 
     # 4GB RAM
     zk003:
-        ip: 192.168.4.208
+        ip: 192.168.5.106
         dockernet: 192.168.23.0/24
 
     # 6GB RAM
     os001:
-        ip: 192.168.4.206
+        ip: 192.168.5.102
         dockernet: 192.168.31.0/24
 
     # 8GB RAM
     os002:
-        ip: 192.168.4.202
+        ip: 192.168.5.105
         dockernet: 192.168.32.0/24
 
-    # 32GB RAM
+    # 16GB RAM
     os003:
-        ip: 192.168.4.209
+        ip: 192.168.5.101
         dockernet: 192.168.33.0/24
+
+    # 16GB RAM
+    os004:
+        ip: 192.168.5.107
+        dockernet: 192.168.34.0/24
 
