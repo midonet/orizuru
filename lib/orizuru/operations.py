@@ -352,11 +352,12 @@ fi
         cuisine.package_ensure(self._metadata.config["common_packages"])
 
     def newrelic(self):
-        run("rm -fv /etc/newrelic/nrsysmond.cfg* || true")
+        if env.host_string not in self._metadata.containers:
+            run("rm -fv /etc/newrelic/nrsysmond.cfg* || true")
 
-        cuisine.package_ensure("newrelic-sysmond")
+            cuisine.package_ensure("newrelic-sysmond")
 
-        run("""
+            run("""
 
 SERVER_NAME="%s"
 DOMAIN_NAME="%s"
@@ -432,7 +433,10 @@ apt-get -y autoremove
 """)
 
     def ntp(self):
-        run("""
+        if env.host_string not in self._metadata.containers:
+            cuisine.package_ensure("ntpdate")
+            cuisine.package_ensure("ntp")
+            run("""
 /etc/init.d/ntp stop || true
 
 ln -sfv "/usr/share/zoneinfo/%s" /etc/localtime

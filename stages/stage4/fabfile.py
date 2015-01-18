@@ -71,6 +71,11 @@ RUN sync
 
 RUN cat /etc/apt/sources.list
 
+RUN rm -rf /var/lib/apt/lists
+RUN mkdir -p /var/lib/apt/lists/partial
+RUN apt-get clean
+RUN apt-get autoclean
+
 RUN apt-get update 1>/dev/null
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -u dist-upgrade 1>/dev/null
 

@@ -53,8 +53,10 @@ def stage6():
 
     # do not enable this yet (it is not implemented yet in stage7 midolman setup and tunnel-zone host adding)
     if metadata.config["nova_compute_outside_of_container"] == "yes":
+        execute(stage6_openstack_nova_compute_firstnode)
         execute(stage6_openstack_nova_compute)
     else:
+        execute(stage6_container_openstack_nova_compute_firstnode)
         execute(stage6_container_openstack_nova_compute)
 
     execute(stage6_container_openstack_horizon)
@@ -851,6 +853,14 @@ def stage6_container_openstack_nova_compute():
 def stage6_openstack_nova_compute():
     stage6_openstack_nova_compute_impl()
 
+@roles('container_openstack_compute_firstnode')
+def stage6_container_openstack_nova_compute_firstnode():
+    stage6_openstack_nova_compute_impl()
+
+@roles('openstack_compute_firstnode')
+def stage6_openstack_nova_compute_firstnode():
+    stage6_openstack_nova_compute_impl()
+
 def stage6_openstack_nova_compute_impl():
     metadata = Config(os.environ["CONFIGFILE"])
 
@@ -992,10 +1002,6 @@ cgroup_device_acl = [
 
 EOF
 
-for SUBSERVICE in "compute"; do
-    service "${SERVICE}-${SUBSERVICE}" restart
-done
-
 rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
 cd /var/run
@@ -1011,6 +1017,8 @@ modprobe nbd
 service libvirt-bin restart
 
 chmod 0777 /var/run/screen
+
+sleep 10
 
 ps axufwwwww | grep -v grep | grep nova-compute || \
     screen -S nova-compute -d -m -- start-stop-daemon --start --chuid nova --exec /usr/bin/nova-compute -- --config-file=/etc/nova/nova.conf --config-file=/etc/nova/nova-compute.conf

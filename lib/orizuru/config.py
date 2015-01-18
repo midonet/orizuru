@@ -146,6 +146,9 @@ class Config(object):
                         if container_id not in self._roles[container_role]:
                             self._roles[container_role].append(container_id)
 
+        self._roles['container_openstack_compute_firstnode'] = []
+        self._roles['container_openstack_compute_firstnode'].append(self._roles['container_openstack_compute'][0])
+
     def __prepare_config_idx(self):
         idx = 1
         self._config["idx"] = {}
@@ -166,8 +169,8 @@ class Config(object):
                         idx = idx + 1
 
     def __prepare_config(self):
-        common1 = 'htop vim screen atop tcpdump nload make git dstat ntp ntpdate tinc bridge-utils openjdk-7-jre-headless'
-        common2 = 'traceroute mosh python-mysqldb mysql-client-core-5.5 docker.io python git puppet docker.io'
+        common1 = 'htop vim screen atop tcpdump nload make git dstat tinc bridge-utils openjdk-7-jre-headless'
+        common2 = 'traceroute mosh python-mysqldb mysql-client-core-5.5 docker.io python git puppet minicom strace'
 
         common_packages = "%s %s" % (common1, common2)
 
@@ -222,6 +225,9 @@ class Config(object):
         for server in self._servers:
             if server not in self._roles['all_servers']:
                 self._roles['all_servers'].append(server)
+
+        self._roles['openstack_compute_firstnode'] = []
+        self._roles['openstack_compute_firstnode'].append(self._roles['openstack_compute'][0])
 
     def __prepare_servers(self):
         for role in self._roles:
