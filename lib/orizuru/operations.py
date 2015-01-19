@@ -95,40 +95,40 @@ deb [arch=amd64] http://apt.newrelic.com/debian/ newrelic non-free
         self.repokey("https://download.newrelic.com/548C16BF.gpg")
 
     def datastax(self):
-        cuisine.file_write("/etc/apt/sources.list.d/datastax.list", """
+        if env.host_string in self._metadata.containers:
+            cuisine.file_write("/etc/apt/sources.list.d/datastax.list", """
 deb [arch=amd64] http://debian.datastax.com/community stable main
 """)
-        self.repokey("http://debian.datastax.com/debian/repo_key")
+            self.repokey("http://debian.datastax.com/debian/repo_key")
 
     def midonet(self):
+        if env.host_string in self._metadata.containers:
+            Install(self._metadata).apt_get_update()
 
-        Install(self._metadata).apt_get_update()
+            cuisine.package_ensure("puppet")
+            cuisine.package_ensure("git")
 
-        cuisine.package_ensure("puppet")
-        cuisine.package_ensure("git")
+            if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
+                username = os.environ["OS_MIDOKURA_REPOSITORY_USER"]
+            else:
+                username = ""
 
-        if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
-            username = os.environ["OS_MIDOKURA_REPOSITORY_USER"]
-        else:
-            username = ""
+            if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
+                password = os.environ["OS_MIDOKURA_REPOSITORY_PASS"]
+            else:
+                password = ""
 
-        if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
-            password = os.environ["OS_MIDOKURA_REPOSITORY_PASS"]
-        else:
-            password = ""
+            if "midonet_repo" in self._metadata.config:
+                repo_flavor = self._metadata.config["midonet_repo"]
+            else:
+                repo_flavor = "OSS"
 
-        if "midonet_repo" in self._metadata.config:
-            repo_flavor = self._metadata.config["midonet_repo"]
-        else:
-            repo_flavor = "OSS"
+            if str(env.host_string).startswith("midonet_manager"):
+                if not username == "":
+                    if not password == "":
+                        repo_flavor = "MEM"
 
-        # midonet manager can only be installed when using MEM
-        if str(env.host_string).startswith("midonet_manager"):
-            if not username == "":
-                if not password == "":
-                    repo_flavor = "MEM"
-
-        run("""
+            run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
@@ -402,6 +402,22 @@ ps axufwwwwwwwww | grep -v grep | grep nrsysmond
             if self._metadata.config["container_os_release_codename"] == "trusty":
                 if self._metadata.config["openstack_release"] == "juno":
                     run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
+
+        run("""
+OPENSTACK_RELEASE="%s"
+APT_CACHER="%s"
+
+SOURCES_LIST="/etc/apt/sources.list.d/cloudarchive-${OPENSTACK_RELEASE}.list"
+
+test -f "${SOURCES_LIST}" && \
+    sed -i 's,http://ubuntu-cloud.archive.canonical.com,'"${APT_CACHER}"'/ubuntu-cloud.archive.canonical.com,g;' "${SOURCES_LIST}"
+
+exit 0
+
+""" % (
+        self._metadata.config["openstack_release"],
+        self._metadata.config["apt-cacher"]
+    ))
 
     @classmethod
     def dist_upgrade(cls):

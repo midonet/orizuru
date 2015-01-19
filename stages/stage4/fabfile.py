@@ -75,7 +75,6 @@ RUN rm -rf /var/lib/apt/lists
 RUN mkdir -p /var/lib/apt/lists/partial
 RUN apt-get clean
 RUN apt-get autoclean
-
 RUN apt-get update 1>/dev/null
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -u dist-upgrade 1>/dev/null
 
@@ -162,6 +161,8 @@ FIP_BASE="%s"
 MIDONET_API_IP="%s"
 MIDONET_API_OUTER_IP="%s"
 
+MTU_CONTAINER="%s"
+
 CONTAINER_VETH="${RANDOM}"
 
 NETNS_NAME="docker_${CONTAINER_VETH}_${CONTAINER_ROLE}_${SERVER_NAME}"
@@ -225,12 +226,14 @@ if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_
     # set up networking for the container in our main namespace
     #
     ip link set "${CONTAINER_VETH_A}" up
+    # TODO ip link set dev "${CONTAINER_VETH_A}" mtu "${MTU_CONTAINER}"
 
     #
     # set up networking in the container namespace
     #
     ip link set "${CONTAINER_VETH_B}" netns "${NETNS_NAME}"
     ip netns exec "${NETNS_NAME}" ip link set dev "${CONTAINER_VETH_B}" name eth0
+    # TODO ip netns exec "${NETNS_NAME}" ip link set dev eth0 mtu "${MTU_CONTAINER}"
     ip netns exec "${NETNS_NAME}" ip link set eth0 up
     ip netns exec "${NETNS_NAME}" ip addr add "${CONTAINER_IP}/${CONTAINER_NETMASK}" dev eth0
     ip netns exec "${NETNS_NAME}" ip route add default via "${CONTAINER_DEFAULT_GW}"
@@ -256,7 +259,8 @@ cat "${CONTAINER_ETC_HOSTS}" >"${CONTAINER_HOSTS_PATH}"
         metadata.servers[env.host_string]["ip"],
         metadata.config["fip_base"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
-        metadata.servers[metadata.roles["midonet_api"][0]]["ip"]
+        metadata.servers[metadata.roles["midonet_api"][0]]["ip"],
+        metadata.config["mtu_container"]
     ))
 
                 cuisine.file_write("/etc/rc.local.d/docker_%s_%s_NAT" % (role, env.host_string),
@@ -399,6 +403,23 @@ chmod 0755 /etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}_NAT
 "/etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}_NAT"
 
 """ % (metadata.config["debug"], env.host_string, role))
+
+    run("""
+DOMAIN="%s"
+MTU_PHYSICAL="%s"
+MTU_MEZZANINE="%s"
+GW="$(ip route show | grep 'default via' | awk -Fdev '{print $2;}' | xargs -n1 echo)"
+
+# TODO ip link set dev "${GW}" mtu "${MTU_PHYSICAL}"
+# TODO ip link set dev ${DOMAIN} mtu "${MTU_MEZZANINE}"
+
+exit 0
+
+""" % (
+        metadata.config["domain"],
+        metadata.config["mtu_physical"],
+        metadata.config["mtu_mezzanine"]
+    ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

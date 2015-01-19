@@ -33,6 +33,17 @@ def cleanup():
 
     execute(fabric_docker_rm_role_containers_and_cleanup)
 
+    for server in sorted(metadata.servers):
+        for role in sorted(metadata.roles):
+            if role <> 'all_servers':
+                if server in metadata.roles[role]:
+                    local("ssh-keygen -f ${HOME}/.ssh/known_hosts -R %s_%s; true" % (server, role))
+                    local("ssh-keygen -f ${HOME}/.ssh/known_hosts -R %s.%s; true" % (server, role))
+
+    for role in sorted(metadata.roles):
+        if role <> 'all_servers':
+            local("ssh-keygen -f ${HOME}/.ssh/known_hosts -R %s; true" % role)
+
 @parallel
 @roles('all_servers')
 def fabric_docker_rm_role_containers_and_cleanup():

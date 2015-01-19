@@ -39,6 +39,7 @@ sshconfig:
 	$(FAB) > $(SSHCONFIG)
 
 stage1: sshconfig
+	@figlet UPGRADE SYSTEMS || true
 	mkdir -pv $(shell dirname $(ZONEFILE))
 	cat $(ZONEFILE_TEMPLATE) > $(ZONEFILE)
 	$(FAB)zonefile >> $(ZONEFILE)
@@ -61,31 +62,36 @@ stage2: sshconfig
 	rm $(TMPDIR)/.SUCCESS_$(@)
 
 stage3: sshconfig
+	@figlet SET UP VPN || true
 	mkdir -pv "$(TMPDIR)/etc/tinc"
 	$(RUNSTAGE)
 
 stage4: sshconfig
+	@figlet CONFIGURE CONTAINERS || true
 	$(RUNSTAGE)
 	test -f $(TMPDIR)/.SUCCESS_stage5 || sleep 30
 
 stage5: sshconfig
+	@figlet UPGRADE CONTAINERS || true
 	test -f "$(TMPDIR)/.SUCCESS_$(@)" || $(FAB)pingcheck
 	$(RUNSTAGE)
 
 stage6: sshconfig
+	@figlet INSTALL OPENSTACK || true
 	mkdir -pv $(TMPDIR)/img
 	cp img/favicon.ico $(TMPDIR)/img/favicon.ico
 	cp img/midokura.png $(TMPDIR)/img/midokura.png
 	$(RUNSTAGE)
 
 stage7: sshconfig
+	@figlet INSTALL MIDONET || true
 	$(RUNSTAGE)
 
 #
 # do not run this yet, it is still experimental
 #
-stage8: sshconfig
-	$(RUNSTAGE)
+#stage8: sshconfig
+#	$(RUNSTAGE)
 
 start:
 	mkdir -pv $(TMPDIR)

@@ -214,6 +214,10 @@ class Config(object):
 
         defaults["fip_base"] = "200.200.200"
 
+        defaults["mtu_physical"] = 1500
+        defaults["mtu_mezzanine"] = 1500
+        defaults["mtu_container"] = 1500
+
         for overloading_key in defaults:
             if overloading_key not in self._config:
                 overloading_value = defaults[overloading_key]
