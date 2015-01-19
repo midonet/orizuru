@@ -178,7 +178,7 @@ if [[ "${DEFAULT_GW_IFACE}" == "" ]]; then
     exit 1
 fi
 
-if [[ "$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_NAME}")" == "" ]]; then
+if [[ "$(ps axufwwwwwwwwwwwwwww | grep -v grep | grep -v SCREEN | grep -- "docker run -h ${CONTAINER_ROLE}_${SERVER_NAME}")" == "" ]]; then
     #
     # start the container in a screen session
     #

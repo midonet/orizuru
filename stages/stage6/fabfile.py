@@ -968,12 +968,11 @@ for XSERVICE in "${SERVICE}"; do
 
 done
 
+CONFIGFILE="/etc/${SERVICE}/${SERVICE}-compute.conf"
 if [[ "$(egrep -c 'vmx|svm' /proc/cpuinfo)" == "0" || "$(grep kvm /proc/misc)" == "" ]]; then
-
-    CONFIGFILE="/etc/${SERVICE}/${SERVICE}-compute.conf"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "libvirt" "virt_type" "qemu"
-
 else
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "libvirt" "virt_type" "kvm"
 
     if [ ! -e /dev/kvm ]; then
         KVM_NODE="$(grep 'kvm' /proc/misc | awk '{print $2;}')"
@@ -988,7 +987,6 @@ else
             mknod /dev/net/tun c 10 "${TUN_NODE}"
         fi
     fi
-
 fi
 
 cat>/etc/libvirt/qemu.conf<<EOF
