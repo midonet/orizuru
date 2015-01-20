@@ -68,6 +68,8 @@ docker images | grep "${TEMPLATE_NAME}" && docker rmi -f "${TEMPLATE_NAME}" || t
 
 rm -fv /var/run/netns/docker_*_"${SERVER_NAME}"
 
+rm -fv /etc/newrelic/nrsysmond.cfg
+
 exit 0
 
 """ % (env.host_string, role))
@@ -103,6 +105,8 @@ docker images | grep '^<none>' | awk '{print $3}' | xargs -n1 --no-run-if-empty 
 # this will restore the iptables NAT rules for docker build
 #
 service docker.io restart
+
+rm -fv /etc/newrelic/nrsysmond.cfg
 
 sync
 
