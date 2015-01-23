@@ -53,10 +53,8 @@ def stage6():
 
     # do not enable this yet (it is not implemented yet in stage7 midolman setup and tunnel-zone host adding)
     if metadata.config["nova_compute_outside_of_container"] == "yes":
-        execute(stage6_openstack_nova_compute_firstnode)
         execute(stage6_openstack_nova_compute)
     else:
-        execute(stage6_container_openstack_nova_compute_firstnode)
         execute(stage6_container_openstack_nova_compute)
 
     execute(stage6_container_openstack_horizon)
@@ -851,14 +849,6 @@ def stage6_container_openstack_nova_compute():
 
 @roles('openstack_compute')
 def stage6_openstack_nova_compute():
-    stage6_openstack_nova_compute_impl()
-
-@roles('container_openstack_compute_firstnode')
-def stage6_container_openstack_nova_compute_firstnode():
-    stage6_openstack_nova_compute_impl()
-
-@roles('openstack_compute_firstnode')
-def stage6_openstack_nova_compute_firstnode():
     stage6_openstack_nova_compute_impl()
 
 def stage6_openstack_nova_compute_impl():

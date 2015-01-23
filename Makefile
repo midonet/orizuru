@@ -34,6 +34,9 @@ passwordcache:
 
 preflight: pipinstalled pipdeps
 
+ci:
+	bin/ci.sh
+
 sshconfig:
 	mkdir -pv $(shell dirname $(SSHCONFIG))
 	$(FAB) > $(SSHCONFIG)

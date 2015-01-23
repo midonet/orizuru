@@ -146,9 +146,6 @@ class Config(object):
                         if container_id not in self._roles[container_role]:
                             self._roles[container_role].append(container_id)
 
-        self._roles['container_openstack_compute_firstnode'] = []
-        self._roles['container_openstack_compute_firstnode'].append(self._roles['container_openstack_compute'][0])
-
     def __prepare_config_idx(self):
         idx = 1
         self._config["idx"] = {}
@@ -229,9 +226,6 @@ class Config(object):
         for server in self._servers:
             if server not in self._roles['all_servers']:
                 self._roles['all_servers'].append(server)
-
-        self._roles['openstack_compute_firstnode'] = []
-        self._roles['openstack_compute_firstnode'].append(self._roles['openstack_compute'][0])
 
     def __prepare_servers(self):
         for role in self._roles:
