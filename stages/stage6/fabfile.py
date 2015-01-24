@@ -1463,6 +1463,8 @@ CONFIGHELPER="%s"
 
 DATABASE_SERVER_IP="%s"
 
+OPENSTACK_RELEASE="%s"
+
 CONFIGFILE="/etc/keystone/keystone.conf"
 
 test -f "${CONFIGFILE}.DISTRIBUTION" || cp "${CONFIGFILE}" "${CONFIGFILE}.DISTRIBUTION" || true
@@ -1485,7 +1487,12 @@ test -f "${CONFIGFILE}.DISTRIBUTION" || cp "${CONFIGFILE}" "${CONFIGFILE}.DISTRI
 # experimental feature "${CONFIGHELPER}" set "${CONFIGFILE}" "database" "use_db_reconnect" "True"
 
 "${CONFIGHELPER}" set "${CONFIGFILE}" "token" "provider" "keystone.token.providers.uuid.Provider"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "token" "driver" "keystone.token.persistence.backends.sql.Token"
+
+if [[ "${OPENSTACK_RELEASE}" == "icehouse" ]]; then
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "token" "driver" "keystone.token.backends.sql.Token"
+else
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "token" "driver" "keystone.token.persistence.backends.sql.Token"
+fi
 
 keystone-manage db_sync
 
@@ -1513,7 +1520,8 @@ ps axufwwwwwwwwwww | grep -v grep | grep keystone
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.config["constrictor"],
-        metadata.containers[metadata.roles["container_openstack_mysql"][0]]["ip"]
+        metadata.containers[metadata.roles["container_openstack_mysql"][0]]["ip"],
+        metadata.config["openstack_release"]
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
