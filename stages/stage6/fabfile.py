@@ -1646,7 +1646,6 @@ EOF
     configfile = "/etc/mysql/my.cnf"
 
     cuisine.file_write(configfile, """
-
 [client]
 port = 3306
 socket = /var/run/mysqld/mysqld.sock
@@ -1656,6 +1655,9 @@ socket = /var/run/mysqld/mysqld.sock
 nice = 0
 
 [mysqld]
+max_connections = 10000
+open-files-limit = 100000
+
 user = mysql
 pid-file = /var/run/mysqld/mysqld.pid
 socket = /var/run/mysqld/mysqld.sock
