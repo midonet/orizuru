@@ -51,11 +51,7 @@ def stage6():
 
     execute(stage6_container_openstack_nova_controller)
 
-    # do not enable this yet (it is not implemented yet in stage7 midolman setup and tunnel-zone host adding)
-    if metadata.config["nova_compute_outside_of_container"] == "yes":
-        execute(stage6_openstack_nova_compute)
-    else:
-        execute(stage6_container_openstack_nova_compute)
+    execute(stage6_container_openstack_nova_compute)
 
     execute(stage6_container_openstack_horizon)
 
@@ -845,13 +841,6 @@ rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
 @roles('container_openstack_compute')
 def stage6_container_openstack_nova_compute():
-    stage6_openstack_nova_compute_impl()
-
-@roles('openstack_compute')
-def stage6_openstack_nova_compute():
-    stage6_openstack_nova_compute_impl()
-
-def stage6_openstack_nova_compute_impl():
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):

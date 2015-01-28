@@ -61,6 +61,7 @@ roles:
     midonet_gateway:
     - os005
     - os006
+    - os007
 
     midonet_api:
     - os002
@@ -140,4 +141,9 @@ servers:
     os006:
         ip: 192.168.5.114
         dockernet: 192.168.36.0/24
+
+    # 4GB RAM
+    os007:
+        ip: 192.168.5.116
+        dockernet: 192.168.37.0/24
 

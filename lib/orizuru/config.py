@@ -207,8 +207,6 @@ class Config(object):
         # used for setting up sources.list on the host
         defaults["os_release_codename"] = "trusty"
 
-        defaults["nova_compute_outside_of_container"] = "no"
-
         defaults["fip_base"] = "200.200.200"
 
         defaults["mtu_physical"] = 1500
