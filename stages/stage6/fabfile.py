@@ -34,6 +34,11 @@ import cuisine
 def stage6():
     metadata = Config(os.environ["CONFIGFILE"])
 
+    puts(yellow("adding ssh connections to local known hosts file"))
+    for server in metadata.servers:
+        puts(green("connecting to %s now and adding the key" % server))
+        local("ssh -o StrictHostKeyChecking=no root@%s uptime" % metadata.servers[server]["ip"])
+
     execute(stage6_container_openstack_mysql)
 
     execute(stage6_container_openstack_mysql_create_databases)

@@ -30,6 +30,11 @@ import cuisine
 def stage7():
     metadata = Config(os.environ["CONFIGFILE"])
 
+    puts(yellow("adding ssh connections to local known hosts file"))
+    for server in metadata.servers:
+        puts(green("connecting to %s now and adding the key" % server))
+        local("ssh -o StrictHostKeyChecking=no root@%s uptime" % metadata.servers[server]["ip"])
+
     execute(stage7_container_zookeeper)
     execute(stage7_container_cassandra)
     execute(stage7_container_midonet_agent)
@@ -114,6 +119,8 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 
 /etc/init.d/zookeeper restart
 
+ps axufwwwwwwwwwww | grep -v grep | grep -- '/usr/share/java/zookeeper.jar'
+
 """ % (
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
@@ -122,6 +129,30 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         my_id,
         ",".join(zkhosts)
     ))
+
+    run("""
+
+IMOK="$(echo ruok | nc $(hostname -i) 2181 | grep imok)"
+
+for i in $(seq 1 100); do
+    IMOK="$(echo ruok | nc $(hostname -i) 2181 | grep imok)"
+
+    if [[ "${IMOK}" == "" ]]; then
+        sleep 1
+    else
+        break
+    fi
+done
+
+echo ruok | nc $(hostname -i) 2181 | grep imok
+
+""")
+
+    run("""
+
+echo stats | nc $(hostname -i) 2181
+
+""")
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
