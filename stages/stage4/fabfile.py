@@ -40,6 +40,10 @@ def docker_containers_for_roles_stage4():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
+    run("docker ps")
+
+    run("docker images")
+
     for role in sorted(metadata.roles):
         if role <> 'all_servers':
             if env.host_string in metadata.roles[role]:
