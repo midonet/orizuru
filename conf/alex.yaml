@@ -59,8 +59,9 @@ roles:
     - zk003
 
     midonet_gateway:
-    - os005
-    - os006
+    - gw001
+    - gw002
+    - gw003
 
     midonet_api:
     - os002
@@ -81,7 +82,7 @@ roles:
     - os001
 
     openstack_neutron:
-    - os003
+    - os002
 
     openstack_glance:
     - os003
@@ -97,17 +98,17 @@ roles:
 
 servers:
     # 4GB RAM
-    zk001:
+    gw001:
         ip: 192.168.5.103
         dockernet: 192.168.21.0/24
 
     # 4GB RAM
-    zk002:
+    gw002:
         ip: 192.168.5.104
         dockernet: 192.168.22.0/24
 
     # 4GB RAM
-    zk003:
+    gw003:
         ip: 192.168.5.106
         dockernet: 192.168.23.0/24
 
@@ -131,18 +132,18 @@ servers:
         ip: 192.168.5.107
         dockernet: 192.168.34.0/24
 
-    # 4GB RAM
-    os005:
+    # 2GB RAM
+    zk001:
         ip: 192.168.5.113
         dockernet: 192.168.35.0/24
 
-    # 4GB RAM
-    os006:
+    # 2GB RAM
+    zk002:
         ip: 192.168.5.114
         dockernet: 192.168.36.0/24
 
-#    # 4GB RAM
-#    os007:
-#        ip: 192.168.5.116
-#        dockernet: 192.168.37.0/24
+    # 2GB RAM
+    zk003:
+        ip: 192.168.5.116
+        dockernet: 192.168.37.0/24
 
