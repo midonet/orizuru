@@ -101,6 +101,10 @@ midonet> quit
 ```
 Again, do this for every port you have, one session per port.
 
+Do not forget that the interface has to be up for the session to be started by midonet agent.
+
+If the interface is not up please login to the host and up it.
+
 As usual this config is appropriate for conf/alex.yaml. Your settings may differ.
 
 Finally, do not forget to remove the default route going through the fake uplink ports (which is the default option of this installer).
