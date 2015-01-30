@@ -105,3 +105,7 @@ As usual this config is appropriate for conf/alex.yaml. Your settings may differ
 
 Finally, do not forget to remove the default route going through the fake uplink ports (which is the default option of this installer).
 
+If you do not like cli there is also the option of buying MEM and using the GUI :)
+
+
+Alex
