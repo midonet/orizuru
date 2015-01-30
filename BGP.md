@@ -78,7 +78,7 @@ router bgp 65000
 
 The next thing you will do is set up ports and bgp sessions on the gateways.
 
-Note that you cannot do this AFTER the installer has been finishing creating networks.
+Note that you must do this AFTER the installer has been finishing creating networks.
 ```
 midonet> cleart
 midonet> router list name 'MidoNet Provider Router'
