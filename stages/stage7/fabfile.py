@@ -38,19 +38,21 @@ def stage7():
     execute(stage7_container_zookeeper)
     execute(stage7_container_cassandra)
 
-    if 'physical_midonet_agent' in metadata.roles:
-        execute(stage7_physical_midonet_agent_compute)
-
-    if 'container_midonet_agent' in metadata.roles:
-        execute(stage7_container_midonet_agent_compute)
-
-    execute(stage7_container_midonet_agent)
-
     if 'physical_midonet_gateway' in metadata.roles:
-        execute(stage7_physical_midonet_gateway)
+        execute(stage7_physical_midonet_gateway_midonet_agent)
+        execute(stage7_physical_midonet_gateway_setup)
 
     if 'container_midonet_gateway' in metadata.roles:
-        execute(stage7_container_midonet_gateway)
+        execute(stage7_container_midonet_gateway_midonet_agent)
+        execute(stage7_container_midonet_gateway_setup)
+
+    if 'physical_openstack_compute' in metadata.roles:
+        execute(stage7_physical_openstack_compute_midonet_agent)
+
+    if 'container_openstack_compute' in metadata.roles:
+        execute(stage7_container_openstack_compute_midonet_agent)
+
+    execute(stage7_container_openstack_neutron_midonet_agent)
 
     execute(stage7_container_midonet_api)
     execute(stage7_container_midonet_manager)
@@ -74,10 +76,8 @@ def stage7_container_zookeeper():
 
     zkhosts = []
 
-    # the first cluster node myst have my_id 1
     zkid = 1
 
-    # construct the ensemble string
     for container in sorted(metadata.roles["container_zookeeper"]):
         zkhosts.append('"%s:2888:3888"' % metadata.containers[container]["ip"])
 
@@ -184,11 +184,7 @@ def stage7_container_cassandra():
     cuisine.package_ensure("cassandra=2.0.10")
     cuisine.package_ensure("dsc20=2.0.10-1")
 
-    # cuisine.package_ensure("dsc21")
-
     ip_address = metadata.containers[env.host_string]["ip"]
-
-    # dsc20: org.apache.cassandra.exceptions.ConfigurationException: Invalid yaml. Please remove properties [counter_write_request_timeout_in_ms, sstable_preemptive_open_interval_in_mb, index_summary_capacity_in_mb, counter_cache_size_in_mb, memtable_allocation_type, concurrent_counter_writes, index_summary_resize_interval_in_minutes, counter_cache_save_period] from your cassandra.yaml
 
     cuisine.file_write("/etc/cassandra/cassandra.yaml", """
 
@@ -314,10 +310,7 @@ fi
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@roles('physical_midonet_gateway', 'physical_openstack_compute')
-def stage7_physical_midonet_agent_compute():
-    stage7_midonet_agent()
-
+def stage7_start_physical_midonet_agent():
     run("""
 
 service midolman restart
@@ -331,7 +324,7 @@ ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midol
 
 """)
 
-def start_midonet_agent_screen():
+def stage7_start_container_midonet_agent():
     run("""
 
 for i in $(seq 1 12); do
@@ -370,19 +363,7 @@ ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midol
 
 """)
 
-@roles('container_midonet_gateway', 'container_openstack_compute')
-def stage7_container_midonet_agent_compute():
-    stage7_midonet_agent()
-
-    start_midonet_agent_screen()
-
-@roles('container_openstack_neutron')
-def stage7_container_midonet_agent():
-    stage7_midonet_agent()
-
-    start_midonet_agent_screen()
-
-def stage7_midonet_agent():
+def stage7_install_midonet_agent():
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
@@ -466,19 +447,85 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-@roles('physical_midonet_gateway')
-def stage7_physical_midonet_gateway():
+@roles('physical_openstack_compute')
+def stage7_physical_openstack_compute_midonet_agent():
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    # TODO ifup all interfaces
+    stage7_install_midonet_agent()
+    stage7_start_physical_midonet_agent()
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@roles('physical_midonet_gateway')
+def stage7_physical_midonet_gateway_midonet_agent():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    stage7_install_midonet_agent()
+    stage7_start_physical_midonet_agent()
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@roles('physical_midonet_gateway')
+def stage7_physical_midonet_gateway_setup():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    run("""
+
+ip link show | grep 'state DOWN' | awk '{print $2;}' | sed 's,:,,g;' | xargs -n1 --no-run-if-empty ip link set up dev
+
+ip a
+
+""")
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@roles('container_openstack_neutron')
+def stage7_container_openstack_neutron_midonet_agent():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    stage7_install_midonet_agent()
+    stage7_start_container_midonet_agent()
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@roles('container_openstack_compute')
+def stage7_container_openstack_compute_midonet_agent():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    stage7_install_midonet_agent()
+    stage7_start_container_midonet_agent()
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
 @roles('container_midonet_gateway')
-def stage7_container_midonet_gateway():
+def stage7_container_midonet_gateway_midonet_agent():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    stage7_install_midonet_agent()
+    stage7_start_container_midonet_agent()
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@roles('container_midonet_gateway')
+def stage7_container_midonet_gateway_setup():
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
@@ -748,6 +795,16 @@ expect "midonet> " { send "quit\r" }
 
 EOF
 
+midonet-cli -e 'tunnel-zone name gre member list' | grep "${IP}"
+
+""" (debug, name, ip))
+
+    run("""
+if [[ "%s" == "True" ]] ; then set -x; fi
+
+NAME="%s"
+IP="%s"
+
 /usr/bin/expect<<EOF
 set timeout 10
 spawn midonet-cli
@@ -758,6 +815,8 @@ expect "midonet> " { send "tunnel-zone tzone0 add member host host0 address ${IP
 expect "midonet> " { send "quit\r" }
 
 EOF
+
+midonet-cli -e 'tunnel-zone name vtep member list' | grep "${IP}"
 
 """ % (debug, name, ip))
 
@@ -799,7 +858,7 @@ def stage7_midonet_tunnelzone_members():
         if container_role in metadata.roles:
             for container in metadata.containers:
                 if container in metadata.roles[container_role]:
-                    puts(green("adding container %s as member in tunnel-zone gre" % container))
+                    puts(green("adding container %s as member to tunnel zones" % container))
                     add_host_to_tunnel_zone(metadata.config["debug"], container, metadata.containers[container]["ip"])
 
     for physical_role in ['physical_midonet_gateway', 'physical_openstack_compute']:
