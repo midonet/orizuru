@@ -1069,8 +1069,8 @@ service libvirt-bin restart
         metadata.servers[metadata.roles["openstack_controller"][0]]["ip"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
         metadata.containers[metadata.roles["container_openstack_neutron"][0]]["ip"],
-        service.upper(),
-        compute_vpn_ip
+        compute_vpn_ip,
+        service.upper()
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
