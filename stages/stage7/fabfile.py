@@ -320,6 +320,8 @@ for i in $(seq 1 24); do
     sleep 1
 done
 
+sleep 10
+
 ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf'
 
 """)
@@ -358,6 +360,8 @@ for i in $(seq 1 24); do
     ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && break || true
     sleep 1
 done
+
+sleep 10
 
 ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf'
 
