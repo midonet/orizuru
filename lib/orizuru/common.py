@@ -55,66 +55,35 @@ class Orizuru(object):
     def zonefile(self):
         for server in sorted(self._metadata.servers):
             puts("%s IN A %s" % (server, self._metadata.servers[server]["ip"]))
-
-            puts("%s.tinc IN A %s.%s" % (server,
-                self._metadata.config["vpn_base"],
-                self._metadata.config["idx"][server]))
-
-            puts("%s.dockernet IN A %s" % (server,
-                CIDR(self._metadata.servers[server]["dockernet"])[1]))
-
-            for role in sorted(self._metadata.roles):
-                if role <> 'all_servers':
-                    if server in self._metadata.roles[role]:
-                        container_ip = self._metadata.config["docker_ips"][server][role]
-                        puts("%s.%s.dockernet IN A %s" % (role, server, container_ip))
+            puts("%s.tinc IN A %s.%s" % (server, self._metadata.config["vpn_base"], self._metadata.config["idx"][server]))
+            puts("%s.dockernet IN A %s" % (server, CIDR(self._metadata.servers[server]["dockernet"])[1]))
 
         for container in sorted(self._metadata.containers):
-            puts("%s IN A %s" % (container, self._metadata.containers[container]["ip"]))
+            container_ip = self._metadata.containers[container]["ip"]
+            server = self._metadata.containers[container]["server"]
+            role = self._metadata.containers[container]["role"]
+
+            puts("%s IN A %s" % (container, container_ip))
+            puts("%s.%s.dockernet IN A %s" % (role, server, container_ip))
 
     def hostsfile(self):
         for server in sorted(self._metadata.servers):
-            puts("%s %s.%s" % (self._metadata.servers[server]["ip"],
-                server, self._metadata.config["domain"]))
+            puts("%s %s.%s" % (self._metadata.servers[server]["ip"], server, self._metadata.config["domain"]))
+            puts("%s.%s %s.tinc.%s %s" % (self._metadata.config["vpn_base"], self._metadata.config["idx"][server], server, self._metadata.config["domain"], server))
+            puts("%s %s.dockernet.%s" % (CIDR(self._metadata.servers[server]["dockernet"])[1], server, self._metadata.config["domain"]))
 
-            for role in sorted(self._metadata.roles):
-                if role <> 'all_servers':
-                    if server in self._metadata.roles[role]:
-                        container_ip = self._metadata.config["docker_ips"][server][role]
+        for container in sorted(self._metadata.containers):
+            role = self._metadata.containers[container]["role"]
+            container_ip = self._metadata.containers[container]["ip"]
+            server = self._metadata.containers[container]["server"]
 
-                        puts("%s %s_%s.%s %s_%s" % (
-                            container_ip,
-                            role,
-                            server,
-                            self._metadata.config["domain"],
-                            role,
-                            server
-                            ))
-
-                        puts("%s %s.%s" % (
-                            container_ip,
-                            role,
-                            server
-                            ))
-
-            puts("%s.%s %s.tinc.%s %s" % (self._metadata.config["vpn_base"],
-                self._metadata.config["idx"][server], server,
-                self._metadata.config["domain"], server))
-
-            puts("%s %s.dockernet.%s" % (CIDR(self._metadata.servers[server]["dockernet"])[1],
-                server, self._metadata.config["domain"]))
-
-            for role in sorted(self._metadata.roles):
-                if role <> 'all_servers':
-                    if server in self._metadata.roles[role]:
-                        container_ip = self._metadata.config["docker_ips"][server][role]
-                        puts("%s %s.%s.dockernet.%s" % (container_ip, role, server,
-                            self._metadata.config["domain"]))
+            puts("%s %s.%s" % (container_ip, role, server))
+            puts("%s %s_%s.%s %s_%s" % (container_ip, role, server, self._metadata.config["domain"], role, server))
+            puts("%s %s.%s.dockernet.%s" % (container_ip, role, server, self._metadata.config["domain"]))
 
     def sshconfig(self):
         for server in sorted(self._metadata.servers):
             puts("""
-
 Host %s
     User root
     ServerAliveInterval 2
@@ -137,12 +106,13 @@ Host %s.%s
         self._metadata.config["domain"],
         self._metadata.servers[server]["ip"]))
 
-            for role in sorted(self._metadata.roles):
-                if role <> 'all_servers':
-                    if server in self._metadata.roles[role]:
-                        container_ip = self._metadata.config["docker_ips"][server][role]
-                        puts("""
 
+        for container in sorted(self._metadata.containers):
+            container_ip = self._metadata.containers[container]["ip"]
+            role = self._metadata.containers[container]["role"]
+            server = self._metadata.containers[container]["server"]
+
+            puts("""
 Host %s
     User root
     ServerAliveInterval 2

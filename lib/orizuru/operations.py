@@ -102,33 +102,33 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
             self.repokey("http://debian.datastax.com/debian/repo_key")
 
     def midonet(self):
-        if env.host_string in self._metadata.containers:
-            Install(self._metadata).apt_get_update()
+        Install(self._metadata).apt_get_update()
 
-            cuisine.package_ensure("puppet")
-            cuisine.package_ensure("git")
+        cuisine.package_ensure("puppet")
+        cuisine.package_ensure("git")
 
-            if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
-                username = os.environ["OS_MIDOKURA_REPOSITORY_USER"]
-            else:
-                username = ""
+        if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
+            username = os.environ["OS_MIDOKURA_REPOSITORY_USER"]
+        else:
+            username = ""
 
-            if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
-                password = os.environ["OS_MIDOKURA_REPOSITORY_PASS"]
-            else:
-                password = ""
+        if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
+            password = os.environ["OS_MIDOKURA_REPOSITORY_PASS"]
+        else:
+            password = ""
 
-            if "midonet_repo" in self._metadata.config:
-                repo_flavor = self._metadata.config["midonet_repo"]
-            else:
-                repo_flavor = "OSS"
+        if "midonet_repo" in self._metadata.config:
+            repo_flavor = self._metadata.config["midonet_repo"]
+        else:
+            repo_flavor = "OSS"
 
-            if str(env.host_string).startswith("midonet_manager"):
+        if "midonet_manager" in self._metadata.roles:
+            if env.host_string in self._metadata.roles["midonet_manager"]:
                 if not username == "":
                     if not password == "":
                         repo_flavor = "MEM"
 
-            run("""
+        run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
@@ -307,7 +307,11 @@ if __name__ == "__main__":
 
         cuisine.package_ensure("screen")
 
-        run("mkdir -pv /var/run/screen; chmod 0775 /var/run/screen")
+        run("""
+mkdir -pv /var/run/screen
+chmod 0755 /usr/bin/screen
+chmod 0777 /var/run/screen
+""")
 
         cuisine.file_write("/root/.screenrc", """
 hardstatus alwayslastline

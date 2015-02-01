@@ -34,6 +34,9 @@ passwordcache:
 
 preflight: pipinstalled pipdeps
 
+dumpconfig:
+	make sshconfig 2>&1
+
 ci:
 	bin/ci.sh
 
@@ -72,7 +75,6 @@ stage3: sshconfig
 stage4: sshconfig
 	@figlet CONFIGURE CONTAINERS || true
 	$(RUNSTAGE)
-	test -f $(TMPDIR)/.SUCCESS_stage5 || sleep 30
 
 stage5: sshconfig
 	@figlet UPGRADE CONTAINERS || true

@@ -49,12 +49,10 @@ def cleanup():
 def fabric_docker_rm_role_containers_and_cleanup():
     metadata = Config(os.environ["CONFIGFILE"])
 
-    for role in sorted(metadata.roles):
-        if role <> 'all_servers':
-            if env.host_string in metadata.roles[role]:
-                puts(yellow("destroying container %s on %s" % (role, env.host_string)))
-                run("""
-
+    for container in sorted(metadata.containers):
+        if env.host_string == metadata.containers[container]["server"]:
+            puts(yellow("destroying container %s on %s" % (container, env.host_string)))
+            run("""
 SERVER_NAME="%s"
 CONTAINER_ROLE="%s"
 TEMPLATE_NAME="template_${SERVER_NAME}"
@@ -72,8 +70,9 @@ rm -fv /etc/newrelic/nrsysmond.cfg
 
 exit 0
 
-""" % (env.host_string, role))
+""" % (env.host_string, container))
 
+    puts(red("destroying all containers"))
     run("""
 
 DOMAIN="%s"

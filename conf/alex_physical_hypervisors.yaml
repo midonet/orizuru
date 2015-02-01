@@ -93,7 +93,7 @@ roles:
     openstack_horizon:
     - os001
 
-    openstack_compute:
+    physical_openstack_compute:
     - os003
     - os004
     - os005

@@ -44,17 +44,20 @@ def docker_containers_for_roles_stage4():
 
     run("docker images")
 
-    for role in sorted(metadata.roles):
-        if role <> 'all_servers':
-            if env.host_string in metadata.roles[role]:
-                container_ip = metadata.config["docker_ips"][env.host_string][role]
+    for container in sorted(metadata.containers):
+        server = metadata.containers[container]["server"]
+        container_ip = metadata.containers[container]["ip"]
+        role = metadata.containers[container]["role"]
 
-                puts(green("creating/configuring container on server %s with ip %s for role %s" % (
-                    env.host_string, container_ip, role)))
+        #
+        # only create a container on this host if the container belongs on it
+        #
+        if server == env.host_string:
+            puts(green("creating/configuring container on server %s with ip %s for role %s" % (server, container_ip, role)))
 
-                dockerfile = "/tmp/Dockerfile_orizuru_%s" % env.host_string
+            dockerfile = "/tmp/Dockerfile_orizuru_%s" % server
 
-                cuisine.file_write(dockerfile,
+            cuisine.file_write(dockerfile,
 """
 #
 # orizuru base image for all Midonet and Openstack services
@@ -122,7 +125,7 @@ CMD ["/usr/sbin/sshd", "-D"]
         metadata.config["common_packages"]
         ))
 
-                run("""
+            run("""
 
 SERVER_NAME="%s"
 CONTAINER_ROLE="%s"
@@ -141,11 +144,11 @@ docker images | grep "template_${SERVER_NAME}" || docker build --no-cache=true -
 mkdir -pv /etc/rc.local.d
 
 """ % (
-        env.host_string,
+        server,
         role
      ))
 
-                cuisine.file_write("/etc/rc.local.d/docker_%s_%s" % (role, env.host_string),
+            cuisine.file_write("/etc/rc.local.d/docker_%s_%s" % (role, server),
 """#!/bin/bash
 #
 # adapted from https://docs.docker.com/articles/networking/#building-your-own-bridge
@@ -253,21 +256,21 @@ CONTAINER_HOSTS_PATH="$(docker ps | grep -v ^CONTAINER | grep "^${CONTAINER_ID}"
 cat "${CONTAINER_ETC_HOSTS}" >"${CONTAINER_HOSTS_PATH}"
 
 """ % (
-        env.host_string,
+        server,
         container_ip,
         role,
-        CIDR(metadata.servers[env.host_string]["dockernet"])[1],
-        CIDR(metadata.servers[env.host_string]["dockernet"]).netmask,
-        CIDR(metadata.servers[env.host_string]["dockernet"])[0],
+        CIDR(metadata.servers[server]["dockernet"])[1],
+        CIDR(metadata.servers[server]["dockernet"]).netmask,
+        CIDR(metadata.servers[server]["dockernet"])[0],
         metadata.config["domain"],
-        metadata.servers[env.host_string]["ip"],
+        metadata.servers[server]["ip"],
         metadata.config["fip_base"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
         metadata.servers[metadata.roles["midonet_api"][0]]["ip"],
         metadata.config["mtu_container"]
     ))
 
-                cuisine.file_write("/etc/rc.local.d/docker_%s_%s_NAT" % (role, env.host_string),
+            cuisine.file_write("/etc/rc.local.d/docker_%s_%s_NAT" % (role, server),
 """#!/bin/bash
 #
 # adapted from https://docs.docker.com/articles/networking/#building-your-own-bridge
@@ -381,20 +384,20 @@ else
 fi
 
 """ % (
-        env.host_string,
+        server,
         container_ip,
         role,
-        CIDR(metadata.servers[env.host_string]["dockernet"])[1],
-        CIDR(metadata.servers[env.host_string]["dockernet"]).netmask,
-        CIDR(metadata.servers[env.host_string]["dockernet"])[0],
+        CIDR(metadata.servers[server]["dockernet"])[1],
+        CIDR(metadata.servers[server]["dockernet"]).netmask,
+        CIDR(metadata.servers[server]["dockernet"])[0],
         metadata.config["domain"],
-        metadata.servers[env.host_string]["ip"],
+        metadata.servers[server]["ip"],
         metadata.config["fip_base"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
         metadata.servers[metadata.roles["midonet_api"][0]]["ip"]
     ))
 
-                run("""
+            run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
 SERVER_NAME="%s"
@@ -406,7 +409,7 @@ chmod 0755 /etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}_NAT
 "/etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}"
 "/etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}_NAT"
 
-""" % (metadata.config["debug"], env.host_string, role))
+""" % (metadata.config["debug"], server, role))
 
     run("""
 DOMAIN="%s"

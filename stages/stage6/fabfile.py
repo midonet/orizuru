@@ -40,7 +40,6 @@ def stage6():
         local("ssh -o StrictHostKeyChecking=no root@%s uptime" % metadata.servers[server]["ip"])
 
     execute(stage6_container_openstack_mysql)
-
     execute(stage6_container_openstack_mysql_create_databases)
 
     execute(stage6_container_openstack_rabbitmq)
@@ -56,7 +55,11 @@ def stage6():
 
     execute(stage6_container_openstack_nova_controller)
 
-    execute(stage6_container_openstack_nova_compute)
+    if 'physical_openstack_compute' in metadata.roles:
+        execute(stage6_physical_openstack_nova_compute)
+
+    if 'container_openstack_compute' in metadata.roles:
+        execute(stage6_container_openstack_nova_compute)
 
     execute(stage6_container_openstack_horizon)
 
@@ -844,8 +847,48 @@ rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
+@roles('physical_openstack_compute')
+def stage6_physical_openstack_nova_compute():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    stage6_openstack_nova_compute(metadata.servers[env.host_string]["ip"])
+
+    run("""
+
+service nova-compute restart
+
+for i in $(seq 1 12); do
+    ps axufwwwww | grep -v grep | grep "nova-compute" && break || true
+    sleep 1
+done
+
+ps axufwwwww | grep -v grep | grep nova-compute
+
+""")
+
 @roles('container_openstack_compute')
 def stage6_container_openstack_nova_compute():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    stage6_openstack_nova_compute(metadata.containers[env.host_string]["ip"])
+
+    run("""
+
+chmod 0777 /var/run/screen
+
+ps axufwwwww | grep -v grep | grep nova-compute || \
+    screen -S nova-compute -d -m -- start-stop-daemon --start --chuid nova --exec /usr/bin/nova-compute -- --config-file=/etc/nova/nova.conf --config-file=/etc/nova/nova-compute.conf
+
+for i in $(seq 1 12); do
+    ps axufwwwww | grep -v grep | grep "nova-compute" && break || true
+    sleep 1
+done
+
+ps axufwwwww | grep -v grep | grep nova-compute
+
+""")
+
+def stage6_openstack_nova_compute(compute_ip):
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
@@ -998,20 +1041,6 @@ modprobe nbd
 
 service libvirt-bin restart
 
-chmod 0777 /var/run/screen
-
-sleep 10
-
-ps axufwwwww | grep -v grep | grep nova-compute || \
-    screen -S nova-compute -d -m -- start-stop-daemon --start --chuid nova --exec /usr/bin/nova-compute -- --config-file=/etc/nova/nova.conf --config-file=/etc/nova/nova-compute.conf
-
-for i in $(seq 1 12); do
-    ps axufwwwww | grep -v grep | grep "nova-compute" && break || true
-    sleep 1
-done
-
-ps axufwwwww | grep -v grep | grep nova-compute
-
 """ % (
         metadata.config["debug"],
         metadata.config["verbose"],
@@ -1022,7 +1051,7 @@ ps axufwwwww | grep -v grep | grep nova-compute
         metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"],
         metadata.containers[metadata.roles["container_openstack_rabbitmq"][0]]["ip"],
         metadata.containers[metadata.roles["container_openstack_glance"][0]]["ip"],
-        metadata.containers[env.host_string]["ip"],
+        compute_ip,
         metadata.containers[metadata.roles["container_openstack_controller"][0]]["ip"],
         metadata.servers[metadata.roles["openstack_controller"][0]]["ip"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
@@ -1246,7 +1275,7 @@ touch /usr/lib/python2.7/dist-packages/babel/localedata/__init__.py
 python 2>&1 <<EOF
 from keystoneclient.v2_0 import client
 
-keystone = client.Client(username="admin", password="${ADMIN_PASS}", tenant_name="admin", auth_url="http://${KEYSTONE_IP}:5000/v2.0")
+keystone = client.Client(username="service", password="${SERVICE_PASS}", tenant_name="admin", auth_url="http://${KEYSTONE_IP}:5000/v2.0")
 
 if not [x for x in keystone.services.list() if x.name == "${SERVICE}"]:
     publicurl = "http://${SERVICE_IP}:${PUBLICURL}"
@@ -1337,6 +1366,7 @@ for create_tenant in ['admin', 'service', 'demo']:
 passwords = {}
 passwords["admin"] = "${ADMIN_PASS}"
 passwords["demo"] = "${DEMO_PASS}"
+passwords["service"] = "${SERVICE_PASS}"
 
 admin_tenant = [x for x in keystone.tenants.list() if x.name == 'admin'][0]
 admin_tenant_id = admin_tenant.id
@@ -1352,8 +1382,12 @@ for create_user in passwords:
 
         for create_role in ['admin', 'Member']:
             for role in [x for x in keystone.roles.list() if x.name == create_role]:
-                keystone.roles.add_user_role(admin_tenant_user, role, tenant=admin_tenant)
-                keystone.roles.add_user_role(admin_tenant_user, role, tenant=service_tenant)
+                if create_user <> 'demo':
+                    keystone.roles.add_user_role(admin_tenant_user, role, tenant=admin_tenant)
+
+                if create_user <> 'demo':
+                    if create_user <> 'admin':
+                        keystone.roles.add_user_role(admin_tenant_user, role, tenant=service_tenant)
 
 EOF
 
@@ -1384,17 +1418,17 @@ set -e
 KEYSTONE_IP="%s"
 
 SERVICE="%s"
-SERVICE_PASS="${%s_PASS}"
+X_PASSWORD="${%s_PASS}"
 
 touch /usr/lib/python2.7/dist-packages/babel/localedata/__init__.py
 
 python 2>&1 <<EOF
 from keystoneclient.v2_0 import client
 
-keystone = client.Client(username="admin", password="${ADMIN_PASS}", tenant_name="service", auth_url="http://${KEYSTONE_IP}:5000/v2.0")
+keystone = client.Client(username="service", password="${SERVICE_PASS}", tenant_name="service", auth_url="http://${KEYSTONE_IP}:5000/v2.0")
 
 passwords = {}
-passwords["${SERVICE}"] = "${SERVICE_PASS}"
+passwords["${SERVICE}"] = "${X_PASSWORD}"
 
 service_tenant = [x for x in keystone.tenants.list() if x.name == 'service'][0]
 service_tenant_id = service_tenant.id

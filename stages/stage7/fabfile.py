@@ -37,20 +37,33 @@ def stage7():
 
     execute(stage7_container_zookeeper)
     execute(stage7_container_cassandra)
+
+    if 'physical_midonet_agent' in metadata.roles:
+        execute(stage7_physical_midonet_agent_compute)
+
+    if 'container_midonet_agent' in metadata.roles:
+        execute(stage7_container_midonet_agent_compute)
+
     execute(stage7_container_midonet_agent)
-    execute(stage7_container_midonet_gateway)
+
+    if 'physical_midonet_gateway' in metadata.roles:
+        execute(stage7_physical_midonet_gateway)
+
+    if 'container_midonet_gateway' in metadata.roles:
+        execute(stage7_container_midonet_gateway)
+
     execute(stage7_container_midonet_api)
-
-    # only install midonet manager if the user and password was set
-    # a user who does not have the user/password must be able to install midonet.org without it
-    if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
-        if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
-            execute(stage7_container_midonet_manager)
-
+    execute(stage7_container_midonet_manager)
     execute(stage7_container_midonet_cli)
-    execute(stage7_container_midonet_tunnelzone)
 
-    execute(stage7_container_test_connectivity)
+    execute(stage7_midonet_tunnelzones)
+    execute(stage7_midonet_tunnelzone_members)
+
+    execute(stage7_neutron_networks)
+
+    execute(stage7_midonet_fakeuplinks)
+
+    execute(stage7_test_connectivity)
 
 @roles('container_zookeeper')
 def stage7_container_zookeeper():
@@ -301,43 +314,87 @@ fi
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-#
-# midolman must be on the neutron controller to work with dhcp and metadata service
-#
-@roles('container_midonet_gateway', 'container_openstack_neutron', 'container_openstack_compute')
+@roles('physical_midonet_gateway', 'physical_openstack_compute')
+def stage7_physical_midonet_agent_compute():
+    stage7_midonet_agent()
+
+    run("""
+
+service midolman restart
+
+for i in $(seq 1 24); do
+    ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && break || true
+    sleep 1
+done
+
+ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf'
+
+""")
+
+def start_midonet_agent_screen():
+    run("""
+
+for i in $(seq 1 12); do
+     ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && break || true
+    sleep 1
+done
+
+ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && exit 0
+
+/usr/share/midolman/midolman-prepare
+
+chmod 0777 /var/run/screen
+
+mkdir -pv /etc/rc.local.d
+
+cat>/etc/rc.local.d/midolman<<EOF
+#!/bin/bash
+
+while(true); do
+    ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' || /usr/share/midolman/midolman-start
+    sleep 10
+done
+
+EOF
+
+chmod 0755 /etc/rc.local.d/midolman
+
+screen -S midolman -d -m -- /etc/rc.local.d/midolman
+
+for i in $(seq 1 24); do
+    ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && break || true
+    sleep 1
+done
+
+ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf'
+
+""")
+
+@roles('container_midonet_gateway', 'container_openstack_compute')
+def stage7_container_midonet_agent_compute():
+    stage7_midonet_agent()
+
+    start_midonet_agent_screen()
+
+@roles('container_openstack_neutron')
 def stage7_container_midonet_agent():
+    stage7_midonet_agent()
+
+    start_midonet_agent_screen()
+
+def stage7_midonet_agent():
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    server = metadata.servers[metadata.containers[env.host_string]["server"]]
+    zookeepers = []
+    for zookeeper in sorted(metadata.roles["container_zookeeper"]):
+        zookeepers.append(zookeeper)
 
-    if "zone" not in server:
-        zookeepers = sorted(metadata.roles["container_zookeeper"])
-        cassandras = sorted(metadata.roles["container_cassandra"])
-    else:
-        my_zone = server["zone"]
-
-        #
-        # find all zookeepers in the zone of the host of our container
-        #
-        zookeepers = []
-        for zookeeper in sorted(metadata.roles["container_zookeeper"]):
-            if "zone" in metadata.servers[metadata.containers[zookeeper]["server"]]:
-                zk_zone = metadata.servers[metadata.containers[zookeeper]["server"]]["zone"]
-                if my_zone == zk_zone:
-                    zookeepers.append(zookeeper)
-
-        #
-        # find all cassandras in our zone
-        #
-        cassandras = []
-        for cassandra in sorted(metadata.roles["container_cassandra"]):
-            if "zone" in metadata.servers[metadata.containers[cassandra]["server"]]:
-                cs_zone = metadata.servers[metadata.containers[cassandra]["server"]]["zone"]
-                if my_zone == cs_zone:
-                    cassandras.append(cassandra)
+    cassandras = []
+    for cassandra in sorted(metadata.roles["container_cassandra"]):
+        cassandras.append(cassandra)
 
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
@@ -394,40 +451,6 @@ EOF
 #
 puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
 
-for i in $(seq 1 12); do
-     ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && break || true
-    sleep 1
-done
-
-ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && exit 0
-
-/usr/share/midolman/midolman-prepare
-
-chmod 0777 /var/run/screen
-
-mkdir -pv /etc/rc.local.d
-
-cat>/etc/rc.local.d/midolman<<EOF
-#!/bin/bash
-
-while(true); do
-    ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' || /usr/share/midolman/midolman-start
-    sleep 10
-done
-
-EOF
-
-chmod 0755 /etc/rc.local.d/midolman
-
-screen -S midolman -d -m -- /etc/rc.local.d/midolman
-
-for i in $(seq 1 24); do
-    ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf' && break || true
-    sleep 1
-done
-
-ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf'
-
 """ % (
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
@@ -440,6 +463,17 @@ ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midol
         metadata.config["HEAP_NEWSIZE"],
         metadata.config["openstack_release"]
     ))
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@roles('physical_midonet_gateway')
+def stage7_physical_midonet_gateway():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    # TODO ifup all interfaces
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
@@ -593,7 +627,9 @@ def stage7_container_midonet_manager():
         if str(metadata.config["midonet_mem_version"]) == "1.8":
             puppet_module_name = "midonet_manager18"
 
-    run("""
+    if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
+        if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
+            run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
@@ -694,8 +730,64 @@ EOF
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
+def add_host_to_tunnel_zone(debug, name, ip):
+    run("""
+if [[ "%s" == "True" ]] ; then set -x; fi
+
+NAME="%s"
+IP="%s"
+
+/usr/bin/expect<<EOF
+set timeout 10
+spawn midonet-cli
+
+expect "midonet> " { send "tunnel-zone list name gre\r" }
+expect "midonet> " { send "host list name ${NAME}\r" }
+expect "midonet> " { send "tunnel-zone tzone0 add member host host0 address ${IP}\r" }
+expect "midonet> " { send "quit\r" }
+
+EOF
+
+/usr/bin/expect<<EOF
+set timeout 10
+spawn midonet-cli
+
+expect "midonet> " { send "tunnel-zone list name vtep\r" }
+expect "midonet> " { send "host list name ${NAME}\r" }
+expect "midonet> " { send "tunnel-zone tzone0 add member host host0 address ${IP}\r" }
+expect "midonet> " { send "quit\r" }
+
+EOF
+
+""" % (debug, name, ip))
+
 @roles('container_midonet_cli')
-def stage7_container_midonet_tunnelzone():
+def stage7_midonet_tunnelzones():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    run("""
+if [[ "%s" == "True" ]] ; then set -x; fi
+
+#
+# create tunnel zones
+#
+midonet-cli -e 'tunnel-zone list name gre' | \
+    grep '^tzone' | grep 'name gre type gre' || \
+        midonet-cli -e 'tunnel-zone create name gre type gre'
+
+midonet-cli -e 'tunnel-zone list name vtep' | \
+    grep '^tzone' | grep 'name vtep type vtep' || \
+        midonet-cli -e 'tunnel-zone create name vtep type vtep'
+
+""" % metadata.config["debug"])
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@roles('container_midonet_cli')
+def stage7_midonet_tunnelzone_members():
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
@@ -703,43 +795,28 @@ def stage7_container_midonet_tunnelzone():
 
     cuisine.package_ensure("expect")
 
-    run("""
-if [[ "%s" == "True" ]] ; then set -x; fi
+    for container_role in ['container_midonet_gateway', 'container_openstack_compute', 'container_openstack_neutron']:
+        if container_role in metadata.roles:
+            for container in metadata.containers:
+                if container in metadata.roles[container_role]:
+                    puts(green("adding container %s as member in tunnel-zone gre" % container))
+                    add_host_to_tunnel_zone(metadata.config["debug"], container, metadata.containers[container]["ip"])
 
-#
-# create tunnel-zone
-#
-midonet-cli -e 'tunnel-zone list name gre' | \
-    grep '^tzone' | grep 'name gre type gre' || \
-        midonet-cli -e 'tunnel-zone create name gre type gre'
+    for physical_role in ['physical_midonet_gateway', 'physical_openstack_compute']:
+        if physical_role in metadata.roles:
+            for server in metadata.servers:
+                if server in metadata.roles[physical_role]:
+                    puts(green("adding server %s as member in tunnel-zone gre" % server))
+                    add_host_to_tunnel_zone(metadata.config["debug"], server, metadata.servers[server]["ip"])
 
-""" % metadata.config["debug"])
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
-    for role in ['container_midonet_gateway', 'container_openstack_neutron', 'container_openstack_controller', 'container_openstack_compute']:
-        for container in metadata.containers:
-            if container in metadata.roles[role]:
-                puts(green("enrolling container %s in tunnel-zone gre" % container))
-                run("""
-if [[ "%s" == "True" ]] ; then set -x; fi
+@roles('container_midonet_cli')
+def stage7_neutron_networks():
+    metadata = Config(os.environ["CONFIGFILE"])
 
-CONTAINER_NAME="%s"
-CONTAINER_IP="%s"
-/usr/bin/expect<<EOF
-set timeout 10
-spawn midonet-cli
-
-expect "midonet> " { send "tunnel-zone list name gre\r" }
-expect "midonet> " { send "host list name ${CONTAINER_NAME}\r" }
-expect "midonet> " { send "tunnel-zone tzone0 add member host host0 address ${CONTAINER_IP}\r" }
-expect "midonet> " { send "quit\r" }
-
-EOF
-
-""" %(
-        metadata.config["debug"],
-        container,
-        metadata.containers[container]["ip"]
-    ))
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
 
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
@@ -825,23 +902,33 @@ nova boot \
         metadata.config["fip_base"]
     ))
 
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
+@roles('container_midonet_cli')
+def stage7_midonet_fakeuplinks():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
     # provider router has been created now. we can set up the static routing logic.
     # note that we might also change this role loop to include compute nodes
     # (for simulating a similar approach like the HP DVR off-ramping directly from the compute nodes)
     for role in ['container_midonet_gateway']:
-        for container in metadata.containers:
-            if container in metadata.roles[role]:
-                puts(green("setting up fakeuplink provider router leg for container %s" % container))
+        if role in metadata.roles:
+            for container in metadata.containers:
+                if container in metadata.roles[role]:
+                    puts(green("setting up fakeuplink provider router leg for container %s" % container))
 
-                physical_ip_idx = int(re.sub(r"\D", "", container))
+                    physical_ip_idx = int(re.sub(r"\D", "", container))
 
-                overlay_ip_idx = 255 - physical_ip_idx
+                    overlay_ip_idx = 255 - physical_ip_idx
 
-                #
-                # This logic is the complimentary logic to what happens on the midonet gateways when the veth pair, the fakeuplink bridge and the eth0 SNAT is set up.
-                # We might some day change this to proper BGP peer (which will be in another container or on a different host of course).
-                #
-                run("""
+                    #
+                    # This logic is the complimentary logic to what happens on the midonet gateways when the veth pair, the fakeuplink bridge and the eth0 SNAT is set up.
+                    # We might some day change this to proper BGP peer (which will be in another container or on a different host of course).
+                    #
+                    run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
 CONTAINER_NAME="%s"
@@ -879,7 +966,7 @@ EOF
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
 @roles('container_midonet_cli')
-def stage7_container_test_connectivity():
+def stage7_test_connectivity():
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):

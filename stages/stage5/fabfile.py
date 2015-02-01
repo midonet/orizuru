@@ -75,12 +75,18 @@ def install_stage5():
 def stage5_ping_containers():
     metadata = Config(os.environ["CONFIGFILE"])
 
-    for role in sorted(metadata.roles):
-        if role <> 'all_servers':
-            if env.host_string in metadata.roles[role]:
+    for container in sorted(metadata.containers):
+        container_ip = metadata.containers[container]["ip"]
 
-                container_ip = metadata.config["docker_ips"][env.host_string][role]
+        run("""
+IP="%s"
 
-                puts(yellow("pinging %s.%s.%s (%s)" % (role, env.host_string, metadata.config["domain"], container_ip)))
-                run("ping -c1 %s" % container_ip)
+for i in $(seq 1 120); do
+    ping -c1 "${IP}" && break
+    sleep 1
+done
+
+ping -c1 "${IP}"
+
+""" % container_ip)
 

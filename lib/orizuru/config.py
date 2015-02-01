@@ -26,6 +26,8 @@ from fabric.utils import puts
 
 from netaddr import IPNetwork as CIDR
 
+import sys
+
 class Config(object):
 
     def __init__(self, configfile):
@@ -38,12 +40,33 @@ class Config(object):
         self.__prepare()
         self.__setup_fabric_env()
 
+        #self.__dumpconfig()
+
+    def __dumpconfig(self):
+        for role in sorted(self._roles):
+            sys.stderr.write("role: %s\n" % role)
+        sys.stderr.write("\n")
+
+        for server in sorted(self._servers):
+            sys.stderr.write("server: %s\n" % server)
+            for role in sorted(self._roles):
+                if server in self._roles[role]:
+                    sys.stderr.write("server role: %s\n" % role)
+            sys.stderr.write("\n")
+
+        for container in sorted(self._containers):
+            sys.stderr.write("container: %s\n" % container)
+            for role in sorted(self._roles):
+                if container in self._roles[role]:
+                    sys.stderr.write("container role: %s\n" % role)
+            sys.stderr.write("\n")
+
     def __setup_fabric_env(self):
         env.use_ssh_config = True
 
         env.port = 22
-        env.connection_attempts = 100
-        env.timeout = 30
+        env.connection_attempts = 5
+        env.timeout = 5
 
         env.parallel = self._config["parallel"]
 
@@ -126,25 +149,26 @@ class Config(object):
         for server in sorted(self._servers):
             for role in sorted(self._roles):
                 if role <> 'all_servers':
-                    if server in self._roles[role]:
-                        container_ip = self._config["docker_ips"][server][role]
-                        container_id = "%s_%s" % (role, server)
-                        container_role = "container_%s" % role
+                    if not role.startswith("physical_"):
+                        if server in self._roles[role]:
+                            container_ip = self._config["docker_ips"][server][role]
+                            container_id = "%s_%s" % (role, server)
+                            container_role = "container_%s" % role
 
-                        self._containers[container_id] = {}
+                            self._containers[container_id] = {}
 
-                        self._containers[container_id]["ip"] = container_ip
-                        self._containers[container_id]["server"] = server
-                        self._containers[container_id]["role"] = role
+                            self._containers[container_id]["ip"] = container_ip
+                            self._containers[container_id]["server"] = server
+                            self._containers[container_id]["role"] = role
 
-                        if container_id not in self._roles['all_containers']:
-                            self._roles['all_containers'].append(container_id)
+                            if container_id not in self._roles['all_containers']:
+                                self._roles['all_containers'].append(container_id)
 
-                        if container_role not in self._roles:
-                            self._roles[container_role] = []
+                            if container_role not in self._roles:
+                                self._roles[container_role] = []
 
-                        if container_id not in self._roles[container_role]:
-                            self._roles[container_role].append(container_id)
+                            if container_id not in self._roles[container_role]:
+                                self._roles[container_role].append(container_id)
 
     def __prepare_config_idx(self):
         idx = 1

@@ -11,7 +11,6 @@ $TTL 86400
 @                        IN NS      robotns2.second-ns.de.
 @                        IN NS      robotns3.second-ns.com.
 
-@                        IN A       119.15.120.99
-benningen                IN A       119.15.120.64
-www                      IN A       119.15.120.99
+@                        IN A       37.187.101.121
+www                      IN A       37.187.101.121
 
