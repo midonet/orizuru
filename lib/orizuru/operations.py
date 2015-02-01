@@ -396,16 +396,16 @@ ps axufwwwwwwwww | grep -v grep | grep nrsysmond
 
     def cloud_repository(self):
         cuisine.package_ensure(["python-software-properties", "software-properties-common", "ubuntu-cloud-keyring"])
+
         self.dist_upgrade()
 
-        if env.host_string in self._metadata.containers:
-            if self._metadata.config["container_os_release_codename"] == "precise":
-                if self._metadata.config["openstack_release"] in ["icehouse", "juno"]:
-                    run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
+        if self._metadata.config["container_os_release_codename"] == "precise":
+            if self._metadata.config["openstack_release"] in ["icehouse", "juno"]:
+                run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
-            if self._metadata.config["container_os_release_codename"] == "trusty":
-                if self._metadata.config["openstack_release"] == "juno":
-                    run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
+        if self._metadata.config["container_os_release_codename"] == "trusty":
+            if self._metadata.config["openstack_release"] == "juno":
+                run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
         run("""
 OPENSTACK_RELEASE="%s"
