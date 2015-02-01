@@ -58,7 +58,7 @@ roles:
     - cs002
     - cs003
 
-    physical_midonet_gateway:
+    midonet_gateway:
     - gw001
     - gw002
     - gw003
