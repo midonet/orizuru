@@ -870,7 +870,8 @@ def stage7_midonet_tunnelzone_members():
             for server in metadata.servers:
                 if server in metadata.roles[physical_role]:
                     puts(green("adding server %s as member in tunnel-zone gre" % server))
-                    add_host_to_tunnel_zone(metadata.config["debug"], server, metadata.servers[server]["ip"])
+                    server_ip = "%s.%s" % (metadata.config["vpn_base"], metadata.config["idx"][server])
+                    add_host_to_tunnel_zone(metadata.config["debug"], server, server_ip)
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
