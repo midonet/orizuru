@@ -854,7 +854,9 @@ ps axufwwwwww | grep -v grep | grep -- "${SERVICE}-${SUBSERVICE}"
 def stage6_physical_openstack_compute_nova_compute():
     metadata = Config(os.environ["CONFIGFILE"])
 
-    stage6_openstack_compute_nova_compute(metadata.servers[env.host_string]["ip"])
+    compute_ip = "%s.%s" % (metadata.config["vpn_base"], metadata.config["idx"][env.host_string])
+
+    stage6_openstack_compute_nova_compute(compute_ip, compute_ip)
 
     run("""
 
@@ -875,7 +877,9 @@ ps axufwwwww | grep -v grep | grep nova-compute
 def stage6_container_openstack_compute_nova_compute():
     metadata = Config(os.environ["CONFIGFILE"])
 
-    stage6_openstack_compute_nova_compute(metadata.containers[env.host_string]["ip"])
+    compute_ip = metadata.containers[env.host_string]["ip"]
+
+    stage6_openstack_compute_nova_compute(compute_ip, compute_ip)
 
     run("""
 
@@ -895,7 +899,7 @@ ps axufwwwww | grep -v grep | grep nova-compute
 
 """)
 
-def stage6_openstack_compute_nova_compute(compute_ip):
+def stage6_openstack_compute_nova_compute(compute_ip, compute_vpn_ip):
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
@@ -936,6 +940,8 @@ MIDONET_API="%s"
 
 NEUTRON_IP="%s"
 
+COMPUTE_VPN_IP="%s"
+
 #
 # nova compute
 #
@@ -964,8 +970,8 @@ for XSERVICE in "${SERVICE}"; do
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "my_ip" "${COMPUTE_IP}"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "novncproxy_base_url" "http://${CONTROLLER_OUTER_IP}:6080/vnc_auto.html"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "vncserver_listen" "${COMPUTE_IP}"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "vncserver_proxyclient_address" "${COMPUTE_IP}"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "vncserver_listen" "${COMPUTE_VPN_IP}"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "vncserver_proxyclient_address" "${COMPUTE_VPN_IP}"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "vnc_enabled" "True"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "auth_strategy" "keystone"
@@ -1063,7 +1069,8 @@ service libvirt-bin restart
         metadata.servers[metadata.roles["openstack_controller"][0]]["ip"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
         metadata.containers[metadata.roles["container_openstack_neutron"][0]]["ip"],
-        service.upper()
+        service.upper(),
+        compute_vpn_ip
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
