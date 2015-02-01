@@ -833,9 +833,23 @@ if [[ "${SUBSERVICE}" == "novncproxy" ]]; then
     SUBSERVICE_PARAMS="--web /usr/share/novnc/"
 fi
 
-ps axufwwwwww | grep -v grep | grep -- "${SERVICE}-${SUBSERVICE}" || \
-    screen -S "${SERVICE}-${SUBSERVICE}" -d -m -- start-stop-daemon --start --chuid ${SERVICE} \
-        --exec "/usr/bin/${SERVICE}-${SUBSERVICE}" -- --config-file=/etc/${SERVICE}/${SERVICE}.conf ${SUBSERVICE_PARAMS}
+mkdir -pv /etc/rc.local.d
+
+cat >/etc/rc.local.d/${SERVICE}-${SUBSERVICE}.sh<<EOF
+#!/bin/bash
+
+while(true); do
+    ps axufwwwwwwww | grep -v grep | grep -- "${SERVICE}-${SUBSERVICE}" || \
+        screen -S "${SERVICE}-${SUBSERVICE}" -d -m -- start-stop-daemon --start --chuid ${SERVICE} \
+            --exec "/usr/bin/${SERVICE}-${SUBSERVICE}" -- --config-file=/etc/${SERVICE}/${SERVICE}.conf ${SUBSERVICE_PARAMS}
+    sleep 2
+done
+
+EOF
+
+chmod 0755 /etc/rc.local.d/${SERVICE}-${SUBSERVICE}.sh
+
+/etc/rc.local.d/${SERVICE}-${SUBSERVICE}.sh
 
 for i in $(seq 1 24); do
     ps axufwwwww | grep -v grep | grep "${SERVICE}-${SUBSERVICE}" && break || true
