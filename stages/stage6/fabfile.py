@@ -56,10 +56,10 @@ def stage6():
     execute(stage6_container_openstack_nova_controller)
 
     if 'physical_openstack_compute' in metadata.roles:
-        execute(stage6_physical_openstack_nova_compute)
+        execute(stage6_physical_openstack_compute_nova_compute)
 
     if 'container_openstack_compute' in metadata.roles:
-        execute(stage6_container_openstack_nova_compute)
+        execute(stage6_container_openstack_compute_nova_compute)
 
     execute(stage6_container_openstack_horizon)
 
@@ -848,10 +848,10 @@ rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
 @roles('physical_openstack_compute')
-def stage6_physical_openstack_nova_compute():
+def stage6_physical_openstack_compute_nova_compute():
     metadata = Config(os.environ["CONFIGFILE"])
 
-    stage6_openstack_nova_compute(metadata.servers[env.host_string]["ip"])
+    stage6_openstack_compute_nova_compute(metadata.servers[env.host_string]["ip"])
 
     run("""
 
@@ -862,15 +862,17 @@ for i in $(seq 1 12); do
     sleep 1
 done
 
+sleep 10
+
 ps axufwwwww | grep -v grep | grep nova-compute
 
 """)
 
 @roles('container_openstack_compute')
-def stage6_container_openstack_nova_compute():
+def stage6_container_openstack_compute_nova_compute():
     metadata = Config(os.environ["CONFIGFILE"])
 
-    stage6_openstack_nova_compute(metadata.containers[env.host_string]["ip"])
+    stage6_openstack_compute_nova_compute(metadata.containers[env.host_string]["ip"])
 
     run("""
 
@@ -884,11 +886,13 @@ for i in $(seq 1 12); do
     sleep 1
 done
 
+sleep 10
+
 ps axufwwwww | grep -v grep | grep nova-compute
 
 """)
 
-def stage6_openstack_nova_compute(compute_ip):
+def stage6_openstack_compute_nova_compute(compute_ip):
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
