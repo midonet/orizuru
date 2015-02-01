@@ -794,10 +794,6 @@ done
 
 nova-manage db sync
 
-sync
-
-sleep 10
-
 cd /var/run
 
 mkdir -p /var/run/nova
@@ -807,24 +803,6 @@ mkdir -p /var/lock/nova
 chown -R nova:root /var/lock/nova/
 
 chmod 0777 /var/run/screen
-
-for SUBSERVICE in "api" "cert" "consoleauth" "scheduler" "conductor" "novncproxy"; do
-    if [[ "${SUBSERVICE}" == "novncproxy" ]]; then
-        SUBSERVICE_PARAMS="--web /usr/share/novnc/"
-    fi
-
-    ps axufwwwwww | grep -v grep | grep -- "${SERVICE}-${SUBSERVICE}" || \
-        screen -S "nova-${SUBSERVICE}" -d -m -- \
-            start-stop-daemon --start --chuid nova \
-                --exec "/usr/bin/nova-${SUBSERVICE}" -- --config-file=/etc/nova/nova.conf ${SUBSERVICE_PARAMS}
-
-    for i in $(seq 1 12); do
-        ps axufwwwww | grep -v grep | grep "${SERVICE}-${SUBSERVICE}" && break || true
-        sleep 1
-    done
-
-    ps axufwwwwww | grep -v grep | grep -- "${SERVICE}-${SUBSERVICE}"
-done
 
 rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
@@ -844,6 +822,31 @@ rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
         service.upper(),
         service.upper()
     ))
+
+    for service in ['nova']:
+        for subservice in ['api', 'cert', 'consoleauth', 'scheduler', 'conductor', 'novncproxy']:
+            run("""
+SERVICE="%s"
+SUBSERVICE="%s"
+
+if [[ "${SUBSERVICE}" == "novncproxy" ]]; then
+    SUBSERVICE_PARAMS="--web /usr/share/novnc/"
+fi
+
+ps axufwwwwww | grep -v grep | grep -- "${SERVICE}-${SUBSERVICE}" || \
+    screen -S "${SERVICE}-${SUBSERVICE}" -d -m -- start-stop-daemon --start --chuid ${SERVICE} \
+        --exec "/usr/bin/${SERVICE}-${SUBSERVICE}" -- --config-file=/etc/${SERVICE}/${SERVICE}.conf ${SUBSERVICE_PARAMS}
+
+for i in $(seq 1 24); do
+    ps axufwwwww | grep -v grep | grep "${SERVICE}-${SUBSERVICE}" && break || true
+    sleep 1
+done
+
+sleep 10
+
+ps axufwwwwww | grep -v grep | grep -- "${SERVICE}-${SUBSERVICE}"
+
+""" % (service, subservice))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

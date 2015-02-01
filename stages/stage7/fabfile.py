@@ -801,7 +801,7 @@ EOF
 
 midonet-cli -e 'tunnel-zone name gre member list' | grep "${IP}"
 
-""" (debug, name, ip))
+""" % (debug, name, ip))
 
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
