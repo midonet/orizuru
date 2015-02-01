@@ -37,22 +37,6 @@ def stage1pingcheck():
 
     Orizuru(metadata).pingcheck()
 
-def stage1zonefile():
-    metadata = Config(os.environ["CONFIGFILE"])
-
-    Orizuru(metadata).zonefile()
-
-    # do not remove this or you will have the word "Done." in your zonefile (thanks fabric)
-    sys.exit(0)
-
-def stage1hostsfile():
-    metadata = Config(os.environ["CONFIGFILE"])
-
-    Orizuru(metadata).hostsfile()
-
-    # do not remove this.
-    sys.exit(0)
-
 def stage1sshcheck():
     metadata = Config(os.environ["CONFIGFILE"])
 

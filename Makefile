@@ -44,14 +44,19 @@ sshconfig:
 	mkdir -pv $(shell dirname $(SSHCONFIG))
 	$(FAB) > $(SSHCONFIG)
 
-stage1: sshconfig
-	@figlet UPGRADE SYSTEMS || true
+zonefile:
 	mkdir -pv $(shell dirname $(ZONEFILE))
 	cat $(ZONEFILE_TEMPLATE) > $(ZONEFILE)
-	$(FAB)zonefile >> $(ZONEFILE)
+	$(FAB) >> $(ZONEFILE)
+
+etchosts:
 	mkdir -pv $(shell dirname $(HOSTSFILE))
-	$(FAB)hostsfile > $(HOSTSFILE)
-	./stages/$@/bin/localips.sh >> $(HOSTSFILE)
+	$(FAB) > $(HOSTSFILE).NEW
+	./stages/$@/bin/localips.sh >> $(HOSTSFILE).NEW
+	mv $(HOSTSFILE).NEW $(HOSTSFILE)
+
+stage1: sshconfig
+	@figlet UPGRADE SYSTEMS || true
 	test -f "$(TMPDIR)/.SUCCESS_$(@)" || $(FAB)pingcheck
 	test -f "$(TMPDIR)/.SUCCESS_$(@)" || $(FAB)sshcheck
 	$(RUNSTAGE)

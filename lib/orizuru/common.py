@@ -36,7 +36,7 @@ class Orizuru(object):
 
     def orizuru(self):
         self.zonefile()
-        self.hostsfile()
+        self.etchosts()
         self.sshconfig()
         self.pingcheck()
         self.connectcheck()
@@ -66,10 +66,10 @@ class Orizuru(object):
             puts("%s IN A %s" % (container, container_ip))
             puts("%s.%s.dockernet IN A %s" % (role, server, container_ip))
 
-    def hostsfile(self):
+    def etchosts(self):
         for server in sorted(self._metadata.servers):
-            puts("%s %s.%s" % (self._metadata.servers[server]["ip"], server, self._metadata.config["domain"]))
-            puts("%s.%s %s.tinc.%s %s" % (self._metadata.config["vpn_base"], self._metadata.config["idx"][server], server, self._metadata.config["domain"], server))
+            puts("%s %s.%s %s" % (self._metadata.servers[server]["ip"], server, self._metadata.config["domain"], server))
+            puts("%s.%s %s.tinc.%s" % (self._metadata.config["vpn_base"], self._metadata.config["idx"][server], server, self._metadata.config["domain"]))
             puts("%s %s.dockernet.%s" % (CIDR(self._metadata.servers[server]["dockernet"])[1], server, self._metadata.config["domain"]))
 
         for container in sorted(self._metadata.containers):
@@ -77,8 +77,8 @@ class Orizuru(object):
             container_ip = self._metadata.containers[container]["ip"]
             server = self._metadata.containers[container]["server"]
 
-            puts("%s %s.%s" % (container_ip, role, server))
             puts("%s %s_%s.%s %s_%s" % (container_ip, role, server, self._metadata.config["domain"], role, server))
+            puts("%s %s.%s" % (container_ip, role, server))
             puts("%s %s.%s.dockernet.%s" % (container_ip, role, server, self._metadata.config["domain"]))
 
     def sshconfig(self):
