@@ -29,13 +29,12 @@ all: start passwordcache preflight stage1 stage3 stage4 stage5 stage6 stage7 suc
 
 include include/orizuru.mk
 
+PREREQUISITES = sshconfig zonefile etchosts
+
 passwordcache:
 	test -f $(PASSWORDCACHE) || $(BINDIR)/mkpwcache.sh | tee $(PASSWORDCACHE)
 
 preflight: pipinstalled pipdeps
-
-dumpconfig:
-	make sshconfig 2>&1
 
 ci:
 	bin/ci.sh
@@ -55,7 +54,7 @@ etchosts:
 	./stages/$@/bin/localips.sh >> $(HOSTSFILE).NEW
 	mv $(HOSTSFILE).NEW $(HOSTSFILE)
 
-stage1: sshconfig
+stage1: $(PREREQUISITES)
 	@figlet UPGRADE SYSTEMS || true
 	test -f "$(TMPDIR)/.SUCCESS_$(@)" || $(FAB)pingcheck
 	test -f "$(TMPDIR)/.SUCCESS_$(@)" || $(FAB)sshcheck
@@ -63,37 +62,37 @@ stage1: sshconfig
 
 reboot: stage2
 
-info: sshconfig
+info: $(PREREQUISITES)
 	@clear
 	@$(FAB):admin_password="$(shell grep ADMIN_PASS $(PASSWORDCACHE) | awk -F'=' '{print $$2;}')"
 	@test -f $(TMPDIR)/.SUCCESS_stage1 || sleep 10
 
-stage2: sshconfig
+stage2: $(PREREQUISITES)
 	$(RUNSTAGE)
 	rm $(TMPDIR)/.SUCCESS_$(@)
 
-stage3: sshconfig
+stage3: $(PREREQUISITES)
 	@figlet SET UP VPN || true
 	mkdir -pv "$(TMPDIR)/etc/tinc"
 	$(RUNSTAGE)
 
-stage4: sshconfig
+stage4: $(PREREQUISITES)
 	@figlet CONFIGURE CONTAINERS || true
 	$(RUNSTAGE)
 
-stage5: sshconfig
+stage5: $(PREREQUISITES)
 	@figlet UPGRADE CONTAINERS || true
 	test -f "$(TMPDIR)/.SUCCESS_$(@)" || $(FAB)pingcheck
 	$(RUNSTAGE)
 
-stage6: sshconfig
+stage6: $(PREREQUISITES)
 	@figlet INSTALL OPENSTACK || true
 	mkdir -pv $(TMPDIR)/img
 	cp img/favicon.ico $(TMPDIR)/img/favicon.ico
 	cp img/midokura.png $(TMPDIR)/img/midokura.png
 	$(RUNSTAGE)
 
-stage7: sshconfig
+stage7: $(PREREQUISITES)
 	@figlet INSTALL MIDONET || true
 	$(RUNSTAGE)
 
@@ -117,17 +116,18 @@ success:
 	@echo run \'make info\' to see the urls and admin password
 	@echo
 
-clean: sshconfig cleanlocks
+clean: $(PREREQUISITES) cleanlocks
 	test -n "$(TMPDIR)" && rm -rfv "$(TMPDIR)"/.SUCCESS_*
 
-cleanlocks: sshconfig
+cleanlocks: $(PREREQUISITES)
 	$(FAB) || true
 
-cleancontainerlocks: sshconfig
+cleancontainerlocks: $(PREREQUISITES)
 	$(FAB) || true
 
-distclean: sshconfig cleanup clean
+distclean: $(PREREQUISITES) cleanup clean
 	test -n "$(TMPDIR)" && rm -rfv "$(TMPDIR)"
 	mkdir -pv "$(TMPDIR)"
 	find $(SRCDIR) -type f -path '*.pyc' -delete
-	make sshconfig
+	make $(PREREQUISITES)
+
