@@ -430,3 +430,5 @@ exit 0
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
+    puts(green("waiting for other servers to finish their container bootstrapping"))
+
