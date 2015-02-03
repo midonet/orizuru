@@ -62,6 +62,9 @@ stage1: $(PREREQUISITES)
 
 reboot: stage2
 
+poweroff: $(PREREQUISITES)
+	$(RUNSTAGE); rm $(TMPDIR)/.SUCCESS_$(@)
+
 info: $(PREREQUISITES)
 	@clear
 	@$(FAB):admin_password="$(shell grep ADMIN_PASS $(PASSWORDCACHE) | awk -F'=' '{print $$2;}')"
