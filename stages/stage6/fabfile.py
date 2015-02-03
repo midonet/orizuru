@@ -835,30 +835,30 @@ fi
 
 mkdir -pv /etc/rc.local.d
 
-cat >/etc/rc.local.d/${SERVICE}-${SUBSERVICE}.sh<<EOF
+cat >/etc/rc.local.d/orizuru-${SERVICE}-${SUBSERVICE}.sh<<EOF
 #!/bin/bash
 
 while(true); do
-    ps axufwwwwwwww | grep -v grep | grep -- "${SERVICE}-${SUBSERVICE}" || \
-        screen -S "${SERVICE}-${SUBSERVICE}" -d -m -- start-stop-daemon --start --chuid ${SERVICE} \
+    ps axufwwwwwwww | grep -v grep | grep -v "orizuru-${SERVICE}-${SUBSERVICE}.sh" | grep -- "${SERVICE}-${SUBSERVICE}" || \
+        start-stop-daemon --start --chuid ${SERVICE} \
             --exec "/usr/bin/${SERVICE}-${SUBSERVICE}" -- --config-file=/etc/${SERVICE}/${SERVICE}.conf ${SUBSERVICE_PARAMS}
     sleep 2
 done
 
 EOF
 
-chmod 0755 /etc/rc.local.d/${SERVICE}-${SUBSERVICE}.sh
+chmod 0755 /etc/rc.local.d/orizuru-${SERVICE}-${SUBSERVICE}.sh
 
-/etc/rc.local.d/${SERVICE}-${SUBSERVICE}.sh
+screen -S "${SERVICE}-${SUBSERVICE}" -d -m -- /etc/rc.local.d/orizuru-${SERVICE}-${SUBSERVICE}.sh
 
 for i in $(seq 1 24); do
-    ps axufwwwww | grep -v grep | grep "${SERVICE}-${SUBSERVICE}" && break || true
+    ps axufwwwww | grep -v grep | grep -v "orizuru-${SERVICE}-${SUBSERVICE}.sh" | grep "${SERVICE}-${SUBSERVICE}" && break || true
     sleep 1
 done
 
 sleep 10
 
-ps axufwwwwww | grep -v grep | grep -- "${SERVICE}-${SUBSERVICE}"
+ps axufwwwwww | grep -v grep | grep -v "orizuru-${SERVICE}-${SUBSERVICE}.sh" | grep -- "${SERVICE}-${SUBSERVICE}"
 
 """ % (service, subservice))
 
