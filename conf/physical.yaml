@@ -95,7 +95,6 @@ roles:
 
     physical_openstack_compute:
     - os003
-    - os004
     - os005
 
 servers:
@@ -130,10 +129,11 @@ servers:
         ip: 192.168.5.101
         dockernet: 192.168.101.0/24
 
-    # 192.168.5.107 edxaq.maas (00:25:22:ff:4b:ea) cpu: 2 memory: 16384 status: 6
-    os004:
-        ip: 192.168.5.107
-        dockernet: 192.168.107.0/24
+# disk /dev/sda died, no time for fixing it right now
+#    # 192.168.5.107 edxaq.maas (00:25:22:ff:4b:ea) cpu: 2 memory: 16384 status: 6
+#    os004:
+#        ip: 192.168.5.107
+#        dockernet: 192.168.107.0/24
 
    # 192.168.5.118 trgbe.maas (00:04:4b:14:ae:6d,00:04:4b:14:ae:6b) cpu: 1 memory: 6GB status: 6
     os005:
