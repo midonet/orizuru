@@ -64,7 +64,7 @@ roles:
     - gw003
 
     midonet_api:
-    - os002
+    - os001
 
     midonet_manager:
     - os001
@@ -82,7 +82,7 @@ roles:
     - os001
 
     openstack_neutron:
-    - os002
+    - os001
 
     openstack_glance:
     - os001
@@ -94,6 +94,9 @@ roles:
     - os001
 
     physical_openstack_compute:
+    - os002
+    - os003
+    - os004
     - os005
 
 servers:
