@@ -39,7 +39,8 @@ for PASS in MYSQL_DATABASE_PASSWORD \
   TROVE_DBPASS \
   TROVE_PASS \
   MIDONET_PASS \
-  NEUTRON_METADATA_SHARED_SECRET
+  NEUTRON_METADATA_SHARED_SECRET \
+  SWIFT_PASS
 do
   if [[ ! "$(env | grep "^${PASS}")" == "" ]]; then
     echo "export $(env | grep "^${PASS}")"

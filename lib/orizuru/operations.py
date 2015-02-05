@@ -235,6 +235,7 @@ class Install(object):
         self._metadata = metadata
 
     def install(self):
+        self.rsyslog()
         self.screen()
         self.login_stuff()
         self.apt_get_update()
@@ -355,6 +356,74 @@ fi
     def common_packages(self):
         cuisine.package_ensure(self._metadata.config["common_packages"])
 
+    def rsyslog(self):
+
+        cuisine.package_ensure("rsyslog")
+
+        controller_name = self._metadata.roles["openstack_controller"][0]
+        controller_ip_suffix = self._metadata.config["idx"][controller_name]
+        controller_ip = "%s.%s" % (self._metadata.config["vpn_base"], controller_ip_suffix)
+
+        if env.host_string <> controller_name:
+            cuisine.file_write("/etc/rsyslog.conf", """
+
+$KLogPermitNonKernelFacility on
+$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+$RepeatedMsgReduction on
+$FileOwner syslog
+$FileGroup adm
+$FileCreateMode 0640
+$DirCreateMode 0755
+$Umask 0022
+$PrivDropToUser syslog
+$PrivDropToGroup syslog
+$WorkDirectory /var/spool/rsyslog
+$IncludeConfig /etc/rsyslog.d/*.conf
+$ModLoad imuxsock
+$ModLoad imklog
+
+*.* @%s:514
+*.* @@%s:514
+""" % (controller_ip, controller_ip))
+
+        else:
+            cuisine.file_write("/etc/rsyslog.conf", """
+
+$ModLoad imuxsock # provides support for local system logging
+$ModLoad imklog   # provides kernel logging support
+
+$KLogPermitNonKernelFacility on
+
+$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+
+$RepeatedMsgReduction on
+
+$FileOwner syslog
+$FileGroup adm
+$FileCreateMode 0640
+$DirCreateMode 0755
+$Umask 0022
+$PrivDropToUser syslog
+$PrivDropToGroup syslog
+
+$WorkDirectory /var/spool/rsyslog
+
+$IncludeConfig /etc/rsyslog.d/*.conf
+
+$ModLoad imudp
+
+$UDPServerRun 514
+
+$template FILENAME,"/var/log/%fromhost-ip%/syslog.log"
+
+*.* ?FILENAME
+
+""")
+
+        run("service rsyslog restart")
+
+        run("logger ping")
+
     def newrelic(self):
         if env.host_string not in self._metadata.containers:
             run("rm -fv /etc/newrelic/nrsysmond.cfg* || true")
@@ -395,6 +464,8 @@ ps axufwwwwwwwww | grep -v grep | grep nrsysmond
     ))
 
     def cloud_repository(self):
+        run("rm -rf /etc/apt/sources.list.d/cloudarchive-*")
+
         cuisine.package_ensure(["python-software-properties", "software-properties-common", "ubuntu-cloud-keyring"])
 
         self.dist_upgrade()
@@ -422,6 +493,8 @@ exit 0
         self._metadata.config["openstack_release"],
         self._metadata.config["apt-cacher"]
     ))
+
+        self.dist_upgrade()
 
     @classmethod
     def dist_upgrade(cls):

@@ -615,6 +615,7 @@ KEYSTONE_IP="%s"
 MIDONET_API_IP="%s"
 MIDONET_API_OUTER_IP="%s"
 ZOOKEEPER_HOSTS="%s"
+MIDONET_API_URL="%s"
 
 PUPPET_NODE_DEFINITION="$(mktemp)"
 
@@ -638,7 +639,7 @@ node $(hostname) {
     midonet_api::configure {"$(hostname)":
         keystone_admin_token => "${ADMIN_TOKEN}",
         keystone_service_host => "${KEYSTONE_IP}",
-        rest_api_base_url => "http://${MIDONET_API_OUTER_IP}:8080/midonet-api",
+        rest_api_base_url => "http://${MIDONET_API_OUTER_IP}:${MIDONET_API_URL}",
         zookeeper_hosts => "${ZOOKEEPER_HOSTS}"
     }
     ->
@@ -652,6 +653,46 @@ EOF
 #
 puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
 
+#
+# patch the port of midonet-api to be at :8081 (swift is on 8080)
+#
+cat>/etc/tomcat6/server.xml<<EOF
+<?xml version='1.0' encoding='utf-8'?>
+
+<Server port="8005" shutdown="SHUTDOWN">
+
+  <Listener className="org.apache.catalina.core.JasperListener" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.ServerLifecycleListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+
+  <GlobalNamingResources>
+
+    <Resource name="UserDatabase"
+        auth="Container"
+        type="org.apache.catalina.UserDatabase"
+        description="User database that can be updated and saved"
+        factory="org.apache.catalina.users.MemoryUserDatabaseFactory" pathname="conf/tomcat-users.xml" />
+
+  </GlobalNamingResources>
+
+  <Service name="Catalina">
+    <Connector port="8081" protocol="HTTP/1.1" connectionTimeout="120000" URIEncoding="UTF-8" redirectPort="8443" />
+
+    <Engine name="Catalina" defaultHost="localhost">
+
+      <Realm className="org.apache.catalina.realm.UserDatabaseRealm" resourceName="UserDatabase"/>
+      <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true" xmlValidation="false" xmlNamespaceAware="false"></Host>
+
+    </Engine>
+  </Service>
+
+</Server>
+
+EOF
+
+service tomcat6 restart
+
 """ % (
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
@@ -660,7 +701,8 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"],
         metadata.containers[env.host_string]["ip"],
         metadata.servers[metadata.roles["midonet_api"][0]]["ip"],
-        ",".join(map(lambda zk: str(metadata.containers[zk]["ip"]), sorted(metadata.roles["container_zookeeper"])))
+        ",".join(map(lambda zk: str(metadata.containers[zk]["ip"]), sorted(metadata.roles["container_zookeeper"]))),
+        metadata.services["midonet"]["internalurl"]
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
@@ -712,7 +754,7 @@ node $(hostname) {
     }
     ->
     ${PUPPET_MODULE}::configure {"$(hostname)":
-        rest_api_base => "http://${API_OUTER_IP}:8080",
+        rest_api_base => "http://${API_OUTER_IP}:8081",
     }
     ->
     ${PUPPET_MODULE}::start {"$(hostname)":
@@ -766,7 +808,7 @@ ADMIN_TENANT_ID="$(keystone tenant-list | grep admin | awk -F'|' '{print $2;}' |
 
 cat >/root/.midonetrc<<EOF
 [cli]
-api_url = http://%s:8080/midonet-api
+api_url = http://%s:%s
 username = admin
 password = ${ADMIN_PASS}
 tenant = ${ADMIN_TENANT_ID}
@@ -776,7 +818,8 @@ EOF
 """ % (
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
-        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"]
+        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
+        metadata.services["midonet"]["internalurl"]
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")

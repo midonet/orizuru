@@ -85,4 +85,11 @@ def info(admin_password="test"):
                 )))
         puts("")
 
+    puts("log in to %s (%s) and tail /var/log/syslog to see syslog of all hosts and containers" % (
+        metadata.roles["openstack_controller"][0],
+        metadata.servers[metadata.roles["openstack_controller"][0]]["ip"]
+        ))
+
+    puts("")
+
     sys.exit(0)

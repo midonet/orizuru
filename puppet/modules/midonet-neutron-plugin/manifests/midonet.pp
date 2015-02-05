@@ -18,7 +18,7 @@ class neutron::plugins::midonet (
   $core_plugin                = 'midonet.neutron.plugin.MidonetPluginV2',
   $plugin_path                = '/etc/neutron/plugins/midonet/midonet.ini'
   $midonet_api_address        = '127.0.0.1',
-  $midonet_api_port           = '8080',
+  $midonet_api_port           = '8081',
   $midonet_keystone_username,
   $midonet_keystone_password,
   $keystone_admin_tenant_name = 'admin'

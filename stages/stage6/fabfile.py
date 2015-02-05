@@ -492,6 +492,8 @@ REGION="%s"
 
 MIDONET_API="%s"
 
+MIDONET_API_URL="%s"
+
 source /etc/keystone/KEYSTONERC_ADMIN
 
 SERVICE_TENANT_ID="$(keystone tenant-list | grep 'service' | awk -F'|' '{print $2;}' | xargs -n1 echo)"
@@ -581,7 +583,7 @@ CONFIGFILE="/etc/neutron/metadata_agent.ini"
 # Add the midonet section to the midonet plugin and the dhcp agent ini
 #
 for CONFIGFILE in "${MIDONET_PLUGIN}" "/etc/neutron/dhcp_agent.ini"; do
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "midonet_uri" "http://${MIDONET_API}:8080/midonet-api"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "midonet_uri" "http://${MIDONET_API}:${MIDONET_API_URL}"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "username" "midonet"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "password" "${MIDONET_PASS}"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "project_id" "service"
@@ -610,7 +612,8 @@ sync
         metadata.containers[metadata.roles["container_openstack_rabbitmq"][0]]["ip"],
         metadata.containers[metadata.roles["container_openstack_controller"][0]]["ip"],
         metadata.config["region"],
-        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"]
+        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
+        metadata.services["midonet"]["internalurl"]
     ))
 
     puts(green("running neutron-db-manage"))
@@ -956,6 +959,8 @@ NEUTRON_IP="%s"
 
 COMPUTE_VPN_IP="%s"
 
+MIDONET_API_URL="%s"
+
 #
 # nova compute
 #
@@ -1005,7 +1010,7 @@ for XSERVICE in "${SERVICE}"; do
     # used for midonet
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "libvirt_vif_driver" "nova.virt.libvirt.vif.LibvirtGenericVIFDriver"
 
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "midonet_uri" "http://${MIDONET_API}:8080/midonet-api"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "midonet_uri" "http://${MIDONET_API}:${MIDONET_API_URL}"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "username" "midonet"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "password" "${MIDONET_PASS}"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "project_id" "service"
@@ -1084,6 +1089,7 @@ service libvirt-bin restart
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
         metadata.containers[metadata.roles["container_openstack_neutron"][0]]["ip"],
         compute_vpn_ip,
+        metadata.services["midonet"]["internalurl"],
         service.upper()
     ))
 
@@ -1272,7 +1278,10 @@ def stage6_container_openstack_keystone_create_service_entity_api_endpoints():
             if service == 'midonet':
                 service_ip = metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"]
             else:
-                service_ip = metadata.containers[metadata.roles["container_openstack_%s" % service_alias][0]]["ip"]
+                if service == 'swift':
+                    service_ip = metadata.containers[metadata.roles["container_openstack_controller"][0]]["ip"]
+                else:
+                    service_ip = metadata.containers[metadata.roles["container_openstack_%s" % service_alias][0]]["ip"]
 
             run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
@@ -1700,12 +1709,23 @@ mysql-server-5.6 mysql-server/root_password_again password ${MYSQL_PASSWORD}
 
 EOF
 
+DEBIAN_FRONTEND=noninteractive apt-get -q --yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install mariadb-server || true
+
+mkdir -pv /var/lib/mysql
+touch /var/lib/mysql/debian-x.flag
+
+dpkg --configure -a
+
+apt-get -f install
+
+DEBIAN_FRONTEND=noninteractive apt-get -q --yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install mariadb-server
+
 """ % (
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read()
     ))
 
-    cuisine.package_ensure(["mariadb-server", "python-mysqldb"])
+    cuisine.package_ensure("python-mysqldb")
 
     configfile = "/etc/mysql/my.cnf"
 

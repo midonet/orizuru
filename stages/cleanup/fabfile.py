@@ -66,11 +66,18 @@ docker images | grep "${TEMPLATE_NAME}" && docker rmi -f "${TEMPLATE_NAME}" || t
 
 rm -fv /var/run/netns/docker_*_"${SERVER_NAME}"
 
+""" %(env.host_string, container))
+
+    run("""
+
 rm -fv /etc/newrelic/nrsysmond.cfg
+rm -fv /etc/apt/sources.list.d/cloudarchive*
+rm -fv /etc/apt/sources.list.d/newrelic*
+rm -fv /etc/apt/sources.list.d/mido*
 
-exit 0
+apt-get update
 
-""" % (env.host_string, container))
+""")
 
     puts(red("destroying all containers"))
     run("""

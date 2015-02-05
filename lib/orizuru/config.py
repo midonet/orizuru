@@ -126,10 +126,17 @@ class Config(object):
         services["neutron"]["type"] = "network"
         services["neutron"]["description"] = "OpenStack Networking"
 
+        services["swift"] = {}
+        services["swift"]["publicurl"] = "8080"
+        services["swift"]["internalurl"] = "8080"
+        services["swift"]["adminurl"] = "8080"
+        services["swift"]["type"] = "object-store"
+        services["swift"]["description"] = "OpenStack Object Store"
+
         services["midonet"] = {}
-        services["midonet"]["publicurl"] = "8080"
-        services["midonet"]["internalurl"] = "8080"
-        services["midonet"]["adminurl"] = "8080"
+        services["midonet"]["publicurl"] = "8081/midonet-api"
+        services["midonet"]["internalurl"] = "8081/midonet-api"
+        services["midonet"]["adminurl"] = "8081/midonet-api"
         services["midonet"]["type"] = "midonet"
         services["midonet"]["description"] = "MidoNet API Service"
 

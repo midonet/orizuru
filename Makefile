@@ -100,10 +100,19 @@ stage7: $(PREREQUISITES)
 	$(RUNSTAGE)
 
 #
-# do not run this yet, it is still experimental
+# tempest, experimental
 #
-#stage8: sshconfig
-#	$(RUNSTAGE)
+stage8: sshconfig
+	$(RUNSTAGE)
+
+#
+# swift, experimental
+#
+# swift is needed for letting an openstack cloud be a juju environments platform target,
+# it is used for storing the deployment state
+#
+stage9: sshconfig
+	$(RUNSTAGE)
 
 start:
 	mkdir -pv $(TMPDIR)

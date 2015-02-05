@@ -42,20 +42,6 @@
     <param-value>admin</param-value>
   </context-param>
 
-  <!-- Mock auth configuration -->
-  <context-param>
-    <param-name>mock_auth-admin_token</param-name>
-    <param-value>999888777666</param-value>
-  </context-param>
-  <context-param>
-    <param-name>mock_auth-tenant_admin_token</param-name>
-    <param-value>999888777666</param-value>
-  </context-param>
-  <context-param>
-    <param-name>mock_auth-tenant_user_token</param-name>
-    <param-value>999888777666</param-value>
-  </context-param>
-
   <!-- Keystone configuration -->
   <context-param>
     <param-name>keystone-service_protocol</param-name>
@@ -79,24 +65,6 @@
   <context-param>
     <param-name>keystone-tenant_name</param-name>
     <param-value><%= @keystone_tenant_name -%></param-value>
-  </context-param>
-
-  <!-- CloudStack auth configuration -->
-  <context-param>
-    <param-name>cloudstack-api_base_uri</param-name>
-    <param-value>http://127.0.0.1:8080</param-value>
-  </context-param>
-  <context-param>
-    <param-name>cloudstack-api_path</param-name>
-    <param-value>/client/api?</param-value>
-  </context-param>
-  <context-param>
-    <param-name>cloudstack-api_key</param-name>
-    <param-value></param-value>
-  </context-param>
-  <context-param>
-    <param-name>cloudstack-secret_key</param-name>
-    <param-value></param-value>
   </context-param>
 
   <!-- Zookeeper configuration -->
@@ -137,14 +105,12 @@
   <!-- Servlet Listner -->
   <listener>
      <listener-class>
-         <!-- Use Jersey's Guice compatible context listener -->
          org.midonet.api.servlet.JerseyGuiceServletContextListener
      </listener-class>
   </listener>
 
   <!-- Servlet filter -->
   <filter>
-     <!-- Filter to enable Guice -->
     <filter-name>Guice Filter</filter-name>
     <filter-class>com.google.inject.servlet.GuiceFilter</filter-class>
   </filter>
