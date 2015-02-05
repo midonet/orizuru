@@ -127,8 +127,8 @@ class Config(object):
         services["neutron"]["description"] = "OpenStack Networking"
 
         services["swift"] = {}
-        services["swift"]["publicurl"] = "8080"
-        services["swift"]["internalurl"] = "8080"
+        services["swift"]["publicurl"] = "8080/v1/AUTH_%(tenant_id)s"
+        services["swift"]["internalurl"] = "8080/v1/AUTH_%(tenant_id)s"
         services["swift"]["adminurl"] = "8080"
         services["swift"]["type"] = "object-store"
         services["swift"]["description"] = "OpenStack Object Store"

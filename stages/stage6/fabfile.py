@@ -1655,6 +1655,11 @@ set -e
 SERVICE_ACCOUNT="%s"
 SERVICE_PASSWORD="${%s_DBPASS}"
 
+# TODO test and enable this
+#if [[ "" == "${SERVICE_PASSWORD}" ]]; then
+#    exit 0
+#fi
+
 mysql -uroot <<EOF
 
 CREATE DATABASE IF NOT EXISTS ${SERVICE_ACCOUNT};

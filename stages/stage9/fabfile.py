@@ -87,7 +87,7 @@ mkdir -p /etc/swift
 cd /etc/swift
 
 swift-ring-builder ${RING}.builder add r1z1-${COMPUTE_IP}:${PORT}/sdx1 100
-swift-ring-builder ${RING}.builder add r1z1-${COMPUTE_IP}:${PORT}/sdy1 100
+swift-ring-builder ${RING}.builder add r1z1-${COMPUTE_IP}:${PORT}/sdx2 100
 
 """ % (compute_ip, compute_node, rings[ring], ring))
 
@@ -119,7 +119,7 @@ cd "${TMPDIR}"
 
 mkdir -pv ${CONTROLLER}/etc/swift
 
-rsync -avpx -e 'ssh -F .ssh/config' root@${CONTROLLER}:/etc/swift/. ./${CONTROLLER}/etc/swift/.
+rsync -avpx -e 'ssh -F .ssh/config -o StrictHostKeyChecking=no' root@${CONTROLLER}:/etc/swift/. ./${CONTROLLER}/etc/swift/.
 
 """ % (os.environ["TMPDIR"], env.host_string))
 
@@ -133,7 +133,7 @@ cd "${TMPDIR}"
 
 ssh -F .ssh/config root@${COMPUTE_NODE} -- mkdir -p /etc/swift
 
-rsync -avpx -e 'ssh -F .ssh/config' ./${CONTROLLER}/etc/swift/*.gz root@${COMPUTE_NODE}:/etc/swift/.
+rsync -avpx -e 'ssh -F .ssh/config -o StrictHostKeyChecking=no' ./${CONTROLLER}/etc/swift/*.gz root@${COMPUTE_NODE}:/etc/swift/.
 
 """ % (os.environ["TMPDIR"], compute_node, env.host_string))
 
@@ -271,15 +271,16 @@ service rsync restart
 
     if env.host_string in metadata.roles["physical_openstack_compute"]:
         run("""
-for NODE in sdx1 sdy1; do
-    mkdir -p /srv/node/${NODE}
+for NODE in 1 2; do
+    mkdir -p /srv/node/sdx${NODE}
 
-    umount /srv/node/${NODE} || true
-    rm -vf /tmp/${NODE}.dd
-    dd if=/dev/zero of=/tmp/${NODE}.dd bs=4096 count=100000
+    umount /srv/node/sdx${NODE} || true
+    test -f /tmp/sdx${NODE}.dd || dd if=/dev/zero of=/tmp/sdx${NODE}.dd bs=4096 count=100000
 
-    mkfs.xfs /tmp/${NODE}.dd
-    mount -o noatime,nodiratime,nobarrier,logbufs=8 -t xfs /tmp/${NODE}.dd /srv/node/${NODE}
+    losetup /dev/loop${NODE} /tmp/sdx${NODE}.dd || true
+
+    mkfs.ext4 /dev/loop${NODE} || true
+    mount -o noatime,nodiratime,nobarrier,data=ordered -t ext4 /dev/loop${NODE} /srv/node/sdx${NODE}
 done
 
 """)
@@ -320,25 +321,16 @@ for TYPE in "proxy" "account" "container" "object"; do
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "expose_info" "true"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "log_name" "swift"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "log_facility" "LOG_LOCAL0"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "log_level" "DEBUG"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "log_facility" "LOG_LOCAL2"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "log_level" "INFO"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "log_headers" "true"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "log_requests" "true"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "log_address" "/dev/log"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "log_max_line_length" "0"
 
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:keystoneauth" "use" "egg:swift#keystoneauth"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:keystoneauth" "operator_roles" "admin,_member_"
-
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "paste.filter_factory" "keystonemiddleware.auth_token:filter_factory"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "auth_uri" "http://${KEYSTONE_IP}:5000/v2.0"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "identity_uri" "http://${KEYSTONE_IP}:35357"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "admin_tenant_name" "service"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "admin_user" "swift"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "admin_password" "${SWIFT_PASS}"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "delay_auth_decision"  "true"
-
     if [[ ! "proxy" == "${TYPE}" ]]; then
         "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "devices" "/srv/node"
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "mount_check" "false"
     fi
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:recon" "use" "egg:swift#recon"
@@ -349,38 +341,50 @@ done
 touch "/etc/swift/container-sync-realms.conf"
 
 CONFIGFILE="/etc/swift/proxy-server.conf"
+
 "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "bind_port" "8080"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "workers" "8"
+
 "${CONFIGHELPER}" set "${CONFIGFILE}" "pipeline:main" "pipeline" "tempauth authtoken cache healthcheck keystoneauth proxy-logging proxy-server"
 
 "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:cache" "memcache_servers" "127.0.0.1:11211"
-
-"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:tempauth" "use" "egg:swift#tempauth"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:tempauth" "log_name" "tempauth"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:tempauth" "log_facility" "LOG_LOCAL0"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:tempauth" "log_level" "DEBUG"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:tempauth" "log_headers" "true"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:tempauth" "log_address" "/dev/log"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:tempauth" "log_max_line_length" "0"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:tempauth" "user_admin_admin" "admin .admin .reseller_admin"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:tempauth" "auth_prefix" "/auth/"
-"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:tempauth" "token_life" "86400"
 
 "${CONFIGHELPER}" set "${CONFIGFILE}" "app:proxy-server" "allow_account_management" "true"
 "${CONFIGHELPER}" set "${CONFIGFILE}" "app:proxy-server" "account_autocreate" "true"
 "${CONFIGHELPER}" set "${CONFIGFILE}" "app:proxy-server" "use" "egg:swift#proxy"
 
+"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:keystoneauth" "use" "egg:swift#keystoneauth"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:keystoneauth" "operator_roles" "admin,_member_"
+
+"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "paste.filter_factory" "keystonemiddleware.auth_token:filter_factory"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "auth_uri" "http://${KEYSTONE_IP}:5000/v2.0"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "identity_uri" "http://${KEYSTONE_IP}:35357"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "admin_tenant_name" "service"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "admin_user" "swift"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "admin_password" "${SWIFT_PASS}"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "filter:authtoken" "delay_auth_decision"  "true"
+
 CONFIGFILE="/etc/swift/account-server.conf"
 "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "bind_port" "6002"
 "${CONFIGHELPER}" set "${CONFIGFILE}" "pipeline:main" "pipeline" "healthcheck recon account-server"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "app:account-server" "use" "egg:swift#account"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "account-replicator" "concurrency" "8"
 
 CONFIGFILE="/etc/swift/container-server.conf"
 "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "bind_port" "6001"
 "${CONFIGHELPER}" set "${CONFIGFILE}" "pipeline:main" "pipeline" "healthcheck recon container-server"
 "${CONFIGHELPER}" set "${CONFIGFILE}" "filter:recon" "container_recon" "true"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "app:container-server" "use" "egg:swift#container"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "app:container-server" "allow_versions" "true"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "container-replicator" "concurrency" "8"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "container-updater" "concurrency" "8"
 
 CONFIGFILE="/etc/swift/object-server.conf"
 "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "bind_port" "6000"
 "${CONFIGHELPER}" set "${CONFIGFILE}" "pipeline:main" "pipeline" "healthcheck recon object-server"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "app:object-server" "use" "egg:swift#object"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "object-replicator" "concurrency" "8"
+"${CONFIGHELPER}" set "${CONFIGFILE}" "object-updater" "concurrency" "8"
 
 """ % (
         metadata.config["debug"],
