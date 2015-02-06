@@ -35,6 +35,9 @@ export OS_MIDOKURA_ROOT_PASSWORD="new root password"
 make
 ```
 
+If you experience a lot of spurious ssh errors that could be a bug in paramiko ssh session handling (we see it alot during testing).
+What helps is running the installer from a second machine, not on the same host you are installing to.
+
 Writing your own config file
 ============================
 To set up the installation on several servers you should cd into the project directory and create a yaml file in the ./conf directory.
