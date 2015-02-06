@@ -20,12 +20,12 @@ config:
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
     # OS_MIDOKURA_REPOSITORY_PASS
-    midonet_repo: MEM # can be OSS or MEM
+    midonet_repo: OSS # can be OSS or MEM
 
     midonet_mem_version: 1.8
     midonet_mem_openstack_plugin_version: juno
 
-    midonet_oss_version: 2014.11
+    midonet_oss_version: 2015.01
     midonet_oss_openstack_plugin_version: juno
 
     openstack_release: juno

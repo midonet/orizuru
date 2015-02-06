@@ -132,6 +132,30 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
 
 /etc/init.d/zookeeper restart
 
+sleep 2
+
+ps axufwwwwwwwwwww | grep -v grep | grep -- '/usr/share/java/zookeeper.jar' && exit 0
+
+. /etc/zookeeper/conf/environment
+[ -d $ZOO_LOG_DIR ] || mkdir -p $ZOO_LOG_DIR
+chown $USER:$GROUP $ZOO_LOG_DIR
+
+[ -r /etc/default/zookeeper ] && . /etc/default/zookeeper
+if [ -z "$JMXDISABLE" ]; then
+    export JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.local.only=$JMXLOCALONLY"
+fi
+
+export JAVA_OPTS="${JAVA_OPTS} -Djava.net.preferIPv4Stack=true"
+
+chmod 0755 /usr/bin/screen
+chmod 0777 /var/run/screen
+
+screen -S zookeeper -d -m -- \
+    start-stop-daemon --start -c $USER --exec $JAVA --name zookeeper -- \
+        -cp $CLASSPATH $JAVA_OPTS -Dzookeeper.log.dir=${ZOO_LOG_DIR} -Dzookeeper.root.logger=${ZOO_LOG4J_PROP} $ZOOMAIN $ZOOCFG
+
+sleep 2
+
 ps axufwwwwwwwwwww | grep -v grep | grep -- '/usr/share/java/zookeeper.jar'
 
 """ % (
