@@ -120,6 +120,10 @@ stage10: $(PREREQUISITES)
 	@figlet VTEP || true
 	$(RUNSTAGE)
 
+uptime: $(PREREQUISITES)
+	$(RUNSTAGE)
+	rm $(TMPDIR)/.SUCCESS_$(@)
+
 start:
 	mkdir -pv $(TMPDIR)
 	@date > $(TMPDIR)/.START
