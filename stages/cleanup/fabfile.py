@@ -75,7 +75,7 @@ rm -fv /etc/apt/sources.list.d/cloudarchive*
 rm -fv /etc/apt/sources.list.d/newrelic*
 rm -fv /etc/apt/sources.list.d/mido*
 
-apt-get update
+# apt-get update 1>/dev/null
 
 """)
 
