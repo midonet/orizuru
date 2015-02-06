@@ -18,9 +18,19 @@ Please make sure that you have at least 4 cores (8 HT cores) and 16 GB memory on
 Also ssh root@localhost must work and the ssh fingerprint of the server should be saved in .ssh/known_hosts.
 
 The file that is used for this installation is called conf/localhost.yaml
+
+You need to replace the ip 127.0.0.1 in this file with the ip for your host before starting the installation:
+```
+servers:
+  os001:
+    ip: 146.185.187.4
+```
+
+Now you can set the root password, set the configfile and start
 ```
 git clone https://github.com/midonet/orizuru.git
 cd orizuru
+export CONFIGFILE=${PWD}/conf/localhost.yaml
 export OS_MIDOKURA_ROOT_PASSWORD="new root password"
 make
 ```
