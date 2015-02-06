@@ -72,6 +72,9 @@ roles:
     midonet_cli:
     - os001
 
+    midonet_vtep_sandbox:
+    - os001
+
     openstack_mysql:
     - os001
 

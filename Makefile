@@ -100,18 +100,24 @@ stage7: $(PREREQUISITES)
 	$(RUNSTAGE)
 
 #
-# tempest, experimental
+# tempest
 #
-stage8: sshconfig
+stage8: $(PREREQUISITES)
+	@figlet TEMPEST || true
 	$(RUNSTAGE)
 
 #
-# swift, experimental
+# swift
 #
-# swift is needed for letting an openstack cloud be a juju environments platform target,
-# it is used for storing the deployment state
+stage9: $(PREREQUISITES)
+	@figlet SWIFT || true
+	$(RUNSTAGE)
+
 #
-stage9: sshconfig
+# vtep logic
+#
+stage10: $(PREREQUISITES)
+	@figlet VTEP || true
 	$(RUNSTAGE)
 
 start:
