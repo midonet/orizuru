@@ -220,7 +220,7 @@ for TYPE in 'deb' 'deb-src'; do
     for realm in "main restricted" "universe" "multiverse"; do
         echo "${TYPE} ${XX}/${XD}.archive.ubuntu.com/ubuntu/ ${XC} ${realm}"
         echo "${TYPE} ${XX}/${XD}.archive.ubuntu.com/ubuntu/ ${XC}-updates ${realm}"
-        echo "${TYPE} http://security.archive.ubuntu.com/ubuntu/ ${XC}-security ${realm}"
+        echo "${TYPE} ${XX}/security.archive.ubuntu.com/ubuntu/ ${XC}-security ${realm}"
     done
 
     echo "${TYPE} ${XX}/${XD}.archive.ubuntu.com/ubuntu/ ${XC}-backports main restricted universe multiverse"

@@ -44,9 +44,20 @@ def stage10_container_midonet_vtep_sandbox():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    #
     # set up ovsdb-server in the vtep sandbox
     #
+    cuisine.package_ensure(["openvswitch-switch", "openvswitch-vtep", "vlan"])
+
+    run("""
+ip netns | xargs -n1 --no-run-if-empty ip netns del
+
+rm /etc/openvswitch/vtep.db
+rm /etc/openvswitch/conf.db
+
+/etc/init.d/openvswitch-switch restart
+/etc/init.d/openvswitch-vtep restart
+
+""")
 
     # TODO cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
