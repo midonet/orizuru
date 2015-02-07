@@ -195,7 +195,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         if env.host_string in self._metadata.containers:
             self.__lib_orizuru_operations_ubuntu_repo(self._metadata.config["container_os_release_codename"])
         else:
-           self.__lib_orizuru_operations_ubuntu_repo(self._metadata.config["os_release_codename"])
+            self.__lib_orizuru_operations_ubuntu_repo(self._metadata.config["os_release_codename"])
 
     def __lib_orizuru_operations_ubuntu_repo(self, codename):
 

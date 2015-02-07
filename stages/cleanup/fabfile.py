@@ -84,6 +84,12 @@ rm -fv /etc/apt/sources.list.d/mido*
 
 DOMAIN="%s"
 
+/etc/init.d/openvswitch-switch stop
+/etc/init.d/openvswitch-vtep stop
+
+rm -f /etc/openvswitch/vtep.db
+rm -f /etc/openvswitch/conf.db
+
 rm -rfv /etc/rc.local.d
 mkdir -pv /etc/rc.local.d
 

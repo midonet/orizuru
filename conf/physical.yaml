@@ -1,5 +1,10 @@
 config:
 
+    connect_script: physical.sh
+
+    # bind to this interface on the vtep
+    vtep_port: eth1
+
     midonet_puppet_modules_branch: agabert
 
     archive_country: de
@@ -72,8 +77,8 @@ roles:
     midonet_cli:
     - os001
 
-    midonet_vtep_sandbox:
-    - os001
+    vtep:
+    - os005
 
     openstack_mysql:
     - os001
@@ -100,7 +105,6 @@ roles:
     - os002
     - os003
     - os004
-    - os005
 
 servers:
 
