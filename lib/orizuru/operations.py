@@ -123,9 +123,9 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
             repo_flavor = "OSS"
 
         if "midonet_manager" in self._metadata.roles:
-            if env.host_string in self._metadata.roles["midonet_manager"]:
-                if not username == "":
-                    if not password == "":
+            if env.host_string in self._metadata.roles["container_midonet_manager"]:
+                if username <> "":
+                    if password <> "":
                         repo_flavor = "MEM"
 
         run("""
