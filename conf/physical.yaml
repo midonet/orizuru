@@ -1,5 +1,10 @@
 config:
 
+    connect_script: physical.sh
+
+    # bind to this interface on the vtep
+    vtep_port: eth1
+
     midonet_puppet_modules_branch: agabert
 
     archive_country: de

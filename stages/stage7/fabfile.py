@@ -1103,6 +1103,14 @@ def stage7_test_connectivity():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
+    if not "container_midonet_gateway" in metadata.roles:
+        if "connect_script" in metadata.config:
+            if not cuisine.file_exists("/tmp/.%s.connect_script.lck" % sys._getframe().f_code.co_name):
+                cuisine.file_upload("/tmp/%s" % metadata.config["connect_script"], "%s/../conf/%s" % (os.environ["TMPDIR"], metadata.config["connect_script"]))
+                puts(green("running connect script: %s" % metadata.config["connect_script"]))
+                run("/bin/bash /tmp/%s" % metadata.config["connect_script"])
+                cuisine.file_write("/tmp/.%s.connect_script.lck" % sys._getframe().f_code.co_name, "xoxo")
+
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 

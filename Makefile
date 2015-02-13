@@ -65,6 +65,12 @@ reboot: stage2
 poweroff: $(PREREQUISITES)
 	$(RUNSTAGE); rm $(TMPDIR)/.SUCCESS_$(@)
 
+rootlogins: $(PREREQUISITES)
+	$(RUNSTAGE); rm $(TMPDIR)/.SUCCESS_$(@)
+
+disks: $(PREREQUISITES)
+	$(RUNSTAGE); rm $(TMPDIR)/.SUCCESS_$(@)
+
 info: $(PREREQUISITES)
 	@clear
 	@$(FAB):admin_password="$(shell grep ADMIN_PASS $(PASSWORDCACHE) | awk -F'=' '{print $$2;}')"
@@ -100,19 +106,29 @@ stage7: $(PREREQUISITES)
 	$(RUNSTAGE)
 
 #
-# tempest, experimental
+# tempest
 #
-stage8: sshconfig
+stage8: $(PREREQUISITES)
+	@figlet TEMPEST || true
 	$(RUNSTAGE)
 
 #
-# swift, experimental
+# swift
 #
-# swift is needed for letting an openstack cloud be a juju environments platform target,
-# it is used for storing the deployment state
-#
-stage9: sshconfig
+stage9: $(PREREQUISITES)
+	@figlet SWIFT || true
 	$(RUNSTAGE)
+
+#
+# vtep logic
+#
+stage10: $(PREREQUISITES)
+	@figlet VTEP || true
+	$(RUNSTAGE)
+
+uptime: $(PREREQUISITES)
+	$(RUNSTAGE)
+	rm $(TMPDIR)/.SUCCESS_$(@)
 
 start:
 	mkdir -pv $(TMPDIR)

@@ -20,12 +20,12 @@ config:
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
     # OS_MIDOKURA_REPOSITORY_PASS
-    midonet_repo: MEM # can be OSS or MEM
+    midonet_repo: OSS # can be OSS or MEM
 
     midonet_mem_version: 1.8
     midonet_mem_openstack_plugin_version: juno
 
-    midonet_oss_version: 2014.11
+    midonet_oss_version: 2015.01
     midonet_oss_openstack_plugin_version: juno
 
     openstack_release: juno
@@ -54,9 +54,9 @@ roles:
     - gw003
 
     cassandra:
-    - cs001
-    - cs002
-    - cs003
+    - gw001
+    - gw002
+    - gw003
 
     midonet_gateway:
     - gw001
@@ -64,7 +64,7 @@ roles:
     - gw003
 
     midonet_api:
-    - os002
+    - os001
 
     midonet_manager:
     - os001
@@ -82,7 +82,7 @@ roles:
     - os001
 
     openstack_neutron:
-    - os002
+    - os001
 
     openstack_glance:
     - os001
@@ -94,6 +94,7 @@ roles:
     - os001
 
     openstack_compute:
+    - os002
     - os003
     - os004
     - os005
@@ -139,19 +140,4 @@ servers:
     os005:
         ip: 192.168.5.118
         dockernet: 192.168.118.0/24
-
-    # 192.168.5.113 rhf3b.maas (08:00:27:29:1a:fb) cpu: 1 memory: 1.5G status: 6
-    cs001:
-        ip: 192.168.5.113
-        dockernet: 192.168.113.0/24
-
-    # 192.168.5.114 bhhaq.maas (08:00:27:ac:3e:ca) cpu: 1 memory: 1.5G status: 6
-    cs002:
-        ip: 192.168.5.114
-        dockernet: 192.168.114.0/24
-
-    # 192.168.5.116 fw4e6.maas (08:00:27:eb:a9:11) cpu: 1 memory: 1.5G status: 6
-    cs003:
-        ip: 192.168.5.116
-        dockernet: 192.168.116.0/24
 

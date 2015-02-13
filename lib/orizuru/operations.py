@@ -123,9 +123,9 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
             repo_flavor = "OSS"
 
         if "midonet_manager" in self._metadata.roles:
-            if env.host_string in self._metadata.roles["midonet_manager"]:
-                if not username == "":
-                    if not password == "":
+            if env.host_string in self._metadata.roles["container_midonet_manager"]:
+                if username <> "":
+                    if password <> "":
                         repo_flavor = "MEM"
 
         run("""
@@ -195,7 +195,7 @@ puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NO
         if env.host_string in self._metadata.containers:
             self.__lib_orizuru_operations_ubuntu_repo(self._metadata.config["container_os_release_codename"])
         else:
-           self.__lib_orizuru_operations_ubuntu_repo(self._metadata.config["os_release_codename"])
+            self.__lib_orizuru_operations_ubuntu_repo(self._metadata.config["os_release_codename"])
 
     def __lib_orizuru_operations_ubuntu_repo(self, codename):
 
@@ -220,7 +220,7 @@ for TYPE in 'deb' 'deb-src'; do
     for realm in "main restricted" "universe" "multiverse"; do
         echo "${TYPE} ${XX}/${XD}.archive.ubuntu.com/ubuntu/ ${XC} ${realm}"
         echo "${TYPE} ${XX}/${XD}.archive.ubuntu.com/ubuntu/ ${XC}-updates ${realm}"
-        echo "${TYPE} http://security.archive.ubuntu.com/ubuntu/ ${XC}-security ${realm}"
+        echo "${TYPE} ${XX}/security.archive.ubuntu.com/ubuntu/ ${XC}-security ${realm}"
     done
 
     echo "${TYPE} ${XX}/${XD}.archive.ubuntu.com/ubuntu/ ${XC}-backports main restricted universe multiverse"
@@ -249,6 +249,7 @@ class Install(object):
         self.kmod("openvswitch")
         self.kmod("nbd")
         self.kmod("kvm")
+	self.kmod("vhost_net")
 
     def kmod(self, module_name):
         if env.host_string not in self._metadata.roles["all_containers"]:
