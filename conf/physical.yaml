@@ -5,7 +5,7 @@ config:
     # bind to this interface on the vtep
     vtep_port: eth1
 
-    midonet_puppet_modules_branch: agabert
+    # midonet_puppet_modules_branch: master
 
     archive_country: de
     apt-cacher: http://192.168.5.1:3142
