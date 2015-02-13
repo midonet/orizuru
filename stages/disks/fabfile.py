@@ -50,10 +50,15 @@ mkdir -pv /var/lib/docker
 mkdir -pv /var/lib/nova
 
 if [[ ! "$(ls -ali /dev/sdc)" == "" ]]; then
+  service docker.io stop
+  service nova-compute stop
+  umount /var/lib/docker
+  umount /var/lib/nova
   mdadm --stop /dev/md0
   mdadm --stop /dev/md127
   dd if=/dev/zero of=/dev/sdb count=1000 bs=4096
   dd if=/dev/zero of=/dev/sdc count=1000 bs=4096
+
   yes | mdadm --create --verbose /dev/md127 --level=stripe --raid-devices=2 /dev/sdb /dev/sdc
   sync
   mkfs.ext4 /dev/md127
@@ -78,7 +83,6 @@ else
 
     mount /var/lib/docker
     mount /var/lib/nova
-
   fi
 fi
 
