@@ -106,43 +106,35 @@ roles:
 
 servers:
 
-    # 192.168.5.103 99ktr.maas (80:ee:73:83:9c:f1,80:ee:73:83:9c:f0) cpu: 2 memory: 4096 status: 6
     gw001:
-        ip: 192.168.5.103
-        dockernet: 192.168.103.0/24
+        ip: 192.168.5.114
+        dockernet: 192.168.114.0/24
 
-    # 192.168.5.104 k3383.maas (80:ee:73:83:a1:9c,80:ee:73:83:a1:9d) cpu: 2 memory: 4096 status: 6
     gw002:
-        ip: 192.168.5.104
-        dockernet: 192.168.104.0/24
+        ip: 192.168.5.111
+        dockernet: 192.168.111.0/24
 
-    # 192.168.5.106 44mqn.maas (80:ee:73:83:93:57,80:ee:73:83:93:56) cpu: 2 memory: 4096 status: 6
     gw003:
-        ip: 192.168.5.106
-        dockernet: 192.168.106.0/24
+        ip: 192.168.5.112
+        dockernet: 192.168.112.0/24
 
-    # 192.168.5.102 6fafk.maas (80:ee:73:83:9d:03,80:ee:73:83:9d:02) cpu: 2 memory: 6144 status: 6
     os001:
-        ip: 192.168.5.102
-        dockernet: 192.168.102.0/24
+        ip: 192.168.5.113
+        dockernet: 192.168.113.0/24
 
-    # 192.168.5.105 egkgy.maas (00:21:cc:69:f4:00,24:77:03:03:34:c0) cpu: 4 memory: 8192 status: 6
     os002:
-        ip: 192.168.5.105
-        dockernet: 192.168.105.0/24
+        ip: 192.168.5.110
+        dockernet: 192.168.110.0/24
 
-    # 192.168.5.101 dxyhn.maas (08:60:6e:80:72:00) cpu: 1 memory: 16384 status: 6
     os003:
-        ip: 192.168.5.101
-        dockernet: 192.168.101.0/24
+        ip: 192.168.5.109
+        dockernet: 192.168.109.0/24
 
-    # 192.168.5.107 edxaq.maas (00:25:22:ff:4b:ea) cpu: 2 memory: 16384 status: 6
     os004:
+        ip: 192.168.5.108
+        dockernet: 192.168.108.0/24
+
+    os005:
         ip: 192.168.5.107
         dockernet: 192.168.107.0/24
-
-   # 192.168.5.118 trgbe.maas (00:04:4b:14:ae:6d,00:04:4b:14:ae:6b) cpu: 1 memory: 6GB status: 6
-    os005:
-        ip: 192.168.5.118
-        dockernet: 192.168.118.0/24
 
