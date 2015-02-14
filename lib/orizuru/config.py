@@ -197,7 +197,7 @@ class Config(object):
                         idx = idx + 1
 
     def __prepare_config(self):
-        common1 = 'htop vim screen atop tcpdump nload make git dstat tinc bridge-utils openjdk-7-jre-headless mdadm iperf'
+        common1 = 'htop vim screen atop tcpdump nload make git dstat tinc bridge-utils openjdk-7-jre-headless mdadm iperf beep figlet'
         common2 = 'traceroute mosh python-mysqldb mysql-client-core-5.5 apparmor docker.io python git puppet minicom strace'
 
         common_packages = "%s %s" % (common1, common2)

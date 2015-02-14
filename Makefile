@@ -62,6 +62,9 @@ stage1: $(PREREQUISITES)
 
 reboot: stage2
 
+wifi:$(PREREQUISITES)
+	$(RUNSTAGE); rm $(TMPDIR)/.SUCCESS_$(@)
+
 poweroff: $(PREREQUISITES)
 	$(RUNSTAGE); rm $(TMPDIR)/.SUCCESS_$(@)
 

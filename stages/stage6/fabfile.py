@@ -1211,6 +1211,26 @@ glance image-list | grep cirros || \
 
 """)
 
+    run("""
+
+source /etc/keystone/KEYSTONERC_ADMIN
+
+set -e
+
+cd /tmp
+
+wget --continue http://cloud-images.ubuntu.com/trusty/current/trusty-server-cloudimg-amd64-disk1.img
+
+glance image-list | grep 'trusty' || \
+    glance image-create \
+        --name "Ubuntu 14.04 trusty-server-cloudimg-amd64-disk1.img" \
+        --file "trusty-server-cloudimg-amd64-disk1.img" \
+        --disk-format qcow2 \
+        --container-format bare \
+        --is-public True
+
+""")
+
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
 @roles('all_containers')

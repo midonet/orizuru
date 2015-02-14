@@ -64,7 +64,6 @@ REQUIREMENTS = $(INCLUDE)/requirements.txt
 
 preflight: pipinstalled pipdeps
 	env | grep ^OS_MIDOKURA_ROOT_PASSWORD
-	env | grep ^CONFIGFILE
 	test -f $(CONFIGFILE)
 
 TMPDIR = $(PWD)/tmp

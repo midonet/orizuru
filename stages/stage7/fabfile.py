@@ -398,6 +398,7 @@ def stage7_install_midonet_agent():
         return
 
     zookeepers = []
+
     for zookeeper in sorted(metadata.roles["container_zookeeper"]):
         zookeepers.append(zookeeper)
 
