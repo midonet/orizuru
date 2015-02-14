@@ -957,7 +957,7 @@ FIP_BASE="%s"
 source /etc/keystone/KEYSTONERC_ADMIN
 
 neutron net-list | grep public || \
-    neutron net-create public --shared --router:external=true
+    neutron net-create public --router:external=true
 
 # this is the pseudo FIP subnet
 neutron subnet-list | grep extsubnet || \

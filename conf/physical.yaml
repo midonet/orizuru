@@ -3,7 +3,7 @@ config:
     connect_script: physical.sh
 
     # bind to this interface on the vtep
-    vtep_port: eth1
+    # vtep_port: eth1
 
     # midonet_puppet_modules_branch: master
 
@@ -44,24 +44,24 @@ config:
     vpn_base: 192.168.3
 
     # currently not used
-    HEAP_INITIAL: 1024M
+    HEAP_INITIAL: 3000M
 
     # this becomes Xms and Xmx in midolman-env.sh
-    MAX_HEAPSIZE: 1024M
+    MAX_HEAPSIZE: 3000M
 
     # this becomes Xmn in midolman-env.sh
     HEAP_NEWSIZE: 512M
 
 roles:
     zookeeper:
-    - gw001
-    - gw002
-    - gw003
+    - zk001
+    - zk002
+    - zk003
 
     cassandra:
-    - gw001
-    - gw002
-    - gw003
+    - zk001
+    - zk002
+    - zk003
 
     physical_midonet_gateway:
     - gw001
@@ -69,7 +69,7 @@ roles:
     - gw003
 
     midonet_api:
-    - os001
+    - os002
 
     midonet_manager:
     - os001
@@ -78,7 +78,7 @@ roles:
     - os001
 
     openstack_mysql:
-    - os001
+    - os002
 
     openstack_rabbitmq:
     - os001
@@ -87,7 +87,7 @@ roles:
     - os001
 
     openstack_neutron:
-    - os001
+    - os002
 
     openstack_glance:
     - os001
@@ -99,37 +99,43 @@ roles:
     - os001
 
     physical_openstack_compute:
-    - os002
     - os003
-    - os004
 
 servers:
 
     gw001:
-        ip: 192.168.5.114
-        dockernet: 192.168.114.0/24
-
-    gw002:
         ip: 192.168.5.111
         dockernet: 192.168.111.0/24
 
-    gw003:
+    gw002:
         ip: 192.168.5.112
         dockernet: 192.168.112.0/24
 
-    os001:
-        ip: 192.168.5.113
-        dockernet: 192.168.113.0/24
+    gw003:
+        ip: 192.168.5.114
+        dockernet: 192.168.114.0/24
 
-    os002:
+    zk001:
+        ip: 192.168.5.132
+        dockernet: 192.168.132.0/24
+
+    zk002:
+        ip: 192.168.5.131
+        dockernet: 192.168.131.0/24
+
+    zk003:
+        ip: 192.168.5.133
+        dockernet: 192.168.133.0/24
+
+    os001:
         ip: 192.168.5.110
         dockernet: 192.168.110.0/24
 
-    os003:
+    os002:
         ip: 192.168.5.109
         dockernet: 192.168.109.0/24
 
-    os004:
+    os003:
         ip: 192.168.5.108
         dockernet: 192.168.108.0/24
 

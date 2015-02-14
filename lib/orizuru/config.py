@@ -238,7 +238,7 @@ class Config(object):
         # used for setting up sources.list on the host
         defaults["os_release_codename"] = "trusty"
 
-        defaults["fip_base"] = "200.200.200"
+        defaults["fip_base"] = "10.0.0"
 
         defaults["mtu_physical"] = 1500
         defaults["mtu_mezzanine"] = 1500
