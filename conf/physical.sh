@@ -39,7 +39,7 @@ expect "midonet> " { send "host host0 add binding port router router0 port port0
 
 expect "midonet> " { send "router router0 add route dst 192.168.6.0/24 src 0.0.0.0/0 type normal port router0:port0\r" }
 
-expect "midonet> " { send "router router0 port port0 add bgp local-AS 6510${GW} peer-AS 650${PEER} peer 192.168.6.${PEER}\r" }
+expect "midonet> " { send "router router0 port port0 add bgp local-AS 6503${GW} peer-AS 650${PEER} peer 192.168.6.${PEER}\r" }
 expect "midonet> " { send "router router0 port port0 bgp bgp0 add route net 10.0.0.0/24\r" }
 
 expect "midonet> " { send "quit\r" }
