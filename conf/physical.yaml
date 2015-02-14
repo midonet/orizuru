@@ -44,10 +44,10 @@ config:
     vpn_base: 192.168.3
 
     # currently not used
-    HEAP_INITIAL: 3000M
+    HEAP_INITIAL: 1024M
 
     # this becomes Xms and Xmx in midolman-env.sh
-    MAX_HEAPSIZE: 3000M
+    MAX_HEAPSIZE: 1024M
 
     # this becomes Xmn in midolman-env.sh
     HEAP_NEWSIZE: 512M
@@ -69,7 +69,7 @@ roles:
     - gw003
 
     midonet_api:
-    - os002
+    - os001
 
     midonet_manager:
     - os001
@@ -78,7 +78,7 @@ roles:
     - os001
 
     openstack_mysql:
-    - os002
+    - os001
 
     openstack_rabbitmq:
     - os001
@@ -87,7 +87,7 @@ roles:
     - os001
 
     openstack_neutron:
-    - os002
+    - os001
 
     openstack_glance:
     - os001
@@ -99,6 +99,7 @@ roles:
     - os001
 
     physical_openstack_compute:
+    - os002
     - os003
 
 servers:
