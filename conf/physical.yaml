@@ -7,7 +7,7 @@ config:
 
     # midonet_puppet_modules_branch: master
 
-    archive_country: de
+    archive_country: us
     apt-cacher: http://192.168.5.1:3142
 
     container_os: ubuntu
