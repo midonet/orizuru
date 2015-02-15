@@ -233,17 +233,17 @@ if [[ "$(ps axufwwwwwwwwwwwwwww | grep -v grep | grep -v SCREEN | grep -- "docke
     # set up networking for the container in our main namespace
     #
     ip link set "${CONTAINER_VETH_A}" up
-    # TODO ip link set dev "${CONTAINER_VETH_A}" mtu "${MTU_CONTAINER}"
+    ip link set dev "${CONTAINER_VETH_A}" mtu "${MTU_CONTAINER}"
 
     #
     # set up networking in the container namespace
     #
     ip link set "${CONTAINER_VETH_B}" netns "${NETNS_NAME}"
     ip netns exec "${NETNS_NAME}" ip link set dev "${CONTAINER_VETH_B}" name eth0
-    # TODO ip netns exec "${NETNS_NAME}" ip link set dev eth0 mtu "${MTU_CONTAINER}"
     ip netns exec "${NETNS_NAME}" ip link set eth0 up
     ip netns exec "${NETNS_NAME}" ip addr add "${CONTAINER_IP}/${CONTAINER_NETMASK}" dev eth0
     ip netns exec "${NETNS_NAME}" ip route add default via "${CONTAINER_DEFAULT_GW}"
+    ip netns exec "${NETNS_NAME}" ip link set dev eth0 mtu "${MTU_CONTAINER}"
 
 else
     CONTAINER_ID="$(docker ps | grep -v '^CONTAINER' | grep -- "${CONTAINER_ROLE}_${SERVER_NAME}" | awk '{print $1;}' | head -n1)"

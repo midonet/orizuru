@@ -123,3 +123,12 @@ Running the services inside Docker containers is perfectly acceptable (and will 
 
 The installer should serve as a fully automated bootstrapper to give you a fast and elegant way of buidling and looking at the inner workings of an OpenStack cloud running the MidoNet reference architecture.
 
+Nested cloud installations
+==========================
+
+If you are installing into a cloud, please write down the MTU from the virtual machines and set the parameter "mtu_container" in your config file to the same value as the vms are having.
+
+For example, when installing to MidoCloud, the vm mtu is 1450. The containers inside those vms should run with 1450 also.
+
+If you do not set up this value, the containers will come up with a default MTU of 1500, which will then lead to very detrimental network performance inside the containers (around 30kbits, purely nostalgic modem speed).
+
