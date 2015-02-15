@@ -937,8 +937,17 @@ def stage7_midonet_tunnelzone_members():
         if physical_role in metadata.roles:
             for server in metadata.servers:
                 if server in metadata.roles[physical_role]:
-                    puts(green("adding server %s as member in tunnel-zone gre" % server))
-                    server_ip = "%s.%s" % (metadata.config["vpn_base"], metadata.config["idx"][server])
+                    puts(green("adding server %s as member to tunnel zones" % server))
+
+                    #
+                    # tinc can only work with MTU 1500
+                    # we could use the approach from http://lartc.org/howto/lartc.cookbook.mtu-mss.html
+                    # but instead we will disable rp_filter and use the physical interface ip
+                    #
+                    # server_ip = "%s.%s" % (metadata.config["vpn_base"], metadata.config["idx"][server])
+                    #
+
+                    server_ip = metadata.servers[server]["ip"]
                     add_host_to_tunnel_zone(metadata.config["debug"], server, server_ip)
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")

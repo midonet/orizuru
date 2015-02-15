@@ -241,6 +241,7 @@ class Install(object):
         self.apt_get_update()
         self.common_packages()
         self.newrelic()
+        self.rp_filter()
         self.cloud_repository()
         self.apt_get_update()
         self.ntp()
@@ -424,6 +425,20 @@ $template FILENAME,"/var/log/%fromhost-ip%/syslog.log"
         run("service rsyslog restart")
 
         run("logger ping")
+
+    def rp_filter(self):
+        #
+        # async routing traffic floating from neutron metadata/dhcp midonet agent to hypervisors and gateways
+        #
+        if 'physical_midonet_gateway' in self._metadata.roles or 'physical_openstack_compute' in self._metadata.roles:
+            if env.host_string not in self._metadata.containers:
+                run("""
+
+for RP in /proc/sys/net/ipv4/conf/*/rp_filter; do
+    echo 0 > "${RP}"
+done
+
+""")
 
     def newrelic(self):
         if env.host_string not in self._metadata.containers:
