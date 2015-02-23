@@ -32,6 +32,11 @@ def info(admin_password="test"):
     This is the current configuration for your MidoNet powered OpenStack Demo Cluster:"""))
 
     puts(green("""
+    
+    use ssh -F tmp/.ssh/config midonet_cli to log into the container for running midonet-cli
+    
+    there is a file called /etc/keystone/KEYSTONERC that you can source in every container
+    
     container operating system: Ubuntu %s (%s)
 
     Midonet variant (MEM or OSS): %s
