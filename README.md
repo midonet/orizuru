@@ -9,6 +9,15 @@ A demo video of the installer running (30 minutes) is available here: http://mid
 
 To get started with this all you need to provide is a list of (virtual or physical) servers.
 
+At the end of the installation you can do the following to log into midonet-cli and use keystone:
+```
+ssh -F tmp/.ssh/config midonet_cli
+root@midonet_cli # source /etc/keystone/KEYSTONERC
+root@midonet_cli # keystone tenant-list
+root@midonet_cli # midonet-cli
+```
+The file /etc/keystone/KEYSTONERC is available in every container (so when you log into openstack_controller you will be able to source it also).
+
 Localhost Quickstart
 ====================
 This is useful if you do not want to install to other servers and install everything on your localhost right away.
