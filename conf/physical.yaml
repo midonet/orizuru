@@ -105,53 +105,58 @@ roles:
 
 servers:
 
+    # pc 3
+    edge001:
+        ip: 192.168.5.107
+        dockernet: 192.168.207.0/24
+
     # shuttle
     gw001:
         ip: 192.168.5.112
-        dockernet: 192.168.112.0/24
+        dockernet: 192.168.212.0/24
 
     # shuttle
     gw002:
         ip: 192.168.5.111
-        dockernet: 192.168.111.0/24
+        dockernet: 192.168.211.0/24
 
     # shuttle
     gw003:
         ip: 192.168.5.114
-        dockernet: 192.168.114.0/24
+        dockernet: 192.168.214.0/24
 
     # vm
     zk001:
         ip: 192.168.5.131
-        dockernet: 192.168.131.0/24
+        dockernet: 192.168.231.0/24
 
     # vm
     zk002:
         ip: 192.168.5.132
-        dockernet: 192.168.132.0/24
+        dockernet: 192.168.232.0/24
 
     # vm
     zk003:
         ip: 192.168.5.133
-        dockernet: 192.168.133.0/24
+        dockernet: 192.168.233.0/24
 
     # shuttle
     os001:
         ip: 192.168.5.113
-        dockernet: 192.168.113.0/24
+        dockernet: 192.168.213.0/24
 
     # thinkpad
     os002:
         ip: 192.168.5.110
-        dockernet: 192.168.110.0/24
+        dockernet: 192.168.210.0/24
 
     # pc 1
     os003:
         ip: 192.168.5.109
-        dockernet: 192.168.109.0/24
+        dockernet: 192.168.209.0/24
 
     # pc 2
     os004:
         ip: 192.168.5.108
-        dockernet: 192.168.108.0/24
+        dockernet: 192.168.208.0/24
 
