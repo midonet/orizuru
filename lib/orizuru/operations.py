@@ -251,6 +251,10 @@ class Install(object):
         self.kmod("nbd")
         self.kmod("kvm")
 	self.kmod("vhost_net")
+        self.lldpd()
+
+    def lldpd(self):
+        cuisine.package_ensure("lldpd")
 
     def kmod(self, module_name):
         if env.host_string not in self._metadata.roles["all_containers"]:
