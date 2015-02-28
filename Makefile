@@ -129,6 +129,13 @@ stage10: $(PREREQUISITES)
 	@figlet VTEP || true
 	$(RUNSTAGE)
 
+#
+# install gnome on all servers
+#
+stage11: $(PREREQUISITES)
+	@figlet GNOME || true
+	$(RUNSTAGE)
+
 uptime: $(PREREQUISITES)
 	$(RUNSTAGE)
 	rm $(TMPDIR)/.SUCCESS_$(@)
