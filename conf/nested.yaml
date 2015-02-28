@@ -1,0 +1,122 @@
+#
+# localhost config
+#
+# make sure you allow ssh root@localhost for this
+#
+# also make sure you have at least 16GB of free memory and a quadcore cpu on this machine
+#
+config:
+
+    mtu_container: 1450
+
+    archive_country: us
+
+    fip_base: 192.168.254
+
+    # used for the midonet gateway veth pair
+    fake_transfer_net: 192.168.253
+
+    verbose: True
+    debug: False
+
+    domain: inception.midokura.de
+
+    # if you enable MEM here you should also set two environment variables:
+    # OS_MIDOKURA_REPOSITORY_USER
+    # OS_MIDOKURA_REPOSITORY_PASS
+    midonet_repo: OSS # can be OSS or MEM
+
+    midonet_mem_version: 1.8
+    midonet_mem_openstack_plugin_version: juno
+
+    midonet_oss_version: 2015.01
+    midonet_oss_openstack_plugin_version: juno
+
+    openstack_release: juno
+
+    newrelic_license_key: 5bb3df5f1f18a73de737a37e17690c58252bd183
+
+    # must be a file under /usr/share/zoneinfo
+    timezone: Europe/Berlin
+
+    # used for the vpn between different testbed hosts
+    vpn_base: 192.168.252
+
+    HEAP_INITIAL: 1024M
+    MAX_HEAPSIZE: 2048M
+    HEAP_NEWSIZE: 512M
+
+roles:
+    zookeeper:
+    - mn001
+    - mn002
+    - mn003
+
+    cassandra:
+    - mn001
+    - mn002
+    - mn003
+
+    midonet_gateway:
+    - mn001
+    - mn002
+    - mn003
+
+    midonet_api:
+    - mn004
+
+    midonet_manager:
+    - mn005
+
+    midonet_cli:
+    - mn005
+
+    openstack_rabbitmq:
+    - mn005
+
+    openstack_mysql:
+    - mn004
+
+    openstack_keystone:
+    - mn004
+
+    openstack_glance:
+    - mn005
+
+    openstack_neutron:
+    - mn004
+
+    openstack_horizon:
+    - mn005
+
+    openstack_controller:
+    - mn005
+
+    openstack_compute:
+    - mn006
+
+servers:
+    mn001:
+        ip: 10.0.0.8
+        dockernet: 192.168.251.0/24
+
+    mn002:
+        ip: 10.0.0.9
+        dockernet: 192.168.250.0/24
+
+    mn003:
+        ip: 10.0.0.10
+        dockernet: 192.168.249.0/24
+
+    mn004:
+        ip: 10.0.0.11
+        dockernet: 192.168.248.0/24
+
+    mn005:
+        ip: 10.0.0.12
+        dockernet: 192.168.247.0/24
+
+    mn006:
+        ip: 10.0.0.13
+        dockernet: 192.168.246.0/24
+
