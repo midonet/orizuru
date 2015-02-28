@@ -107,10 +107,12 @@ expect "midonet> " { send "router router0 port list address 192.168.7.22\r" }
 expect "midonet> " { send "host list name gw001\r" }
 expect "midonet> " { send "host host0 add binding port router router0 port port0 interface p3p1\r" }
 expect "midonet> " { send "router router0 add route dst 192.168.7.20/30 src 0.0.0.0/0 type normal port router0:port0\r" }
-expect "midonet> " { send "router router0 port port0 add bgp local-AS 65722 peer-AS 65424 peer 192.168.7.21\r" }
+expect "midonet> " { send "router router0 port port0 add bgp local-AS 65700 peer-AS 65424 peer 192.168.7.21\r" }
 expect "midonet> " { send "router router0 port port0 bgp bgp0 add route net 10.0.0.0/24\r" }
 expect "midonet> " { send "quit\r" }
 EOF
+
+exit 0
 
 echo
 
@@ -123,7 +125,7 @@ expect "midonet> " { send "router router0 port list address 192.168.7.26\r" }
 expect "midonet> " { send "host list name gw002\r" }
 expect "midonet> " { send "host host0 add binding port router router0 port port0 interface p3p1\r" }
 expect "midonet> " { send "router router0 add route dst 192.168.7.24/30 src 0.0.0.0/0 type normal port router0:port0\r" }
-expect "midonet> " { send "router router0 port port0 add bgp local-AS 65726 peer-AS 65424 peer 192.168.7.25\r" }
+expect "midonet> " { send "router router0 port port0 add bgp local-AS 65700 peer-AS 65424 peer 192.168.7.25\r" }
 expect "midonet> " { send "router router0 port port0 bgp bgp0 add route net 10.0.0.0/24\r" }
 expect "midonet> " { send "quit\r" }
 EOF
@@ -139,7 +141,7 @@ expect "midonet> " { send "router router0 port list address 192.168.7.30\r" }
 expect "midonet> " { send "host list name gw003\r" }
 expect "midonet> " { send "host host0 add binding port router router0 port port0 interface p3p1\r" }
 expect "midonet> " { send "router router0 add route dst 192.168.7.28/30 src 0.0.0.0/0 type normal port router0:port0\r" }
-expect "midonet> " { send "router router0 port port0 add bgp local-AS 65730 peer-AS 65424 peer 192.168.7.29\r" }
+expect "midonet> " { send "router router0 port port0 add bgp local-AS 65700 peer-AS 65424 peer 192.168.7.29\r" }
 expect "midonet> " { send "router router0 port port0 bgp bgp0 add route net 10.0.0.0/24\r" }
 expect "midonet> " { send "quit\r" }
 EOF
