@@ -41,21 +41,23 @@ def stage11():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    cuisine.package_ensure(["gnome", "ubuntu-desktop", "xrdp"])
+    cuisine.package_ensure(["gnome", "ubuntu-desktop", "xrdp", "fluxbox", "virtualbox"])
+
+    cuisine.file_write("/root/.xsession", """#!/bin/bash
+source /etc/profile
+source /root/.bashrc
+
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
+
+exec startfluxbox
+
+""")
 
     run("""
 
-cat>/root/.xsession<<EOF
-gnome-session -session=Ubuntu-2d
-EOF
+wget --continue http://%s.releases.ubuntu.com/14.04.2/ubuntu-14.04.2-server-amd64.iso
 
-chmod 0755 /root/.xsession
-
-service gdm restart
-
-exit 0
-
-""")
+""" % metadata.config["archive_country"])
 
     # TODO cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
