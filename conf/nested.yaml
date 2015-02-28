@@ -3,6 +3,8 @@
 #
 config:
 
+    parallel: False
+
     mtu_container: 1450
 
     archive_country: us
