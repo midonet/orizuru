@@ -63,7 +63,6 @@ RUNSTAGE = figlet "running $(@)" || echo "running $(@)"; $(RUNSTAGE_CHECK) || $(
 REQUIREMENTS = $(INCLUDE)/requirements.txt
 
 preflight: pipinstalled pipdeps
-	env | grep ^OS_MIDOKURA_ROOT_PASSWORD
 	test -f $(CONFIGFILE)
 
 TMPDIR = $(PWD)/tmp

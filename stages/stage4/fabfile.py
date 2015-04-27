@@ -69,8 +69,6 @@ FROM %s:%s
 
 MAINTAINER Alexander Gabert <alexander@midokura.com>
 
-RUN echo "root:%s" | chpasswd
-
 RUN sed -i 's,deb http://archive.ubuntu.com,deb %s/%s.archive.ubuntu.com,g;' /etc/apt/sources.list
 RUN sed -i 's,deb-src http://archive.ubuntu.com,deb-src %s/%s.archive.ubuntu.com,g;' /etc/apt/sources.list
 
@@ -85,7 +83,7 @@ RUN apt-get autoclean
 RUN apt-get update 1>/dev/null
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -u dist-upgrade 1>/dev/null
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server puppet screen %s 1>/dev/null
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server screen 1>/dev/null
 RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 RUN mkdir -pv /var/run/screen
@@ -117,12 +115,10 @@ CMD ["/usr/sbin/sshd", "-D"]
 """ % (
         metadata.config["container_os"],
         metadata.config["container_os_version"],
-        os.environ["OS_MIDOKURA_ROOT_PASSWORD"],
         metadata.config["apt-cacher"],
         metadata.config["archive_country"],
         metadata.config["apt-cacher"],
-        metadata.config["archive_country"],
-        metadata.config["common_packages"]
+        metadata.config["archive_country"]
         ))
 
             run("""

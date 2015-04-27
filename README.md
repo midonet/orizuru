@@ -40,7 +40,6 @@ Now you can set the root password, set the configfile and start
 git clone https://github.com/midonet/orizuru.git
 cd orizuru
 export CONFIGFILE=${PWD}/conf/localhost.yaml
-export OS_MIDOKURA_ROOT_PASSWORD="new root password"
 make
 ```
 
@@ -58,7 +57,6 @@ Also you should export two environment variables, one for the config, one for th
 git clone https://github.com/midonet/orizuru.git
 cd orizuru
 export CONFIGFILE="$(pwd)/conf/alex.yaml"
-export OS_MIDOKURA_ROOT_PASSWORD="new root password"
 make
 ```
 
@@ -79,7 +77,6 @@ cd orizuru
 export OS_MIDOKURA_REPOSITORY_USER="your MEM username"
 export OS_MIDOKURA_REPOSITORY_PASS="your MEM password"
 export CONFIGFILE="$(pwd)/conf/alex.yaml"
-export OS_MIDOKURA_ROOT_PASSWORD="new root password"
 make
 ```
 
