@@ -37,11 +37,16 @@ class Configure(object):
         self._metadata = metadata
 
     def configure(self):
+        self.localegen()
         self.name_resolution()
         self.os_release()
         self.newrelic()
         self.datastax()
         self.midonet()
+
+    def localegen(self):
+        if env.host_string in self._metadata.roles["all_containers"]:
+            run("locale-gen de_DE.UTF-8")
 
     def name_resolution(self):
         if env.host_string not in self._metadata.roles["all_containers"]:
@@ -250,7 +255,7 @@ class Install(object):
         self.kmod("openvswitch")
         self.kmod("nbd")
         self.kmod("kvm")
-	self.kmod("vhost_net")
+        self.kmod("vhost_net")
         self.lldpd()
 
     def lldpd(self):
