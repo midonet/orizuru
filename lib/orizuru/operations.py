@@ -104,8 +104,8 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
     def midonet(self):
         Install(self._metadata).apt_get_update()
 
-        cuisine.package_ensure("puppet")
         cuisine.package_ensure("git")
+        cuisine.package_ensure("puppet")
 
         if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
             username = os.environ["OS_MIDOKURA_REPOSITORY_USER"]
