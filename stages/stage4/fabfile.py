@@ -84,7 +84,6 @@ RUN apt-get update 1>/dev/null
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -u dist-upgrade 1>/dev/null
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server screen 1>/dev/null
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y git 1>/dev/null
 RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 RUN mkdir -pv /var/run/screen

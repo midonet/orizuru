@@ -109,9 +109,6 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
     def midonet(self):
         Install(self._metadata).apt_get_update()
 
-        cuisine.package_ensure("git")
-        cuisine.package_ensure("puppet")
-
         if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
             username = os.environ["OS_MIDOKURA_REPOSITORY_USER"]
         else:
@@ -141,12 +138,6 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 #
 %s
 
-#
-# initialize the puppet module for midonet repository
-#
-REPO="%s"
-BRANCH="%s"
-
 USERNAME="%s"
 PASSWORD="%s"
 
@@ -155,45 +146,53 @@ OPENSTACK_PLUGIN_VERSION="%s"
 
 REPO_FLAVOR="%s"
 
-CONTAINER_OS_RELEASE="%s"
-
-PUPPET_NODE_DEFINITION="$(mktemp)"
-
-cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
-
-PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
-
-cat>"${PUPPET_NODE_DEFINITION}"<<EOF
-node $(hostname) {
-    midonet_repository::install{"$(hostname)": }
-    ->
-    midonet_repository::configure{"$(hostname)":
-        username => "${USERNAME}",
-        password => "${PASSWORD}",
-        midonet_flavor => "${REPO_FLAVOR}",
-        midonet_version => "${MIDONET_VERSION}",
-        midonet_openstack_plugin_version => "${OPENSTACK_PLUGIN_VERSION}",
-        os_release => "${CONTAINER_OS_RELEASE}"
-    }
-}
-EOF
-
 rm -fv -- /etc/apt/sources.list.d/midonet*
 rm -fv -- /etc/apt/sources.list.d/midokura*
 
-puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
+if [[ "${REPO_FLAVOR}" == "MEM" ]]; then
+    FILENAME="/etc/apt/sources.list.d/midokura.list"
+
+    cat>"${FILENAME}"<<EOF
+#
+# MEM midolman
+#
+
+deb [arch=amd64] http://${USERNAME}:${PASSWORD}@apt.midokura.com/midonet/v${MIDONET_VERSION}/stable precise main non-free
+
+#
+# MEM midonet neutron plugin
+#
+
+deb [arch=amd64] http://${USERNAME}:${PASSWORD}@apt.midokura.com/openstack/${OPENSTACK_PLUGIN_VERSION}/stable precise main
+
+EOF
+fi
+
+if [[ "${REPO_FLAVOR}" == "OSS" ]]; then
+    FILENAME="/etc/apt/sources.list.d/midonet.list"
+
+    cat>"${FILENAME}"<<EOF
+
+# OSS MidoNet
+deb http://repo.midonet.org/midonet/v${MIDONET_VERSION} stable main
+
+# OSS MidoNet OpenStack Integration
+deb http://repo.midonet.org/openstack-${OPENSTACK_PLUGIN_VERSION} stable main
+
+# OSS MidoNet 3rd Party Tools and Libraries
+deb http://repo.midonet.org/misc stable main
+
+EOF
+fi
 
 """ % (
         self._metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
-        self._metadata.config["midonet_puppet_modules"],
-        self._metadata.config["midonet_puppet_modules_branch"],
         username,
         password,
         self._metadata.config["midonet_%s_version" % repo_flavor.lower()],
         self._metadata.config["midonet_%s_openstack_plugin_version" % repo_flavor.lower()],
-        repo_flavor.upper(),
-        self._metadata.config["container_os_release_codename"]
+        repo_flavor.upper()
     ))
 
     def os_release(self):
