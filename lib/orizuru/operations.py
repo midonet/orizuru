@@ -152,6 +152,8 @@ rm -fv -- /etc/apt/sources.list.d/midokura*
 if [[ "${REPO_FLAVOR}" == "MEM" ]]; then
     FILENAME="/etc/apt/sources.list.d/midokura.list"
 
+    wget -SO- "http://${USERNAME}:${PASSWORD}@apt.midokura.com/packages.midokura.key" | apt-key add -
+
     cat>"${FILENAME}"<<EOF
 #
 # MEM midolman
@@ -170,6 +172,8 @@ fi
 
 if [[ "${REPO_FLAVOR}" == "OSS" ]]; then
     FILENAME="/etc/apt/sources.list.d/midonet.list"
+
+    wget -SO- http://repo.midonet.org/packages.midokura.key | apt-key add -
 
     cat>"${FILENAME}"<<EOF
 
