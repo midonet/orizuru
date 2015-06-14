@@ -107,7 +107,7 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
             self.repokey("http://debian.datastax.com/debian/repo_key")
 
     def midonet(self):
-        Install(self._metadata).apt_get_update()
+        # Install(self._metadata).apt_get_update()
 
         if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
             username = os.environ["OS_MIDOKURA_REPOSITORY_USER"]
