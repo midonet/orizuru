@@ -19,6 +19,7 @@ import sys
 
 from orizuru.config import Config
 
+from orizuru.operations import Check
 from orizuru.operations import Configure
 from orizuru.operations import Install
 
@@ -53,6 +54,9 @@ def connect_stage1():
 def stage1():
     metadata = Config(os.environ["CONFIGFILE"])
 
+    puts(yellow("checking if cuisine.file_write works"))
+    execute(check_stage1)
+
     puts(yellow("executing stage1 configure"))
     execute(configure_stage1)
 
@@ -60,6 +64,12 @@ def stage1():
     execute(install_stage1)
 
     sys.exit(0)
+
+@roles('all_servers')
+def check_stage1():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    Check(metadata).check_broken_cuisine()
 
 @roles('all_servers')
 def configure_stage1():

@@ -31,6 +31,16 @@ from fabric.utils import puts
 
 import cuisine
 
+class Check(object):
+
+    def __init__(self, metadata):
+        self._metadata = metadata
+
+    def check_broken_cuisine(self):
+        run("rm /tmp/check_broken_cuisine.txt")
+        cuisine.file_write("/tmp/check_broken_cuisine.txt", "WORKING")
+        run("grep WORKING /tmp/check_broken_cuisine.txt")
+
 class Configure(object):
 
     def __init__(self, metadata):
