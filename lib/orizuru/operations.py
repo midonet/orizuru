@@ -37,7 +37,7 @@ class Check(object):
         self._metadata = metadata
 
     def check_broken_cuisine(self):
-        run("rm /tmp/check_broken_cuisine.txt")
+        run("rm -f /tmp/check_broken_cuisine.txt")
         cuisine.file_write("/tmp/check_broken_cuisine.txt", "WORKING")
         run("grep WORKING /tmp/check_broken_cuisine.txt")
 
