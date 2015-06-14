@@ -1,7 +1,13 @@
 折鶴
 ====
 
-Test drive MEM OpenStack and midonet.org OpenStack inside containers on Ubuntu Linux.
+ATTENTION: cuisine.file_write seems to be broken in recent fabric/cuisine installs.
+
+If this tool does not work check if your cuisine installation is broken.
+
+
+
+This program can be used to test drive MEM OpenStack and midonet.org OpenStack inside containers on Ubuntu Linux.
 
 Get your MEM trial key here today: http://www.midokura.com/midonet-enterprise/
 
