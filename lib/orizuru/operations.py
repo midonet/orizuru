@@ -140,6 +140,16 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
                     if password <> "":
                         repo_flavor = "MEM"
 
+        if "OS_MIDOKURA_URL_OVERRIDE" in os.environ:
+            url_override = os.environ["OS_MIDOKURA_URL_OVERRIDE"]
+        else
+            url_override = ""
+
+        if "OS_MIDOKURA_PLUGIN_URL_OVERRIDE" in os.environ:
+            plugin_url_override = os.environ["OS_MIDOKURA_PLUGIN_URL_OVERRIDE"]
+        else:
+            plugin_url_override = ""
+
         run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
@@ -156,6 +166,9 @@ OPENSTACK_PLUGIN_VERSION="%s"
 
 REPO_FLAVOR="%s"
 
+URL_OVERRIDE="%s"
+PLUGIN_URL_OVERRIDE="%s"
+
 rm -fv -- /etc/apt/sources.list.d/midonet*
 rm -fv -- /etc/apt/sources.list.d/midokura*
 
@@ -164,7 +177,8 @@ if [[ "${REPO_FLAVOR}" == "MEM" ]]; then
 
     wget -SO- "http://${USERNAME}:${PASSWORD}@apt.midokura.com/packages.midokura.key" | apt-key add -
 
-    cat>"${FILENAME}"<<EOF
+    if [[ "${URL_OVERRIDE}" == "" && "${PLUGIN_URL_OVERRIDE}" == "" ]]; then
+        cat>"${FILENAME}"<<EOF
 #
 # MEM midolman
 #
@@ -178,6 +192,22 @@ deb [arch=amd64] http://${USERNAME}:${PASSWORD}@apt.midokura.com/midonet/v${MIDO
 deb [arch=amd64] http://${USERNAME}:${PASSWORD}@apt.midokura.com/openstack/${OPENSTACK_PLUGIN_VERSION}/stable precise main
 
 EOF
+    else
+        cat>"${FILENAME}"<<EOF
+#
+# MEM midolman (url override)
+#
+
+${URL_OVERRIDE}
+
+#
+# MEM midonet neutron plugin (plugin url override)
+#
+
+${PLUGIN_URL_OVERRIDE}
+
+EOF
+    fi
 fi
 
 if [[ "${REPO_FLAVOR}" == "OSS" ]]; then
@@ -206,7 +236,9 @@ fi
         password,
         self._metadata.config["midonet_%s_version" % repo_flavor.lower()],
         self._metadata.config["midonet_%s_openstack_plugin_version" % repo_flavor.lower()],
-        repo_flavor.upper()
+        repo_flavor.upper(),
+        url_override,
+        plugin_url_override
     ))
 
     def os_release(self):
