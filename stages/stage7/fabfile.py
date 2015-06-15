@@ -739,11 +739,7 @@ def stage7_container_midonet_manager():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    puppet_module_name = "midonet_manager"
-
-    if metadata.config["midonet_repo"] == "MEM":
-        if str(metadata.config["midonet_mem_version"]) == "1.8":
-            puppet_module_name = "midonet_manager18"
+    puppet_module_name = "midonet_manager18"
 
     if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
         if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
