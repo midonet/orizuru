@@ -142,7 +142,7 @@ deb [arch=amd64] http://debian.datastax.com/community stable main
 
         if "OS_MIDOKURA_URL_OVERRIDE" in os.environ:
             url_override = os.environ["OS_MIDOKURA_URL_OVERRIDE"]
-        else
+        else:
             url_override = ""
 
         if "OS_MIDOKURA_PLUGIN_URL_OVERRIDE" in os.environ:
