@@ -542,7 +542,7 @@ ps axufwwwwwwwww | grep -v grep | grep nrsysmond
                 run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
         if self._metadata.config["container_os_release_codename"] == "trusty":
-            if self._metadata.config["openstack_release"] == "juno":
+            if self._metadata.config["openstack_release"] in ["juno", "kilo"]:
                 run("add-apt-repository --yes cloud-archive:%s" % self._metadata.config["openstack_release"])
 
         run("""
