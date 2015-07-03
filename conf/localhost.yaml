@@ -20,7 +20,7 @@ config:
     # OS_MIDOKURA_REPOSITORY_PASS
     midonet_repo: OSS # can be OSS or MEM
 
-    midonet_mem_version: 1.8
+    midonet_mem_version: 1.9
     midonet_mem_openstack_plugin_version: juno
 
     midonet_oss_version: 2014.11
