@@ -1556,7 +1556,7 @@ def stage6_container_openstack_keystone():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    if metadata.config[] == 'kilo':
+    if metadata.config['openstack_release'] == 'kilo':
         cuisine.package_ensure(["keystone", "python-openstackclient", "apache2", "libapache2-mod-wsgi", "memcached", "python-memcache"])
     else:
         cuisine.package_ensure(["keystone", "python-keystoneclient"])
