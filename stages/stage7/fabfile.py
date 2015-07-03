@@ -700,7 +700,6 @@ node $(hostname) {
         keystone_admin_token => "${ADMIN_TOKEN}",
         keystone_service_host => "${KEYSTONE_IP}",
         rest_api_base_url => "http://${MIDONET_API_OUTER_IP}:${MIDONET_API_URL}",
-        rest_api_ip => "${MIDONET_API_OUTER_IP}",
         zookeeper_hosts => "${ZOOKEEPER_HOSTS}"
     }
     ->
