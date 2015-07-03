@@ -1431,9 +1431,9 @@ if [[ "kilo" == "${OPENSTACK_RELEASE}" ]]; then
     export OS_TOKEN="${ADMIN_TOKEN}"
     export OS_URL="http://${KEYSTONE_IP}:35357/v2.0"
 
-    openstack service create --name keystone --description "OpenStack Identity" identity
+    openstack service list | grep keystone || openstack service create --name keystone --description "OpenStack Identity" identity
 
-    openstack endpoint create \
+    openstack endpoint list | grep "${KEYSTONE_IP}" || openstack endpoint create \
         --publicurl "http://${KEYSTONE_IP}:${PUBLICURL}" \
         --internalurl "http://${KEYSTONE_IP}:${INTERNALURL}" \
         --adminurl "http://${KEYSTONE_IP}:${ADMINURL}" \
