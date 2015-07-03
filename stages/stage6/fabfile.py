@@ -1556,7 +1556,10 @@ def stage6_container_openstack_keystone():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    cuisine.package_ensure(["keystone", "python-keystoneclient"])
+    if metadata.config[] == 'kilo':
+        cuisine.package_ensure(["keystone", "python-openstackclient", "apache2", "libapache2-mod-wsgi", "memcached", "python-memcache"])
+    else:
+        cuisine.package_ensure(["keystone", "python-keystoneclient"])
 
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
@@ -1605,29 +1608,84 @@ test -f "${CONFIGFILE}.DISTRIBUTION" || cp "${CONFIGFILE}" "${CONFIGFILE}.DISTRI
 
 if [[ "${OPENSTACK_RELEASE}" == "icehouse" ]]; then
     "${CONFIGHELPER}" set "${CONFIGFILE}" "token" "driver" "keystone.token.backends.sql.Token"
-else
+fi
+
+if [[ "${OPENSTACK_RELEASE}" == "juno" ]]; then
     "${CONFIGHELPER}" set "${CONFIGFILE}" "token" "driver" "keystone.token.persistence.backends.sql.Token"
+fi
+
+if [[ "${OPENSTACK_RELEASE}" == "kilo" ]]; then
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "memcache" "servers" "localhost:11211"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "token" "provider" "keystone.token.providers.uuid.Provider"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "token" "driver" "keystone.token.persistence.backends.memcache.Token"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "revoke" "driver" "keystone.contrib.revoke.backends.sql.Revoke"
 fi
 
 keystone-manage db_sync
 
 rm -fv /var/lib/keystone/keystone.db
 
-chmod 0777 /var/run/screen
+if [[ "kilo" == "${OPENSTACK_RELEASE}" ]]; then
+    cat> /etc/apache2/sites-available/wsgi-keystone.conf<<EOF
+Listen 5000
+Listen 35357
 
-sync
+<VirtualHost *:5000>
+    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone display-name=%%{GROUP}
+    WSGIProcessGroup keystone-public
+    WSGIScriptAlias / /var/www/cgi-bin/keystone/main
+    WSGIApplicationGroup %%{GLOBAL}
+    WSGIPassAuthorization On
+    <IfVersion >= 2.4>
+      ErrorLogFormat "%%{cu}t %%M"
+    </IfVersion>
+    LogLevel info
+    ErrorLog /var/log/apache2/keystone-error.log
+    CustomLog /var/log/apache2/keystone-access.log combined
+</VirtualHost>
 
-ps axufwwwwwwwwwww | grep -v grep | grep keystone | awk '{print $2;}' | xargs -n1 --no-run-if-empty kill -9 || true
+<VirtualHost *:35357>
+    WSGIDaemonProcess keystone-admin processes=5 threads=1 user=keystone display-name=%%{GROUP}
+    WSGIProcessGroup keystone-admin
+    WSGIScriptAlias / /var/www/cgi-bin/keystone/admin
+    WSGIApplicationGroup %%{GLOBAL}
+    WSGIPassAuthorization On
+    <IfVersion >= 2.4>
+      ErrorLogFormat "%%{cu}t %%M"
+    </IfVersion>
+    LogLevel info
+    ErrorLog /var/log/apache2/keystone-error.log
+    CustomLog /var/log/apache2/keystone-access.log combined
+</VirtualHost>
+EOF
 
-chown -R keystone:keystone /var/lib/keystone
+    ln -s /etc/apache2/sites-available/wsgi-keystone.conf /etc/apache2/sites-enabled
 
-sleep 2
+    mkdir -p /var/www/cgi-bin/keystone
 
-ps axufwwwwwwwwwww | grep -v grep | grep keystone || screen -S keystone -d -m -- start-stop-daemon --start --chuid keystone --chdir /var/lib/keystone --name keystone --exec /usr/bin/keystone-all
+    curl http://git.openstack.org/cgit/openstack/keystone/plain/httpd/keystone.py?h=stable/kilo | tee /var/www/cgi-bin/keystone/main /var/www/cgi-bin/keystone/admin
 
-sleep 2
+    chown -R keystone:keystone /var/www/cgi-bin/keystone
+    chmod 755 /var/www/cgi-bin/keystone/*
 
-ps axufwwwwwwwwwww | grep -v grep | grep keystone
+    service apache2 restart
+else
+    chmod 0777 /var/run/screen
+
+    sync
+
+    ps axufwwwwwwwwwww | grep -v grep | grep keystone | awk '{print $2;}' | xargs -n1 --no-run-if-empty kill -9 || true
+
+    chown -R keystone:keystone /var/lib/keystone
+
+    sleep 2
+
+    ps axufwwwwwwwwwww | grep -v grep | grep keystone || screen -S keystone -d -m -- start-stop-daemon --start --chuid keystone --chdir /var/lib/keystone --name keystone --exec /usr/bin/keystone-all
+
+    sleep 2
+
+    ps axufwwwwwwwwwww | grep -v grep | grep keystone
+fi
 
 """ % (
         metadata.config["debug"],
