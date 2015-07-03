@@ -522,7 +522,7 @@ for XSERVICE in "${SERVICE}"; do
     # lbaas
     #
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "core_plugin" "midonet.neutron.plugin.MidonetPluginV2"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "service_providers" "service_provider" "LOADBALANCER:Midonet:midonet.neutron.services.loadbalancer.driver.MidonetLoadbalancerDriver:default"
+    # "${CONFIGHELPER}" set "${CONFIGFILE}" "service_providers" "service_provider" "LOADBALANCER:Midonet:midonet.neutron.services.loadbalancer.driver.MidonetLoadbalancerDriver:default"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "service_plugins" "lbaas"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "allow_overlapping_ips" "True"
