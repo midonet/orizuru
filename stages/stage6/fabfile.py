@@ -462,7 +462,7 @@ def stage6_container_openstack_neutron():
         "neutron-dhcp-agent")
 
     # from kilo onward you can use the lbaas in horizon
-    if metadata.config["midonet_mem_openstack_plugin_version"] not in ['havana', 'icehouse', 'juno']:
+    if metadata.config["midonet_mem_openstack_plugin_version"] not in ['havana', 'icehouse']:
         cuisine.package_ensure("neutron-lbaas")
 
     service = "neutron"
@@ -527,18 +527,18 @@ for XSERVICE in "${SERVICE}"; do
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "core_plugin" "midonet.neutron.plugin.MidonetPluginV2"
 
     #
-    # use the horizon lbaas plugin for kilo upwards.
+    # use the horizon lbaas plugin for juno upwards.
     #
-    # all older releases should configure l4lbaas in midonet manager or neutron cli.
+    # all older releases should configure L4LB in midonet manager or use neutron cli.
     #
     if [[ ! "havana" == "${PLUGIN_VERSION}" ]]; then
         if [[ ! "icehouse" == "${PLUGIN_VERSION}" ]]; then
             if [[ ! "juno" == "${PLUGIN_VERSION}" ]]; then
-
+                "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "service_plugins" "lbaas"
                 "${CONFIGHELPER}" set "${CONFIGFILE}" "service_providers" "service_provider" \
                     "LOADBALANCER:Midonet:midonet.neutron.services.loadbalancer.driver.MidonetLoadbalancerDriver:default"
-
-                "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "service_plugins" "lbaas"
+            else
+                "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "service_plugins" ""
             fi
         fi
     fi
