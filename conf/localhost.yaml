@@ -37,7 +37,7 @@ config:
     vpn_base: 192.168.253
 
     HEAP_INITIAL: 1024M
-    MAX_HEAPSIZE: 2048M
+    MAX_HEAPSIZE: 1024M
     HEAP_NEWSIZE: 512M
 
 vpnclients:

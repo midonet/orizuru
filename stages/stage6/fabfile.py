@@ -459,7 +459,11 @@ def stage6_container_openstack_neutron():
         "python-neutronclient",
         "python-keystoneclient",
         "neutron-l3-agent",
-        "neutron-dhcp-agent"])
+        "neutron-dhcp-agent")
+
+    # from kilo onward you can use the lbaas in horizon
+    if metadata.config["midonet_mem_openstack_plugin_version"] not in ['havana', 'icehouse', 'juno']:
+        cuisine.package_ensure("neutron-lbaas")
 
     service = "neutron"
 
@@ -494,6 +498,8 @@ MIDONET_API="%s"
 
 MIDONET_API_URL="%s"
 
+PLUGIN_VERSION="%s"
+
 source /etc/keystone/KEYSTONERC_ADMIN
 
 SERVICE_TENANT_ID="$(keystone tenant-list | grep 'service' | awk -F'|' '{print $2;}' | xargs -n1 echo)"
@@ -518,12 +524,24 @@ for XSERVICE in "${SERVICE}"; do
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_userid" "osrabbit"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_password" "${RABBIT_PASS}"
 
-    #
-    # lbaas
-    #
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "core_plugin" "midonet.neutron.plugin.MidonetPluginV2"
-    # "${CONFIGHELPER}" set "${CONFIGFILE}" "service_providers" "service_provider" "LOADBALANCER:Midonet:midonet.neutron.services.loadbalancer.driver.MidonetLoadbalancerDriver:default"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "service_plugins" "lbaas"
+
+    #
+    # use the horizon lbaas plugin for kilo upwards.
+    #
+    # all older releases should configure l4lbaas in midonet manager or neutron cli.
+    #
+    if [[ ! "havana" == "${PLUGIN_VERSION}" ]]; then
+        if [[ ! "icehouse" == "${PLUGIN_VERSION}" ]]; then
+            if [[ ! "juno" == "${PLUGIN_VERSION}" ]]; then
+
+                "${CONFIGHELPER}" set "${CONFIGFILE}" "service_providers" "service_provider" \
+                    "LOADBALANCER:Midonet:midonet.neutron.services.loadbalancer.driver.MidonetLoadbalancerDriver:default"
+
+                "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "service_plugins" "lbaas"
+            fi
+        fi
+    fi
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "allow_overlapping_ips" "True"
 
@@ -618,7 +636,8 @@ sync
         metadata.containers[metadata.roles["container_openstack_controller"][0]]["ip"],
         metadata.config["region"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
-        metadata.services["midonet"]["internalurl"]
+        metadata.services["midonet"]["internalurl"],
+        metadata.config["midonet_mem_openstack_plugin_version"]
     ))
 
     puts(green("running neutron-db-manage"))
