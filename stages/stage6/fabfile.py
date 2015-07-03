@@ -1663,7 +1663,15 @@ EOF
 
     mkdir -pv /var/www/cgi-bin/keystone
 
-    wget -SO- http://git.openstack.org/cgit/openstack/keystone/plain/httpd/keystone.py?h=stable/kilo | tee /var/www/cgi-bin/keystone/main /var/www/cgi-bin/keystone/admin
+    for FILE in /var/www/cgi-bin/keystone/main /var/www/cgi-bin/keystone/admin; do
+
+        cat >"${FILE}" <<EOF
+import os
+from keystone.server import wsgi as wsgi_server
+name = os.path.basename(__file__)
+application = wsgi_server.initialize_application(name)
+EOF
+    done
 
     chown -R keystone:keystone /var/www/cgi-bin/keystone
     chmod 0755 /var/www/cgi-bin/keystone/*
