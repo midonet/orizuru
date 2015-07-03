@@ -410,7 +410,7 @@ def stage7_mn_conf():
 CSHOSTS="%s"
 CSCOUNT="%i"
 
-cat >/etc/cassandra.json<<EOF
+cat >/tmp/cassandra.json<<EOF
 cassandra {
     servers = "${CSHOSTS}"
     replication_factor = ${CSCOUNT}
