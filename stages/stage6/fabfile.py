@@ -1423,7 +1423,23 @@ PUBLICURL="%s"
 INTERNALURL="%s"
 ADMINURL="%s"
 
+OPENSTACK_RELEASE="%s"
+
 touch /usr/lib/python2.7/dist-packages/babel/localedata/__init__.py
+
+if [[ "kilo" == "${OPENSTACK_RELEASE}" ]]; then
+    export OS_TOKEN="${ADMIN_TOKEN}"
+    export OS_URL="http://${KEYSTONE_IP}:35357/v2.0"
+
+    openstack service create --name keystone --description "OpenStack Identity" identity
+
+    openstack endpoint create \
+        --publicurl "http://${KEYSTONE_IP}:${PUBLICURL}" \
+        --internalurl "http://${KEYSTONE_IP}:${INTERNALURL}" \
+        --adminurl "http://${KEYSTONE_IP}:${ADMINURL}" \
+        --region "${REGION}" \
+            identity
+fi
 
 python 2>&1 <<EOF
 from keystoneclient.v2_0 import client
@@ -1487,7 +1503,8 @@ EOF
     metadata.services[service]["type"],
     metadata.services[service]["publicurl"],
     metadata.services[service]["internalurl"],
-    metadata.services[service]["adminurl"]
+    metadata.services[service]["adminurl"],
+    metadata.config["openstack_release"]
     ))
 
     for service in metadata.services:
