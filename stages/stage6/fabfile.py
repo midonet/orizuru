@@ -459,7 +459,7 @@ def stage6_container_openstack_neutron():
         "python-neutronclient",
         "python-keystoneclient",
         "neutron-l3-agent",
-        "neutron-dhcp-agent")
+        "neutron-dhcp-agent"])
 
     # from kilo onward you can use the lbaas in horizon
     if metadata.config["midonet_mem_openstack_plugin_version"] not in ['havana', 'icehouse']:
