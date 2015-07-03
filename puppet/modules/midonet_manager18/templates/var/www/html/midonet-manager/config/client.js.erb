@@ -1,10 +1,14 @@
+
 {
   "api_host": "<%= @rest_api_base -%>",
   "login_host": "<%= @rest_api_base -%>",
+  "trace_api_host": "<%= @rest_api_base -%>",
+  "traces_ws_url": "ws://<%= @rest_api_ip -%>:8460",
   "api_namespace": "midonet-api",
-  "api_version": "1.8",
+  "api_version": "1.9",
   "api_token": false,
-  "poll_enabled": false,
-  "sidebar_collapsed": false
+  "agent_config_api_host": "http://<%= @rest_api_ip -%>:8459",
+  "agent_config_api_namespace": "conf",
+  "poll_enabled": true
 }
 

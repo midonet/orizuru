@@ -350,6 +350,8 @@ ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midol
 
 """)
 
+    stage7_mn_conf()
+
 def stage7_start_container_midonet_agent():
     run("""
 
@@ -390,6 +392,39 @@ sleep 10
 ps axufwwwwwwwwwwwww | grep -v grep | grep 'openjdk' | grep '/etc/midolman/midolman.conf'
 
 """)
+
+    stage7_mn_conf()
+
+def stage7_mn_conf():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    cshosts = []
+
+    for container in sorted(metadata.roles["container_cassandra"]):
+        cshosts.append("%s:9042" % metadata.containers[container]["ip"])
+
+    #
+    # since 1.9.1 (and OSS 2015.3) all runtime config is hidden behind mn-conf
+    #
+    run("""
+CSHOSTS="%s"
+CSCOUNT="%i"
+
+cat >/etc/cassandra.json<<EOF
+cassandra {
+    servers = "${CSHOSTS}"
+    replication_factor = ${CSCOUNT}
+    cluster = midonet
+}
+
+EOF
+
+mn-conf set -t default < /tmp/cassandra.json
+
+""" % (
+    ",".join(cshosts),
+    len(cshosts)
+    ))
 
 def stage7_install_midonet_agent():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -665,6 +700,7 @@ node $(hostname) {
         keystone_admin_token => "${ADMIN_TOKEN}",
         keystone_service_host => "${KEYSTONE_IP}",
         rest_api_base_url => "http://${MIDONET_API_OUTER_IP}:${MIDONET_API_URL}",
+        rest_api_ip => "${MIDONET_API_OUTER_IP}",
         zookeeper_hosts => "${ZOOKEEPER_HOSTS}"
     }
     ->

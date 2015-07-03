@@ -369,15 +369,17 @@ fi
 #
 # midonet api
 #
-if [[ "midonet_api" == "${CONTAINER_ROLE}" ]]; then
-    for IP in "${MIDONET_API_OUTER_IP}" "${DEFAULT_GW_IFACE_IP}"; do
-        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${IP}" --dport 8081 -j DNAT --to "${CONTAINER_IP}:8081"
-        iptables -I FORWARD -p tcp -d "${IP}" --dport 8081 -j ACCEPT
-    done
-else
-    iptables -t nat -I PREROUTING -i dockertinc -p tcp -d "${MIDONET_API_OUTER_IP}" --dport 8081 -j DNAT --to "${MIDONET_API_IP}:8081"
-    iptables -I FORWARD -p tcp -d "${MIDONET_API_IP}" --dport 8081 -j ACCEPT
-fi
+for PORT in 8081 8459 8460; do
+    if [[ "midonet_api" == "${CONTAINER_ROLE}" ]]; then
+        for IP in "${MIDONET_API_OUTER_IP}" "${DEFAULT_GW_IFACE_IP}"; do
+            iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${IP}" --dport ${PORT} -j DNAT --to "${CONTAINER_IP}:${PORT}"
+            iptables -I FORWARD -p tcp -d "${IP}" --dport ${PORT} -j ACCEPT
+        done
+    else
+        iptables -t nat -I PREROUTING -i dockertinc -p tcp -d "${MIDONET_API_OUTER_IP}" --dport ${PORT} -j DNAT --to "${MIDONET_API_IP}:${PORT}"
+        iptables -I FORWARD -p tcp -d "${MIDONET_API_IP}" --dport ${PORT} -j ACCEPT
+    fi
+done
 
 """ % (
         server,

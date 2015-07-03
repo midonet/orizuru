@@ -26,7 +26,7 @@ class midonet_manager18 {
     }
   }
 
-  define configure($rest_api_base = "http://localhost:8080", $install_dir = "/var/www/html/midonet-manager") {
+  define configure($rest_api_ip = "127.0.0.1", $rest_api_base = "http://localhost:8080", $install_dir = "/var/www/html/midonet-manager") {
     if $::osfamily == "RedHat" {
       $root_url = "/html/midonet-manager/"
     } else {
