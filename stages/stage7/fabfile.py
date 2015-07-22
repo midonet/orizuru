@@ -858,6 +858,9 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 #
 %s
 
+API_IP="%s"
+API_URI="%s"
+
 OPENSTACK_RELEASE="%s"
 
 source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
@@ -871,7 +874,7 @@ fi
 
 cat >/root/.midonetrc<<EOF
 [cli]
-api_url = http://%s:%s
+api_url = http://${API_IP}:${API_URI}
 username = admin
 password = ${ADMIN_PASS}
 tenant = ${ADMIN_TENANT_ID}
