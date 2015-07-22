@@ -1357,6 +1357,8 @@ REGION="%s"
 
 SERVICE_IP="%s"
 
+OPENSTACK_RELEASE="%s"
+
 touch /usr/lib/python2.7/dist-packages/babel/localedata/__init__.py
 
 if [[ "kilo" == "${OPENSTACK_RELEASE}" || \
@@ -1409,7 +1411,8 @@ EOF
     metadata.services[service]["internalurl"],
     metadata.services[service]["adminurl"],
     metadata.config["region"],
-    service_ip
+    service_ip,
+    metadata.config["openstack_release"]
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
@@ -1588,6 +1591,8 @@ KEYSTONE_IP="%s"
 SERVICE="%s"
 X_PASSWORD="${%s_PASS}"
 
+OPENSTACK_RELEASE="%s"
+
 touch /usr/lib/python2.7/dist-packages/babel/localedata/__init__.py
 
 if [[ "kilo" == "${OPENSTACK_RELEASE}" || \
@@ -1643,7 +1648,8 @@ EOF
     open(os.environ["PASSWORDCACHE"]).read(),
     keystone_ip,
     service,
-    service.upper()
+    service.upper(),
+    metadata.config["openstack_release"]
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
