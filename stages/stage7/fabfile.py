@@ -865,8 +865,7 @@ OPENSTACK_RELEASE="%s"
 
 source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
-if [[ "kilo" == "${OPENSTACK_RELEASE}" || \
-    "liberty" == "${OPENSTACK_RELEASE}" ]]; then
+if [[ "kilo" == "${OPENSTACK_RELEASE}" || "liberty" == "${OPENSTACK_RELEASE}" ]]; then
     ADMIN_TENANT_ID="$(openstack project list --format csv | sed 's,",,g;' | grep -v ^ID | grep ',admin' | awk -F',' '{print $1;}' | xargs -n1 echo)"
 else
     ADMIN_TENANT_ID="$(keystone tenant-list | grep admin | awk -F'|' '{print $2;}' | xargs -n1 echo)"
@@ -1006,10 +1005,17 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 
 FIP_BASE="%s"
 
+OPENSTACK_RELEASE="%s"
+
 source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
-neutron net-list | grep public || \
-    neutron net-create public --router:external=true
+if [[ "kilo" == "${OPENSTACK_RELEASE}" || "liberty" == "${OPENSTACK_RELEASE}" ]]; then
+    neutron net-list | grep public || \
+        neutron net-create public --router:external
+else
+    neutron net-list | grep public || \
+        neutron net-create public --router:external=true
+fi
 
 # this is the pseudo FIP subnet
 neutron subnet-list | grep extsubnet || \
@@ -1082,7 +1088,8 @@ nova boot \
 
 """ % (
         metadata.config["debug"],
-        metadata.config["fip_base"]
+        metadata.config["fip_base"],
+        metadata.config["openstack_release"]
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
