@@ -72,7 +72,8 @@ def stage6_container_openstack_horizon():
 
     cuisine.package_ensure(["openstack-dashboard", "apache2", "libapache2-mod-wsgi", "memcached", "python-memcache"])
 
-    run("apt-get -y remove openstack-dashboard-ubuntu-theme")
+    if metadata.config["openstack_release"] not in ['kilo', 'liberty']:
+        run("apt-get -y remove openstack-dashboard-ubuntu-theme")
 
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
