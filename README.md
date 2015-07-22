@@ -22,6 +22,8 @@ root@midonet_cli # midonet-cli
 ```
 The file /etc/keystone/KEYSTONERC is available in every container (so when you log into openstack_controller you will be able to source it also).
 
+Note that for kilo you should source /etc/keystone/admin-openrc.sh (the KEYSTONERC will not exist there).
+
 Localhost Quickstart
 ====================
 This is useful if you do not want to install to other servers and install everything on your localhost right away.
