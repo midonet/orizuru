@@ -462,8 +462,8 @@ def stage6_container_openstack_neutron():
         "neutron-dhcp-agent"])
 
     # from kilo onward you can use the lbaas in horizon
-    if metadata.config["midonet_mem_openstack_plugin_version"] not in ['havana', 'icehouse', 'juno']:
-        cuisine.package_ensure("neutron-lbaas")
+    if metadata.config["midonet_mem_openstack_plugin_version"] in ['kilo', 'liberty']:
+        cuisine.package_ensure("python-neutron-lbaas")
 
     service = "neutron"
 
@@ -500,6 +500,8 @@ MIDONET_API_URL="%s"
 
 PLUGIN_VERSION="%s"
 
+OPENSTACK_RELEASE="%s"
+
 source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 SERVICE_TENANT_ID="$(keystone tenant-list | grep 'service' | awk -F'|' '{print $2;}' | xargs -n1 echo)"
@@ -524,7 +526,12 @@ for XSERVICE in "${SERVICE}"; do
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_userid" "osrabbit"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_password" "${RABBIT_PASS}"
 
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "core_plugin" "midonet.neutron.plugin.MidonetPluginV2"
+    if [[ "kilo" == "${PLUGIN_VERSION}" ||
+          "liberty" == "${PLUGIN_VERSION}" ]]; then
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "core_plugin" "neutron.plugins.midonet.plugin.MidonetPluginV2"
+    else
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "core_plugin" "midonet.neutron.plugin.MidonetPluginV2"
+    fi
 
     #
     # use the horizon lbaas plugin for juno upwards.
