@@ -4,5 +4,7 @@ make distclean; echo
 
 make clean; echo
 
-make 2>&1 | tee /tmp/$(date +%s).log
+touch tmp/.SUCCESS_pipinstall
+
+make 2>&1 | tee /tmp/orizuru_CI_$(date +%s).txt
 

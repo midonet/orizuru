@@ -1359,6 +1359,29 @@ SERVICE_IP="%s"
 
 touch /usr/lib/python2.7/dist-packages/babel/localedata/__init__.py
 
+if [[ "kilo" == "${OPENSTACK_RELEASE}" || \
+      "liberty" == "${OPENSTACK_RELEASE}" ]]; then
+    export OS_TOKEN="${ADMIN_TOKEN}"
+    export OS_URL="http://${KEYSTONE_IP}:35357/v2.0"
+
+    openstack service list -c Type | grep "${SERVICE_TYPE}" || \
+        openstack service create --name "${SERVICE}" --description "${SERVICE_DESCRIPTION}" "${SERVICE_TYPE}"
+
+    PUBLIC="http://${SERVICE_IP}:${PUBLICURL}"
+    ADMIN="http://${SERVICE_IP}:${ADMINURL}"
+    INTERNAL="http://${SERVICE_IP}:${INTERNALURL}"
+
+    openstack endpoint list -c 'Service Type' | grep "${SERVICE_TYPE}" || \
+        openstack endpoint create \
+            --publicurl "${PUBLIC}" \
+            --internalurl "${INTERNAL}" \
+            --adminurl "${ADMIN}" \
+            --region "${REGION}" \
+            "${SERVICE_TYPE}"
+
+    exit 0
+fi
+
 python 2>&1 <<EOF
 from keystoneclient.v2_0 import client
 
@@ -1427,7 +1450,8 @@ OPENSTACK_RELEASE="%s"
 
 touch /usr/lib/python2.7/dist-packages/babel/localedata/__init__.py
 
-if [[ "kilo" == "${OPENSTACK_RELEASE}" ]]; then
+if [[ "kilo" == "${OPENSTACK_RELEASE}" || \
+      "liberty" == "${OPENSTACK_RELEASE}" ]]; then
     export OS_TOKEN="${ADMIN_TOKEN}"
     export OS_URL="http://${KEYSTONE_IP}:35357/v2.0"
 
@@ -1439,7 +1463,46 @@ if [[ "kilo" == "${OPENSTACK_RELEASE}" ]]; then
         --adminurl "http://${KEYSTONE_IP}:${ADMINURL}" \
         --region "${REGION}" \
             identity
+
+    for TENANT in 'admin' 'service' 'demo'; do
+        openstack project list | grep "${TENANT}" || openstack project create "${TENANT}"
+    done
+
+    for ROLE in 'admin' 'Member'; do
+        openstack role list | grep "${ROLE}" || openstack role create "${ROLE}"
+    done
+
+    #
+    # demo tenant
+    #
+    openstack user list --project demo --format csv -c Name | sed 's,",,g' | grep -v "^Name" | grep "^demo" && \
+        openstack user set --project demo --password "${DEMO_PASSWORD}" "demo" || \
+        openstack user create --project demo --password "${DEMO_PASSWORD}" "demo"
+
+    #
+    # admin tenant
+    #
+    openstack user list --project admin --format csv -c Name | sed 's,",,g' | grep -v "^Name" | grep "^admin" && \
+        openstack user set --project admin --password "${SERVICE_PASSWORD}" "admin" || \
+        openstack user create --project admin --password "${SERVICE_PASSWORD}" "admin"
+
+    openstack role add --project admin --user admin admin || true
+
+    #
+    # service tenant
+    #
+    openstack user list --project service --format csv -c Name | sed 's,",,g' | grep -v "^Name" | grep "^service" && \
+        openstack user set --project service --password "${SERVICE_PASSWORD}" "service" || \
+        openstack user create --project service --password "${SERVICE_PASSWORD}" "service"
+
+    openstack role add --project service --user service admin || true
+
+    exit 0
 fi
+
+#
+# logic for juno
+#
 
 python 2>&1 <<EOF
 from keystoneclient.v2_0 import client
@@ -1509,6 +1572,7 @@ EOF
 
     for service in metadata.services:
         if not service == 'keystone':
+            puts(green("configuring keystone for service %s" % service))
             run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
@@ -1525,6 +1589,24 @@ SERVICE="%s"
 X_PASSWORD="${%s_PASS}"
 
 touch /usr/lib/python2.7/dist-packages/babel/localedata/__init__.py
+
+if [[ "kilo" == "${OPENSTACK_RELEASE}" || \
+      "liberty" == "${OPENSTACK_RELEASE}" ]]; then
+    export OS_TOKEN="${ADMIN_TOKEN}"
+    export OS_URL="http://${KEYSTONE_IP}:35357/v2.0"
+
+    openstack user list --project service --format csv -c Name | sed 's,",,g' | grep -v "^Name" | grep "^${SERVICE}" && \
+        openstack user set --project service --password "${X_PASSWORD}" "${SERVICE}" || \
+        openstack user create --project service --password "${X_PASSWORD}" "${SERVICE}"
+
+    openstack role add --project service --user "${SERVICE}" admin || true
+
+    exit 0
+fi
+
+#
+# logic for juno
+#
 
 python 2>&1 <<EOF
 from keystoneclient.v2_0 import client

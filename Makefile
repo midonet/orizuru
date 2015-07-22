@@ -36,6 +36,9 @@ passwordcache:
 
 preflight: pipinstalled pipdeps
 
+#
+# do not use this without running make preflight at least once!
+#
 ci:
 	bin/ci.sh
 
