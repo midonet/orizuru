@@ -500,7 +500,7 @@ MIDONET_API_URL="%s"
 
 PLUGIN_VERSION="%s"
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 SERVICE_TENANT_ID="$(keystone tenant-list | grep 'service' | awk -F'|' '{print $2;}' | xargs -n1 echo)"
 
@@ -650,15 +650,15 @@ sync
 
 set -e
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
-neutron-db-manage --config-file /etc/neutron/neutron.conf upgrade juno
+neutron-db-manage --config-file /etc/neutron/neutron.conf upgrade %s
 
-""")
+""" % metadata.config["openstack_release"])
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 SERVICE="neutron"
 
@@ -1221,7 +1221,7 @@ rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 set -e
 
@@ -1243,7 +1243,7 @@ glance image-list | grep cirros || \
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 set -e
 
@@ -1280,7 +1280,28 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 
 KEYSTONE_IP="%s"
 
+OPENSTACK_RELEASE="%s"
+
 mkdir -pv /etc/keystone
+
+if [[ "kilo" == "${OPENSTACK_RELEASE}" || \
+      "liberty" == "${OPENSTACK_RELEASE}" ]]; then
+
+    cat>/etc/keystone/admin-openrc.sh<<EOF
+export OS_PROJECT_DOMAIN_ID=default
+export OS_USER_DOMAIN_ID=default
+export OS_PROJECT_NAME=admin
+export OS_TENANT_NAME=admin
+export OS_USERNAME=admin
+export OS_PASSWORD=${ADMIN_PASS}
+export OS_AUTH_URL=http://${KEYSTONE_IP}:35357/v3
+EOF
+
+    chmod 0700 /etc/keystone/admin-openrc.sh
+    chown root:root /etc/keystone/admin-openrc.sh
+
+    exit 0
+fi
 
 cat>/etc/keystone/KEYSTONERC<<EOF
 export OS_TENANT_NAME=admin
@@ -1304,8 +1325,13 @@ chown root:root /etc/keystone/KEYSTONERC*
 """ % (
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
-        metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"]
+        metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"],
+        metadata.config["openstack_release"]
     ))
+
+    if metadata.config["openstack_release"] in ["liberty", "kilo"]:
+        # install this everywhere because we might need to get tenant ids with it
+        cuisine.package_ensure("python-openstackclient")
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

@@ -858,9 +858,16 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 #
 %s
 
-source /etc/keystone/KEYSTONERC_ADMIN
+OPENSTACK_RELEASE="%s"
 
-ADMIN_TENANT_ID="$(keystone tenant-list | grep admin | awk -F'|' '{print $2;}' | xargs -n1 echo)"
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+
+if [[ "kilo" == "${OPENSTACK_RELEASE}" || \
+    "liberty" == "${OPENSTACK_RELEASE}" ]]; then
+    ADMIN_TENANT_ID="$(openstack project list --format csv | sed 's,",,g;' | grep -v ^ID | grep ',admin' | awk -F',' '{print $1;}' | xargs -n1 echo)"
+else
+    ADMIN_TENANT_ID="$(keystone tenant-list | grep admin | awk -F'|' '{print $2;}' | xargs -n1 echo)"
+fi
 
 cat >/root/.midonetrc<<EOF
 [cli]
@@ -875,7 +882,8 @@ EOF
         metadata.config["debug"],
         open(os.environ["PASSWORDCACHE"]).read(),
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
-        metadata.services["midonet"]["internalurl"]
+        metadata.services["midonet"]["internalurl"],
+        metadata.config["openstack_release"]
     ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
@@ -995,7 +1003,7 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 
 FIP_BASE="%s"
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 neutron net-list | grep public || \
     neutron net-create public --router:external=true
@@ -1157,7 +1165,7 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 
 FIP_BASE="%s"
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 neutron floatingip-list | grep "${FIP_BASE}" || neutron floatingip-create public
 
@@ -1195,7 +1203,7 @@ neutron floatingip-list
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
 
@@ -1210,7 +1218,7 @@ ping -c9 "${FIP}"
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
 
@@ -1220,7 +1228,7 @@ ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /root/.ssh/id_rsa_nova "c
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
 
@@ -1230,7 +1238,7 @@ ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /root/.ssh/id_rsa_nova "c
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN
+source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
 FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
 
