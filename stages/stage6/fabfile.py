@@ -1808,6 +1808,7 @@ EOF
     chmod 0755 /var/www/cgi-bin/keystone/*
 
     service apache2 restart
+    service memcached restart
 else
     chmod 0777 /var/run/screen
 
