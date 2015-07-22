@@ -1505,15 +1505,15 @@ if [[ "kilo" == "${OPENSTACK_RELEASE}" || \
     # demo tenant
     #
     openstack user list --project demo --format csv -c Name | sed 's,",,g' | grep -v "^Name" | grep "^demo" && \
-        openstack user set --project demo --password "${DEMO_PASSWORD}" "demo" || \
-        openstack user create --project demo --password "${DEMO_PASSWORD}" "demo"
+        openstack user set --project demo --password "${DEMO_PASS}" "demo" || \
+        openstack user create --project demo --password "${DEMO_PASS}" "demo"
 
     #
     # admin tenant
     #
     openstack user list --project admin --format csv -c Name | sed 's,",,g' | grep -v "^Name" | grep "^admin" && \
-        openstack user set --project admin --password "${SERVICE_PASSWORD}" "admin" || \
-        openstack user create --project admin --password "${SERVICE_PASSWORD}" "admin"
+        openstack user set --project admin --password "${ADMIN_PASS}" "admin" || \
+        openstack user create --project admin --password "${ADMIN_PASS}" "admin"
 
     openstack role add --project admin --user admin admin || true
 
@@ -1521,8 +1521,8 @@ if [[ "kilo" == "${OPENSTACK_RELEASE}" || \
     # service tenant
     #
     openstack user list --project service --format csv -c Name | sed 's,",,g' | grep -v "^Name" | grep "^service" && \
-        openstack user set --project service --password "${SERVICE_PASSWORD}" "service" || \
-        openstack user create --project service --password "${SERVICE_PASSWORD}" "service"
+        openstack user set --project service --password "${SERVICE_PASS}" "service" || \
+        openstack user create --project service --password "${SERVICE_PASS}" "service"
 
     openstack role add --project service --user service admin || true
 
