@@ -83,8 +83,10 @@ RUN apt-get autoclean
 RUN apt-get update 1>/dev/null
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -u dist-upgrade 1>/dev/null
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server screen 1>/dev/null
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server screen
 RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y %s
 
 RUN mkdir -pv /var/run/screen
 RUN chmod 0777 /var/run/screen
@@ -118,7 +120,8 @@ CMD ["/usr/sbin/sshd", "-D"]
         metadata.config["apt-cacher"],
         metadata.config["archive_country"],
         metadata.config["apt-cacher"],
-        metadata.config["archive_country"]
+        metadata.config["archive_country"],
+        metadata.config["common_packages"]
         ))
 
             run("""

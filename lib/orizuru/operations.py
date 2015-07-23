@@ -290,6 +290,7 @@ class Install(object):
         self.login_stuff()
         self.apt_get_update()
         self.common_packages()
+        self.install_puppet()
         self.newrelic()
         self.rp_filter()
         self.cloud_repository()
@@ -408,6 +409,9 @@ fi
 
     def common_packages(self):
         cuisine.package_ensure(self._metadata.config["common_packages"])
+
+    def install_puppet(self):
+        cuisine.package_ensure("puppet")
 
     def rsyslog(self):
 
