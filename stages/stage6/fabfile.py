@@ -63,6 +63,76 @@ def stage6():
 
     execute(stage6_container_openstack_horizon)
 
+    #
+    # https://bugs.launchpad.net/horizon/+bug/1404471
+    # https://review.openstack.org/#/c/183173
+    #
+    if metadata.config["openstack_release"] == "kilo":
+        execute(stage6_container_openstack_horizon_lbaas_hotfix)
+
+@roles('container_openstack_horizon')
+def stage6_container_openstack_horizon_lbaas_hotfix():
+    metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
+    run("""
+
+cat >/tmp/horizon_lbaas_health_monitor.patch<<EOF
+--- workflows.py.ORIG   2015-07-23 12:49:40.727814567 +0000
++++ workflows.py        2015-07-23 12:50:00.363802595 +0000
+@@ -632,22 +628,25 @@
+     def populate_monitor_id_choices(self, request, context):
+         self.fields['monitor_id'].label = _("Select a monitor template "
+                                             "for %s") % context['pool_name']
+-
+-        monitor_id_choices = [('', _("Select a Monitor"))]
++        monitor_id_choices = []
+         try:
+             tenant_id = self.request.user.tenant_id
+             monitors = api.lbaas.pool_health_monitor_list(request,
+                                                           tenant_id=tenant_id)
+-            pool_monitors_ids = [pm.id for pm in context['pool_monitors']]
+-            for m in monitors:
+-                if m.id not in pool_monitors_ids:
+-                    display_name = utils.get_monitor_display_name(m)
+-                    monitor_id_choices.append((m.id, display_name))
++
++            def is_current_pool_associated(_monitor):
++                assoc_pool_ids = [pool['pool_id'] for pool in _monitor.pools]
++                return context['pool_id'] in assoc_pool_ids
++
++            monitor_id_choices = (
++                [(monitor.id, utils.get_monitor_display_name(monitor))
++                 for monitor in monitors
++                 if not is_current_pool_associated(monitor)])
+         except Exception:
+             exceptions.handle(request,
+                               _('Unable to retrieve monitors list.'))
+         self.fields['monitor_id'].choices = monitor_id_choices
+-
++        monitor_id_choices.insert(0, ('', _("Select a Monitor")))
+         return monitor_id_choices
+
+     class Meta(object):
+EOF
+
+cd /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/loadbalancers
+
+patch -p0 </tmp/horizon_lbaas_health_monitor.patch
+
+""")
+
+    run("""
+
+service apache2 restart
+service memcached restart
+
+    """)
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
 @roles('container_openstack_horizon')
 def stage6_container_openstack_horizon():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -926,6 +996,9 @@ ps axufwwwwww | grep -v grep | grep -v "orizuru-${SERVICE}-${SUBSERVICE}.sh" | g
 def stage6_physical_openstack_compute_nova_compute():
     metadata = Config(os.environ["CONFIGFILE"])
 
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
+
     compute_ip = "%s.%s" % (metadata.config["vpn_base"], metadata.config["idx"][env.host_string])
 
     stage6_openstack_compute_nova_compute(compute_ip, compute_ip)
@@ -945,9 +1018,14 @@ ps axufwwwww | grep -v grep | grep nova-compute
 
 """)
 
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
+
 @roles('container_openstack_compute')
 def stage6_container_openstack_compute_nova_compute():
     metadata = Config(os.environ["CONFIGFILE"])
+
+    if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
+        return
 
     compute_ip = metadata.containers[env.host_string]["ip"]
 
@@ -970,6 +1048,8 @@ sleep 10
 ps axufwwwww | grep -v grep | grep nova-compute
 
 """)
+
+    cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
 def stage6_openstack_compute_nova_compute(compute_ip, compute_vpn_ip):
     metadata = Config(os.environ["CONFIGFILE"])
