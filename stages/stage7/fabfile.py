@@ -1218,7 +1218,7 @@ source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
 
 for i in $(seq 1 120); do
-    ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=2 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" uptime && break || true
+    </dev/null ssh -q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=2 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" uptime && break || true
     sleep 1
 done
 
@@ -1226,35 +1226,23 @@ ping -c9 "${FIP}"
 
 """)
 
-    run("""
+    cxx=[]
+
+    cxx.append('wget -O/dev/null http://www.midokura.com')
+    cxx.append('ping -c3 www.midokura.com')
+    cxx.append('ping -c3 www.google.com')
+
+    for cxc in cxx:
+        puts(green("trying to run command [%s] in testvm" % cxc))
+        run("""
 
 source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
 
-FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
+FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address | head -n1)"
 
-ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- wget -O/dev/null http://www.midokura.com
+</dev/null ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- %s
 
-""")
-
-    run("""
-
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
-
-FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
-
-ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- ping -c3 www.midokura.com
-
-""")
-
-    run("""
-
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
-
-FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
-
-ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /root/.ssh/id_rsa_nova "cirros@${FIP}" -- ping -c3 www.google.com
-
-""")
+""" % cxc)
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

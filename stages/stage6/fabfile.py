@@ -72,9 +72,6 @@ def stage6_container_openstack_horizon():
 
     cuisine.package_ensure(["openstack-dashboard", "apache2", "libapache2-mod-wsgi", "memcached", "python-memcache"])
 
-    if metadata.config["openstack_release"] not in ['kilo', 'liberty']:
-        run("apt-get -y remove openstack-dashboard-ubuntu-theme")
-
     run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
@@ -444,6 +441,14 @@ service memcached restart
 
     for picture in ["logo", "logo-splash"]:
         cuisine.file_upload("/usr/share/openstack-dashboard/static/dashboard/img/%s.png" % picture, "%s/img/midokura.png" % os.environ["TMPDIR"])
+
+    if metadata.config["openstack_release"] in ['kilo', 'liberty']:
+        run("""
+
+apt-get install --reinstall openstack-dashboard-ubuntu-theme
+service apache2 restart
+
+""")
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
