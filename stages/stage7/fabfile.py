@@ -426,6 +426,30 @@ mn-conf set -t default < /tmp/cassandra.json
     len(cshosts)
     ))
 
+    #
+    # haproxy needs to be turned on for L4LB
+    #
+    run("""
+
+cat >/tmp/health.json<<EOF
+
+agent {
+    "haproxy_health_monitor" {
+        # zookeeper://midonet/v1/config/schemas/agent: 62
+        "haproxy_file_loc"="/etc/midolman/l4lb/"
+        # zookeeper://midonet/v1/config/schemas/agent: 63
+        "health_monitor_enable"=true
+        # zookeeper://midonet/v1/config/schemas/agent: 65
+        "namespace_cleanup"=false
+    }
+}
+
+EOF
+
+mn-conf set -t default < /tmp/health.json
+
+""")
+
 def stage7_install_midonet_agent():
     metadata = Config(os.environ["CONFIGFILE"])
 
