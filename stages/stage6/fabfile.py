@@ -777,6 +777,12 @@ CONTROLLER_IP="%s"
 
 NEUTRON_IP="%s"
 
+DBPASS="${%s_DBPASS}"
+
+SERVICE_PASS="${%s_PASS}"
+
+OPENSTACK_RELEASE="%s"
+
 #
 # nova controller
 #
@@ -785,17 +791,26 @@ for XSERVICE in "${SERVICE}"; do
 
     test -f "${CONFIGFILE}.DISTRIBUTION" || cp "${CONFIGFILE}" "${CONFIGFILE}.DISTRIBUTION" || true
 
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_listen" "0.0.0.0"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_listen_port" "8775"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_workers" "2"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "service_neutron_metadata_proxy" "True"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_host" "${CONTROLLER_IP}"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "neutron_metadata_proxy_shared_secret" "${NEUTRON_METADATA_SHARED_SECRET}"
-
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "verbose" "${VERBOSE}"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "debug" "${DEBUG}"
 
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "database" "connection" "mysql://${SERVICE}:${%s_DBPASS}@${DATABASE_SERVER_IP}/${SERVICE}"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_listen" "0.0.0.0"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_listen_port" "8775"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_workers" "2"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_host" "${CONTROLLER_IP}"
+
+    if [[ "kilo" == "${OPENSTACK_RELEASE}" || "liberty" == "${OPENSTACK_RELEASE}" ]]; then
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "service_metadata_proxy" "True"
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "metadata_proxy_shared_secret" "${NEUTRON_METADATA_SHARED_SECRET}"
+    else
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "service_neutron_metadata_proxy" "True"
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "neutron_metadata_proxy_shared_secret" "${NEUTRON_METADATA_SHARED_SECRET}"
+
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "service_neutron_metadata_proxy" "True"
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "neutron_metadata_proxy_shared_secret" "${NEUTRON_METADATA_SHARED_SECRET}"
+    fi
+
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "database" "connection" "mysql://${SERVICE}:${DBPASS}@${DATABASE_SERVER_IP}/${SERVICE}"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "neutron_url_timeout" "240"
 
@@ -816,7 +831,7 @@ for XSERVICE in "${SERVICE}"; do
     "${CONFIGHELPER}" set "${CONFIGFILE}" "keystone_authtoken" "identity_uri" "http://${KEYSTONE_IP}:35357"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "keystone_authtoken" "admin_tenant_name" "service"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "keystone_authtoken" "admin_user" "${SERVICE}"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "keystone_authtoken" "admin_password" "${%s_PASS}"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "keystone_authtoken" "admin_password" "${SERVICE_PASS}"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "glance" "host" "${GLANCE_IP}"
 
@@ -824,9 +839,6 @@ for XSERVICE in "${SERVICE}"; do
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "security_group_api" "neutron"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "linuxnet_interface_driver" "nova.network.linux_net.LinuxOVSInterfaceDriver"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "firewall_driver" "nova.virt.firewall.NoopFirewallDriver"
-
-    # TODO find out which one is correct (this or the above one in DEFAULT)
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "neutron_metadata_proxy_shared_secret" "${NEUTRON_METADATA_SHARED_SECRET}"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "url" "http://${NEUTRON_IP}:9696"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "auth_strategy" "keystone"
@@ -865,7 +877,8 @@ rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
         metadata.containers[metadata.roles["container_openstack_controller"][0]]["ip"],
         metadata.containers[metadata.roles["container_openstack_neutron"][0]]["ip"],
         service.upper(),
-        service.upper()
+        service.upper(),
+        metadata.config["openstack_release"]
     ))
 
     for service in ['nova']:
@@ -1003,6 +1016,8 @@ COMPUTE_VPN_IP="%s"
 
 MIDONET_API_URL="%s"
 
+OPENSTACK_RELEASE="%s"
+
 #
 # nova compute
 #
@@ -1011,15 +1026,24 @@ for XSERVICE in "${SERVICE}"; do
 
     test -f "${CONFIGFILE}.DISTRIBUTION" || cp "${CONFIGFILE}" "${CONFIGFILE}.DISTRIBUTION" || true
 
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "verbose" "${VERBOSE}"
+    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "debug" "${DEBUG}"
+
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_listen" "0.0.0.0"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_listen_port" "8775"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_workers" "2"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "service_neutron_metadata_proxy" "True"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "metadata_host" "${CONTROLLER_IP}"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "neutron_metadata_proxy_shared_secret" "${NEUTRON_METADATA_SHARED_SECRET}"
 
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "verbose" "${VERBOSE}"
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "debug" "${DEBUG}"
+    if [[ "kilo" == "${OPENSTACK_RELEASE}" || "liberty" == "${OPENSTACK_RELEASE}" ]]; then
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "service_metadata_proxy" "True"
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "metadata_proxy_shared_secret" "${NEUTRON_METADATA_SHARED_SECRET}"
+    else
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "service_neutron_metadata_proxy" "True"
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "neutron_metadata_proxy_shared_secret" "${NEUTRON_METADATA_SHARED_SECRET}"
+
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "service_neutron_metadata_proxy" "True"
+        "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "neutron_metadata_proxy_shared_secret" "${NEUTRON_METADATA_SHARED_SECRET}"
+    fi
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rpc_backend" "rabbit"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "rabbit_host" "${RABBIT_IP}"
@@ -1046,7 +1070,6 @@ for XSERVICE in "${SERVICE}"; do
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "network_api_class" "nova.network.neutronv2.api.API"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "security_group_api" "neutron"
-    # "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "linuxnet_interface_driver" "nova.network.linux_net.LinuxOVSInterfaceDriver"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "DEFAULT" "firewall_driver" "nova.virt.firewall.NoopFirewallDriver"
 
     # used for midonet
@@ -1056,9 +1079,6 @@ for XSERVICE in "${SERVICE}"; do
     "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "username" "midonet"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "password" "${MIDONET_PASS}"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "MIDONET" "project_id" "service"
-
-    # TODO find out which one is correct (this or the above one in DEFAULT)
-    "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "neutron_metadata_proxy_shared_secret" "${NEUTRON_METADATA_SHARED_SECRET}"
 
     "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "url" "http://${NEUTRON_IP}:9696"
     "${CONFIGHELPER}" set "${CONFIGFILE}" "neutron" "auth_strategy" "keystone"
@@ -1132,6 +1152,7 @@ service libvirt-bin restart
         metadata.containers[metadata.roles["container_openstack_neutron"][0]]["ip"],
         compute_vpn_ip,
         metadata.services["midonet"]["internalurl"],
+        metadata.config["openstack_release"],
         service.upper()
     ))
 
