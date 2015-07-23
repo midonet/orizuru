@@ -649,7 +649,8 @@ sync
         metadata.config["region"],
         metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
         metadata.services["midonet"]["internalurl"],
-        metadata.config["midonet_mem_openstack_plugin_version"]
+        metadata.config["midonet_mem_openstack_plugin_version"],
+        metadata.config["openstack_release"]
     ))
 
     puts(green("running neutron-db-manage"))
