@@ -345,6 +345,7 @@ fi
 if [[ "openstack_controller" == "${CONTAINER_ROLE}" ]]; then
     for IP in "${SERVER_IP}" "${DEFAULT_GW_IFACE_IP}"; do
         iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${IP}" --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
+        iptables -t nat -I PREROUTING                          -p tcp -d "${IP}" --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
         iptables -I FORWARD -p tcp -d "${IP}" --dport 6080 -j ACCEPT
     done
 fi
@@ -355,6 +356,7 @@ fi
 if [[ "openstack_horizon" == "${CONTAINER_ROLE}" ]]; then
     for IP in "${SERVER_IP}" "${DEFAULT_GW_IFACE_IP}"; do
         iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${IP}" --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
+        iptables -t nat -I PREROUTING                          -p tcp -d "${IP}" --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
         iptables -I FORWARD -p tcp -d "${IP}" --dport 80 -j ACCEPT
     done
 fi
@@ -365,6 +367,7 @@ fi
 if [[ "midonet_manager" == "${CONTAINER_ROLE}" ]]; then
     for IP in "${SERVER_IP}" "${DEFAULT_GW_IFACE_IP}"; do
         iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${IP}" --dport 81 -j DNAT --to "${CONTAINER_IP}:80"
+        iptables -t nat -I PREROUTING                          -p tcp -d "${IP}" --dport 81 -j DNAT --to "${CONTAINER_IP}:80"
         iptables -I FORWARD -p tcp -d "${IP}" --dport 80 -j ACCEPT
     done
 fi
@@ -376,6 +379,7 @@ for PORT in 8081 8459 8460; do
     if [[ "midonet_api" == "${CONTAINER_ROLE}" ]]; then
         for IP in "${MIDONET_API_OUTER_IP}" "${DEFAULT_GW_IFACE_IP}"; do
             iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${IP}" --dport ${PORT} -j DNAT --to "${CONTAINER_IP}:${PORT}"
+            iptables -t nat -I PREROUTING                          -p tcp -d "${IP}" --dport ${PORT} -j DNAT --to "${CONTAINER_IP}:${PORT}"
             iptables -I FORWARD -p tcp -d "${IP}" --dport ${PORT} -j ACCEPT
         done
     else
