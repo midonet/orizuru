@@ -25,7 +25,7 @@
 # Run Midonet Openstack on top of Ubuntu Docker ssh images.
 #
 
-all: start passwordcache preflight stage1 stage3 stage4 stage5 stage6 stage7 success finish
+all: start passwordcache preflight stage1 stage3 stage4 haproxy stage5 stage6 stage7 success finish
 
 include include/orizuru.mk
 
@@ -93,6 +93,10 @@ stage3: $(PREREQUISITES)
 
 stage4: $(PREREQUISITES)
 	@figlet CONFIGURE CONTAINERS || true
+	$(RUNSTAGE)
+
+haproxy: $(PREREQUISITES)
+	@figlet CONFIGURE HAPROXY || true
 	$(RUNSTAGE)
 
 stage5: $(PREREQUISITES)

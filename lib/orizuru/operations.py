@@ -107,6 +107,7 @@ wget -SO- "${URL}" | apt-key add -
         cuisine.file_write("/etc/apt/sources.list.d/newrelic.list", """
 deb [arch=amd64] http://apt.newrelic.com/debian/ newrelic non-free
 """)
+
         self.repokey("https://download.newrelic.com/548C16BF.gpg")
 
     def datastax(self):

@@ -70,6 +70,7 @@ rm -fv /var/run/netns/docker_*_"${SERVER_NAME}"
 
     run("""
 
+rm -fv /etc/haproxy/haproxy.cfg
 rm -fv /etc/newrelic/nrsysmond.cfg
 rm -fv /etc/apt/sources.list.d/cloudarchive*
 rm -fv /etc/apt/sources.list.d/newrelic*

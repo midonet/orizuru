@@ -28,13 +28,10 @@ import cuisine
 
 from netaddr import IPNetwork as CIDR
 
-def stage4():
-    metadata = Config(os.environ["CONFIGFILE"])
-
-    execute(docker_containers_for_roles_stage4)
+metadata = Config(os.environ["CONFIGFILE"])
 
 @roles('all_servers')
-def docker_containers_for_roles_stage4():
+def stage4():
     metadata = Config(os.environ["CONFIGFILE"])
 
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
@@ -307,85 +304,18 @@ fi
 DEFAULT_GW_IFACE_IP="$(ip addr show dev ${DEFAULT_GW_IFACE} | grep 'inet ' | awk '{print $2;}' | awk -F'/' '{print $1;}' | xargs -n1 echo | head -n1)"
 
 #
-# SNAT the container talking to the outside world
+# SNAT the private ips talking to the outside world via this box (we need this for fakeuplink)
 #
-iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -j MASQUERADE
-
-iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -d "10.0.0.0/8" -j ACCEPT
-iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -d "172.16.0.0/12" -j ACCEPT
-iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -d "192.168.0.0/16" -j ACCEPT
+iptables -t nat --list -n -v | grep -A999999 'Chain POSTROUTING' | grep 'MASQUERADE' | grep "${DEFAULT_GW_IFACE}" | grep "${CONTAINER_IP}" | grep "0.0.0.0" || \
+    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -j MASQUERADE
 
 #
-# midonet gateway
+# do not SNAT if we talk to private networks
+# we achieve this by inserting the rule before the masquerade rule that came above
 #
-if [[ "midonet_gateway" == "${CONTAINER_ROLE}" ]]; then
-
-    #
-    # SNAT the dummy FIP range traffic that is going to the internet
-    #
-    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -j MASQUERADE
-
-    #
-    # but do not SNAT for RFC1918 networks
-    #
-    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "10.0.0.0/8" -j ACCEPT
-    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "172.16.0.0/12" -j ACCEPT
-    iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${FIP_BASE}.0/24" -d "192.168.0.0/16" -j ACCEPT
-
-    #
-    # route incoming packets to the FIP network through the midonet container ip, it will know what to do
-    #
-    ip route add "${FIP_BASE}.0/24" via "${CONTAINER_IP}" || true
-
-fi
-
-#
-# openstack controller VNC proxy
-#
-if [[ "openstack_controller" == "${CONTAINER_ROLE}" ]]; then
-    for IP in "${SERVER_IP}" "${DEFAULT_GW_IFACE_IP}"; do
-        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${IP}" --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
-        iptables -t nat -I PREROUTING                          -p tcp -d "${IP}" --dport 6080 -j DNAT --to "${CONTAINER_IP}:6080"
-        iptables -I FORWARD -p tcp -d "${IP}" --dport 6080 -j ACCEPT
-    done
-fi
-
-#
-# horizon dashboard
-#
-if [[ "openstack_horizon" == "${CONTAINER_ROLE}" ]]; then
-    for IP in "${SERVER_IP}" "${DEFAULT_GW_IFACE_IP}"; do
-        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${IP}" --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
-        iptables -t nat -I PREROUTING                          -p tcp -d "${IP}" --dport 80 -j DNAT --to "${CONTAINER_IP}:80"
-        iptables -I FORWARD -p tcp -d "${IP}" --dport 80 -j ACCEPT
-    done
-fi
-
-#
-# midonet manager
-#
-if [[ "midonet_manager" == "${CONTAINER_ROLE}" ]]; then
-    for IP in "${SERVER_IP}" "${DEFAULT_GW_IFACE_IP}"; do
-        iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${IP}" --dport 81 -j DNAT --to "${CONTAINER_IP}:80"
-        iptables -t nat -I PREROUTING                          -p tcp -d "${IP}" --dport 81 -j DNAT --to "${CONTAINER_IP}:80"
-        iptables -I FORWARD -p tcp -d "${IP}" --dport 80 -j ACCEPT
-    done
-fi
-
-#
-# midonet api
-#
-for PORT in 8081 8459 8460; do
-    if [[ "midonet_api" == "${CONTAINER_ROLE}" ]]; then
-        for IP in "${MIDONET_API_OUTER_IP}" "${DEFAULT_GW_IFACE_IP}"; do
-            iptables -t nat -I PREROUTING -i "${DEFAULT_GW_IFACE}" -p tcp -d "${IP}" --dport ${PORT} -j DNAT --to "${CONTAINER_IP}:${PORT}"
-            iptables -t nat -I PREROUTING                          -p tcp -d "${IP}" --dport ${PORT} -j DNAT --to "${CONTAINER_IP}:${PORT}"
-            iptables -I FORWARD -p tcp -d "${IP}" --dport ${PORT} -j ACCEPT
-        done
-    else
-        iptables -t nat -I PREROUTING -i dockertinc -p tcp -d "${MIDONET_API_OUTER_IP}" --dport ${PORT} -j DNAT --to "${MIDONET_API_IP}:${PORT}"
-        iptables -I FORWARD -p tcp -d "${MIDONET_API_IP}" --dport ${PORT} -j ACCEPT
-    fi
+for RFC1918 in "10.0.0.0/8" "172.16.0.0/12" "192.168.0.0/16"; do
+    iptables -t nat --list -n -v | grep -A999999 'Chain POSTROUTING' | grep 'ACCEPT' | grep "${DEFAULT_GW_IFACE}" | grep "${CONTAINER_IP}" | grep "${RFC1918}" || \
+        iptables -t nat -I POSTROUTING -o "${DEFAULT_GW_IFACE}" -s "${CONTAINER_IP}/32" -d "${RFC1918}" -j ACCEPT
 done
 
 """ % (
