@@ -13,21 +13,18 @@ config:
     verbose: True
     debug: False
 
-    domain: orizuru.midonet.org
+    domain: orizuru.midokura.de
 
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
     # OS_MIDOKURA_REPOSITORY_PASS
-    midonet_repo: OSS # can be OSS or MEM
+    midonet_repo: MEM # can be OSS or MEM
 
     midonet_mem_version: 1.9
     midonet_mem_openstack_plugin_version: kilo
 
     # change this to juno for OSS
     openstack_release: kilo
-
-    midonet_oss_version: 2015.01
-    midonet_oss_openstack_plugin_version: juno
 
     newrelic_license_key: 5bb3df5f1f18a73de737a37e17690c58252bd183
 
@@ -92,7 +89,7 @@ roles:
 
 servers:
     os001:
-        ip: 127.0.0.1
+        ip: 46.101.208.130
         # used for the containers on this host
         dockernet: 192.168.252.0/24
 

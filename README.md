@@ -12,13 +12,10 @@ To get started with this all you need to provide is a list of (virtual or physic
 At the end of the installation you can do the following to log into midonet-cli and use keystone:
 ```
 ssh -F tmp/.ssh/config midonet_cli
-root@midonet_cli # source /etc/keystone/KEYSTONERC
-root@midonet_cli # keystone tenant-list
-root@midonet_cli # midonet-cli
 ```
 The file /etc/keystone/KEYSTONERC is available in every container (so when you log into openstack_controller you will be able to source it also).
 
-Note that for kilo you should source /etc/keystone/admin-openrc.sh (the KEYSTONERC will not exist there).
+For kilo you should source /etc/keystone/admin-openrc.sh (the KEYSTONERC will not exist there).
 
 Localhost Quickstart
 ====================
@@ -41,7 +38,6 @@ Now you can set the root password, set the configfile and start
 ```
 git clone https://github.com/midonet/orizuru.git
 cd orizuru
-export CONFIGFILE=${PWD}/conf/localhost.yaml
 make
 ```
 
@@ -125,18 +121,5 @@ The reason for this is that we construct some id fields from the digits of the s
 Not for production
 ==================
 
-Please do not use this software to set up production clouds.
-
-Running the services inside Docker containers is perfectly acceptable (and will be the future of OpenStack running services anyway) but the startup of all the services is (intentionally) not automated because we want to be able to prune machines with 'make distclean' without leaving any startup scripts around on the physical servers.
-
-The installer should serve as a fully automated bootstrapper to give you a fast and elegant way of buidling and looking at the inner workings of an OpenStack cloud running the MidoNet reference architecture.
-
-Nested cloud installations
-==========================
-
-If you are installing into a cloud, please write down the MTU from the virtual machines and set the parameter "mtu_container" in your config file to the same value as the vms are having.
-
-For example, when installing to MidoCloud, the vm mtu is 1450. The containers inside those vms should run with 1450 also.
-
-If you do not set up this value, the containers will come up with a default MTU of 1500, which will then lead to very detrimental network performance inside the containers (around 30kbits, purely nostalgic modem speed).
+Please do not use this demo installer to run production clouds. After you reboot a server all containers will be gone!
 
