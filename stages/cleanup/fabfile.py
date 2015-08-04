@@ -80,6 +80,15 @@ rm -fv /etc/apt/sources.list.d/mido*
 
 """)
 
+    puts(red("destroying all virsh images"))
+    run("""
+virsh list --all | grep instance | awk '{print $2;}' | xargs -n1 --no-run-if-empty virsh destroy || echo
+
+virsh list --all | grep instance | awk '{print $2;}' | xargs -n1 --no-run-if-empty virsh undefine || echo
+
+exit 0
+""")
+
     puts(red("destroying all containers"))
     run("""
 
