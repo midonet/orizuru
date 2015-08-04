@@ -113,7 +113,7 @@ deb [arch=amd64] http://apt.newrelic.com/debian/ newrelic non-free
     def datastax(self):
         if env.host_string in self._metadata.containers:
             cuisine.file_write("/etc/apt/sources.list.d/datastax.list", """
-deb [arch=amd64] http://debian.datastax.com/community stable main
+deb [arch=amd64] http://debian.datastax.com/community 2.0 main
 """)
             self.repokey("http://debian.datastax.com/debian/repo_key")
 
