@@ -38,31 +38,41 @@ def haproxy():
 
     haproxy_default_config()
 
+    restart = 0
+
     if env.host_string in metadata.roles['openstack_keystone']:
+        restart = 1
         for port in [5000, 35357]:
             haproxy_into_container(port, port, 'container_openstack_keystone')
 
     if env.host_string in metadata.roles['openstack_controller']:
+        restart = 1
         for port in [6080, 8774]:
             haproxy_into_container(port, port, 'container_openstack_controller')
 
     if env.host_string in metadata.roles['openstack_glance']:
+        restart = 1
         haproxy_into_container(9292, 9292, 'container_openstack_glance')
 
     if env.host_string in metadata.roles['openstack_neutron']:
+        restart = 1
         haproxy_into_container(9696, 9696, 'container_openstack_neutron')
 
     if env.host_string in metadata.roles['midonet_api']:
+        restart = 1
         for port in [8081, 8459, 8460]:
             haproxy_into_container(port, port, 'container_midonet_api')
 
     if env.host_string in metadata.roles['openstack_horizon']:
+        restart = 1
         haproxy_into_container(80, 80, 'container_openstack_horizon')
 
     if env.host_string in metadata.roles['midonet_manager']:
+        restart = 1
         haproxy_into_container(81, 80, 'container_midonet_manager')
 
-    run("""
+    if restart == 1:
+        run("""
 service haproxy restart
 
 ps axufwwwwwwww | grep -v grep | grep haproxy
