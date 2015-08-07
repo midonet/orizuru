@@ -834,6 +834,7 @@ node $(hostname) {
     ->
     ${PUPPET_MODULE}::configure {"$(hostname)":
         rest_api_base => "http://${API_OUTER_IP}:8081",
+        rest_api_ip => "${API_OUTER_IP}"
     }
     ->
     ${PUPPET_MODULE}::start {"$(hostname)":
