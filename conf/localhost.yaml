@@ -23,11 +23,10 @@ config:
     midonet_mem_version: 1.9
     midonet_mem_openstack_plugin_version: kilo
 
-    # change this to juno for OSS
     openstack_release: kilo
 
-    midonet_oss_version: 2015.01
-    midonet_oss_openstack_plugin_version: juno
+    midonet_oss_version: 2015.06
+    midonet_oss_openstack_plugin_version: kilo
 
     newrelic_license_key: 5bb3df5f1f18a73de737a37e17690c58252bd183
 
