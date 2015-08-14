@@ -104,7 +104,7 @@ def stage7_container_zookeeper():
 
     run("service zookeeper stop; service zookeeper start")
 
-    Daemon.poll('org.apache.zookeeper.server.quorum', 60)
+    Daemon.poll('org.apache.zookeeper.server.quorum', 600)
 
     for zkhost in sorted(metadata.roles['container_zookeeper']):
         run("""
@@ -141,7 +141,7 @@ def stage7_container_cassandra():
 
     Puppet.apply('midonet::cassandra', args, metadata)
 
-    Daemon.poll('org.apache.cassandra.service.CassandraDaemon')
+    Daemon.poll('org.apache.cassandra.service.CassandraDaemon', 600)
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
