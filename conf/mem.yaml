@@ -13,7 +13,7 @@ config:
     verbose: True
     debug: False
 
-    domain: orizuru.midokura.de
+    domain: digitalocean.midokura.de
 
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
@@ -33,10 +33,6 @@ config:
 
     # used for the vpn between different testbed hosts
     vpn_base: 192.168.253
-
-    HEAP_INITIAL: 1024M
-    MAX_HEAPSIZE: 1024M
-    HEAP_NEWSIZE: 512M
 
 vpnclients:
     - alex101
@@ -89,7 +85,8 @@ roles:
 
 servers:
     os001:
-        ip: 46.101.208.130
+        # Amsterdam3
+        ip: 178.62.250.202
         # used for the containers on this host
         dockernet: 192.168.252.0/24
 

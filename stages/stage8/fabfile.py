@@ -62,7 +62,7 @@ DEBUG="%s"
 #
 %s
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 RABBIT_HOST="%s"
 RABBIT_USER="osrabbit"

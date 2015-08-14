@@ -47,6 +47,12 @@ def stage4():
         role = metadata.containers[container]["role"]
 
         #
+        # do not create the midonet manager container if its not MEM
+        #
+        if role == 'midonet_manager':
+            if not metadata.config["midonet_repo"] == "MEM":
+                continue
+        #
         # only create a container on this host if the container belongs on it
         #
         if server == env.host_string:

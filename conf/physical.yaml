@@ -5,8 +5,6 @@ config:
     # bind to this interface on the vtep
     # vtep_port: eth1
 
-    # midonet_puppet_modules_branch: master
-
     archive_country: us
     apt-cacher: http://192.168.5.1:3142
 
@@ -42,15 +40,6 @@ config:
 
     # this is a class C network for the vpn spanning all hosts
     vpn_base: 192.168.3
-
-    # currently not used
-    HEAP_INITIAL: 1024M
-
-    # this becomes Xms and Xmx in midolman-env.sh
-    MAX_HEAPSIZE: 1024M
-
-    # this becomes Xmn in midolman-env.sh
-    HEAP_NEWSIZE: 512M
 
 roles:
     zookeeper:

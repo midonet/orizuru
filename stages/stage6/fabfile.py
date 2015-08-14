@@ -578,7 +578,7 @@ PLUGIN_VERSION="%s"
 
 OPENSTACK_RELEASE="%s"
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 SERVICE_TENANT_ID="$(keystone tenant-list | grep 'service' | awk -F'|' '{print $2;}' | xargs -n1 echo)"
 
@@ -734,7 +734,7 @@ sync
 
 set -e
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 neutron-db-manage --config-file /etc/neutron/neutron.conf upgrade %s
 
@@ -742,7 +742,7 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf upgrade %s
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 SERVICE="neutron"
 
@@ -1336,7 +1336,7 @@ rm -fv "/var/lib/${SERVICE}/${SERVICE}.sqlite"
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 set -e
 
@@ -1358,7 +1358,7 @@ glance image-list | grep cirros || \
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 set -e
 

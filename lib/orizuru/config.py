@@ -223,6 +223,10 @@ class Config(object):
 
         defaults["common_packages"] = common_packages
 
+        # will be used by puppet module install
+        defaults["midonet_puppet_modules_forge"] = "midonet-midonet"
+
+        # will be used by midonet manager install in stage 7
         defaults["midonet_puppet_modules"] = "http://github.com/midonet/orizuru"
         defaults["midonet_puppet_modules_branch"] = "master"
 

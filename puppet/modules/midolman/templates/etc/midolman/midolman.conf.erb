@@ -1,9 +1,0 @@
-
-[zookeeper]
-#zookeeper_hosts = 192.168.100.8:2181,192.168.100.9:2181,192.168.100.10:2181
-<%- zkarr = Array.new -%>
-<%- @zookeepers.split(",").each do |zk| -%>
-  <%-   zkarr.push("#{zk}:2181") -%>
-<%- end -%>
-zookeeper_hosts = <%= zkarr.join(",") %>
-

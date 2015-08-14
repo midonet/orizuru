@@ -20,6 +20,8 @@ import os
 import sys
 
 from orizuru.config import Config
+from orizuru.utils import Puppet
+from orizuru.utils import Daemon
 
 from fabric.api import *
 from fabric.utils import puts
@@ -35,6 +37,9 @@ def stage7():
         puts(green("connecting to %s now and adding the key" % server))
         local("ssh -o StrictHostKeyChecking=no root@%s uptime" % metadata.servers[server]["ip"])
 
+    #
+    # network state database
+    #
     execute(stage7_container_zookeeper)
     execute(stage7_container_cassandra)
 
@@ -74,122 +79,44 @@ def stage7_container_zookeeper():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    zkhosts = []
+    puts(green("installing zookeeper on %s" % env.host_string))
+
+    zk = []
 
     zkid = 1
+    myid = 1
 
-    for container in sorted(metadata.roles["container_zookeeper"]):
-        zkhosts.append('"%s:2888:3888"' % metadata.containers[container]["ip"])
+    for zkhost in sorted(metadata.roles["container_zookeeper"]):
+        zk.append("{'id' => '%s', 'host' => '%s'}" % (zkid, metadata.containers[zkhost]['ip']))
 
-        if container == env.host_string:
-            my_id = zkid
+        if env.host_string == zkhost:
+            # then this is our id
+            myid = zkid
 
         zkid = zkid + 1
 
-    run("""
-if [[ "%s" == "True" ]] ; then set -x; fi
+    args = {}
 
-#
-# initialize the password cache
-#
-%s
+    args['servers'] = "[%s]" % ",".join(zk)
+    args['server_id'] = "%s" % myid
 
-#
-# initialize the puppet module for setting up zookeeper
-#
-REPO="%s"
-BRANCH="%s"
-MY_ID="%s"
+    Puppet.apply('midonet::zookeeper', args, metadata)
 
-PUPPET_NODE_DEFINITION="$(mktemp)"
+    run("service zookeeper stop; service zookeeper start")
 
-cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
+    Daemon.poll('org.apache.zookeeper.server.quorum', 60)
 
-PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
+    for zkhost in sorted(metadata.roles['container_zookeeper']):
+        run("""
+IP="%s"
 
-#
-# set up the node definition
-#
-cat>"${PUPPET_NODE_DEFINITION}"<<EOF
-node $(hostname) {
-    hadoop-zookeeper::install {"$(hostname)":
-    }
-    ->
-    hadoop-zookeeper::configure {"$(hostname)":
-        myid => "${MY_ID}",
-        ensemble => [%s]
-    }
-    ->
-    hadoop-zookeeper::start {"$(hostname)":
-    }
-}
-EOF
+echo ruok | nc "${IP}" 2181 | grep imok
 
-#
-# do the puppet run
-#
-puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
+""" % metadata.containers[zkhost]['ip'])
 
-/etc/init.d/zookeeper restart
-
-sleep 2
-
-ps axufwwwwwwwwwww | grep -v grep | grep -- '/usr/share/java/zookeeper.jar' && exit 0
-
-. /etc/zookeeper/conf/environment
-[ -d $ZOO_LOG_DIR ] || mkdir -p $ZOO_LOG_DIR
-chown $USER:$GROUP $ZOO_LOG_DIR
-
-[ -r /etc/default/zookeeper ] && . /etc/default/zookeeper
-if [ -z "$JMXDISABLE" ]; then
-    export JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.local.only=$JMXLOCALONLY"
-fi
-
-export JAVA_OPTS="${JAVA_OPTS} -Djava.net.preferIPv4Stack=true"
-
-chmod 0755 /usr/bin/screen
-chmod 0777 /var/run/screen
-
-screen -S zookeeper -d -m -- \
-    start-stop-daemon --start -c $USER --exec $JAVA --name zookeeper -- \
-        -cp $CLASSPATH $JAVA_OPTS -Dzookeeper.log.dir=${ZOO_LOG_DIR} -Dzookeeper.root.logger=${ZOO_LOG4J_PROP} $ZOOMAIN $ZOOCFG
-
-sleep 2
-
-ps axufwwwwwwwwwww | grep -v grep | grep -- '/usr/share/java/zookeeper.jar'
-
-""" % (
-        metadata.config["debug"],
-        open(os.environ["PASSWORDCACHE"]).read(),
-        metadata.config["midonet_puppet_modules"],
-        metadata.config["midonet_puppet_modules_branch"],
-        my_id,
-        ",".join(zkhosts)
-    ))
-
-    run("""
-
-IMOK="$(echo ruok | nc $(hostname -i) 2181 | grep imok)"
-
-for i in $(seq 1 100); do
-    IMOK="$(echo ruok | nc $(hostname -i) 2181 | grep imok)"
-
-    if [[ "${IMOK}" == "" ]]; then
-        sleep 1
-    else
-        break
-    fi
-done
-
-echo ruok | nc $(hostname -i) 2181 | grep imok
-
-""")
-
-    run("""
-
-echo stats | nc $(hostname -i) 2181
-
-""")
+    #
+    # TODO status check for 'not serving requests'
+    #
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
@@ -200,136 +127,21 @@ def stage7_container_cassandra():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    cshosts = []
+    puts(green("installing cassandra on %s" % env.host_string))
 
-    for container in sorted(metadata.roles["container_cassandra"]):
-        cshosts.append("%s" % metadata.containers[container]["ip"])
+    cs = []
 
-    cuisine.package_ensure("dsc20")
+    for cshost in metadata.roles['container_cassandra']:
+        cs.append("'%s'" % metadata.containers[cshost]['ip'])
 
-    ip_address = metadata.containers[env.host_string]["ip"]
+    args = {}
 
-    cuisine.file_write("/etc/cassandra/cassandra.yaml", """
+    args['seeds'] = "[%s]" % ",".join(cs)
+    args['seed_address'] = "'%s'" % metadata.containers[env.host_string]['ip']
 
-cluster_name: 'midonet'
-seed_provider:
-    - class_name: org.apache.cassandra.locator.SimpleSeedProvider
-      parameters:
-          - seeds: "%s"
-listen_address: %s
-rpc_address: %s
+    Puppet.apply('midonet::cassandra', args, metadata)
 
-num_tokens: 256
-hinted_handoff_enabled: true
-max_hint_window_in_ms: 10800000 # 3 hours
-hinted_handoff_throttle_in_kb: 1024
-max_hints_delivery_threads: 2
-batchlog_replay_throttle_in_kb: 1024
-authenticator: AllowAllAuthenticator
-authorizer: AllowAllAuthorizer
-permissions_validity_in_ms: 2000
-
-partitioner: org.apache.cassandra.dht.Murmur3Partitioner
-
-data_file_directories:
-    - /var/lib/cassandra/data
-
-commitlog_directory: /var/lib/cassandra/commitlog
-disk_failure_policy: stop
-commit_failure_policy: stop
-key_cache_size_in_mb:
-key_cache_save_period: 14400
-row_cache_size_in_mb: 0
-row_cache_save_period: 0
-# counter_cache_size_in_mb:
-# counter_cache_save_period: 7200
-saved_caches_directory: /var/lib/cassandra/saved_caches
-commitlog_sync: periodic
-commitlog_sync_period_in_ms: 10000
-commitlog_segment_size_in_mb: 32
-
-concurrent_reads: 32
-concurrent_writes: 32
-# concurrent_counter_writes: 32
-# memtable_allocation_type: heap_buffers
-# index_summary_capacity_in_mb:
-# index_summary_resize_interval_in_minutes: 60
-trickle_fsync: false
-trickle_fsync_interval_in_kb: 10240
-storage_port: 7000
-ssl_storage_port: 7001
-start_native_transport: true
-native_transport_port: 9042
-
-start_rpc: true
-rpc_port: 9160
-rpc_keepalive: true
-rpc_server_type: sync
-
-thrift_framed_transport_size_in_mb: 15
-
-incremental_backups: false
-snapshot_before_compaction: false
-auto_snapshot: true
-tombstone_warn_threshold: 1000
-tombstone_failure_threshold: 100000
-column_index_size_in_kb: 64
-batch_size_warn_threshold_in_kb: 5
-compaction_throughput_mb_per_sec: 16
-# sstable_preemptive_open_interval_in_mb: 50
-read_request_timeout_in_ms: 5000
-range_request_timeout_in_ms: 10000
-write_request_timeout_in_ms: 2000
-# counter_write_request_timeout_in_ms: 5000
-cas_contention_timeout_in_ms: 1000
-truncate_request_timeout_in_ms: 60000
-request_timeout_in_ms: 10000
-cross_node_timeout: false
-
-endpoint_snitch: SimpleSnitch
-
-dynamic_snitch_update_interval_in_ms: 100
-dynamic_snitch_reset_interval_in_ms: 600000
-dynamic_snitch_badness_threshold: 0.1
-
-request_scheduler: org.apache.cassandra.scheduler.NoScheduler
-
-server_encryption_options:
-    internode_encryption: none
-    keystore: conf/.keystore
-    keystore_password: cassandra
-    truststore: conf/.truststore
-    truststore_password: cassandra
-
-client_encryption_options:
-    enabled: false
-    keystore: conf/.keystore
-    keystore_password: cassandra
-
-internode_compression: all
-inter_dc_tcp_nodelay: false
-
-""" % (
-        ",".join(cshosts),
-        ip_address,
-        ip_address
-    ))
-
-    cuisine.package_ensure("openjdk-7-jre-headless")
-
-    run("""
-service cassandra start || service cassandra restart
-
-sleep 10
-
-if [[ ! "$(grep 'Saved cluster name Test Cluster' /var/log/cassandra/system.log)" == "" ]]; then
-    service cassandra stop
-    rm -rfv /var/lib/cassandra/*
-    rm -v /var/log/cassandra/system.log
-    service cassandra start
-fi
-
-""")
+    Daemon.poll('org.apache.cassandra.service.CassandraDaemon')
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
@@ -455,82 +267,24 @@ def stage7_install_midonet_agent():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    zookeepers = []
+    puts(green("installing MidoNet agent on %s" % env.host_string))
 
-    for zookeeper in sorted(metadata.roles["container_zookeeper"]):
-        zookeepers.append(zookeeper)
+    zk = []
 
-    cassandras = []
-    for cassandra in sorted(metadata.roles["container_cassandra"]):
-        cassandras.append(cassandra)
+    for zkhost in metadata.roles['container_zookeeper']:
+        zk.append("{'ip' => '%s', 'port' => '2181'}" % metadata.containers[zkhost]['ip'])
 
-    run("""
-if [[ "%s" == "True" ]] ; then set -x; fi
+    cs = []
 
-#
-# initialize the password cache
-#
-%s
+    for cshost in metadata.roles['container_cassandra']:
+        cs.append("'%s'" % metadata.containers[cshost]['ip'])
 
-#
-# initialize the puppet module for installing the midonet agent (midolman)
-#
-REPO="%s"
-BRANCH="%s"
+    args = {}
 
-ZOOKEEPERS="%s"
-CASSANDRAS="%s"
+    args['zk_servers'] = "[%s]" % ",".join(zk)
+    args['cassandra_seeds'] = "[%s]" % ",".join(cs)
 
-XMS="%s"
-XMX="%s"
-XMN="%s"
-
-OPENSTACK_RELEASE="%s"
-
-PUPPET_NODE_DEFINITION="$(mktemp)"
-
-cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
-
-PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
-
-#
-# set up the node definition
-#
-cat>"${PUPPET_NODE_DEFINITION}"<<EOF
-node $(hostname) {
-    midolman::install {$(hostname):
-        openstack_version => "${OPENSTACK_RELEASE}"
-    }
-    ->
-    midolman::configure {"$(hostname)":
-        zookeepers => "${ZOOKEEPERS}",
-        cassandras => "${CASSANDRAS}",
-        max_heap_size => "${XMX}",
-        heap_newsize => "${XMN}"
-    }
-    ->
-    midolman::start {$(hostname):
-    }
-}
-EOF
-
-#
-# do the puppet run
-#
-puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
-
-""" % (
-        metadata.config["debug"],
-        open(os.environ["PASSWORDCACHE"]).read(),
-        metadata.config["midonet_puppet_modules"],
-        metadata.config["midonet_puppet_modules_branch"],
-        ",".join(zookeepers),
-        ",".join(cassandras),
-        metadata.config["HEAP_INITIAL"],
-        metadata.config["MAX_HEAPSIZE"],
-        metadata.config["HEAP_NEWSIZE"],
-        metadata.config["openstack_release"]
-    ))
+    Puppet.apply('midonet::midonet_agent', args, metadata)
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
@@ -681,112 +435,57 @@ def stage7_container_midonet_api():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
+    zk = []
+
+    for zkhost in metadata.roles['container_zookeeper']:
+        zk.append("{'ip' => '%s', 'port' => '2181'}" % metadata.containers[zkhost]['ip'])
+
+    args = {}
+
+    args['zk_servers'] = "[%s]" % ",".join(zk)
+    args['keystone_auth'] = "true"
+    args['vtep'] = "true"
+
+    #
+    # slice and dice the password cache so we can access it in python
+    #
+    passwords = {}
+    with open(os.environ["PASSWORDCACHE"]) as passwordcache:
+        for line in passwordcache:
+            name, var = line.partition("=")[::2]
+            passwords[name] = str(var).rstrip('\n')
+
+    #
+    # this is supposed to be the outer ip, not the container ip, remember HATEOAS
+    #
+    args['api_ip'] = "'%s'" % metadata.servers[metadata.roles["midonet_api"][0]]["ip"]
+    args['api_port'] = "'8081'"
+
+    args['keystone_host'] = "'%s'" % metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"]
+    args['keystone_port'] = "'35357'"
+    args['keystone_admin_token'] = "'%s'" % passwords["export ADMIN_TOKEN"]
+    args['keystone_tenant_name'] = "'admin'"
+
+    Puppet.apply('midonet::midonet_api', args, metadata)
+
+    #
+    # in case mock auth was installed:
+    #
     run("""
-if [[ "%s" == "True" ]] ; then set -x; fi
 
-#
-# initialize the password cache
-#
-%s
+sed -i 's,org.midonet.api.auth.MockAuthService,org.midonet.cluster.auth.MockAuthService,g;' /usr/share/midonet-api/WEB-INF/web.xml
 
-#
-# initialize the puppet module for midonet api
-#
-REPO="%s"
-BRANCH="%s"
-KEYSTONE_IP="%s"
-MIDONET_API_IP="%s"
-MIDONET_API_OUTER_IP="%s"
-ZOOKEEPER_HOSTS="%s"
-MIDONET_API_URL="%s"
+""")
 
-PUPPET_NODE_DEFINITION="$(mktemp)"
+    #
+    # wait for the api to come up
+    #
+    puts(green("please wait for midonet-api to come up, this can take a long time!"))
+    run("""
 
-cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
+wget -SO- -- http://%s:8081/midonet-api/; echo
 
-PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
-
-#
-# init script is starting the daemon multiple times? might as well hit it with the sledge hammer.
-#
-ps axufww | grep -v grep | grep ^tomcat | awk '{print $2;}' | xargs -n1 kill -9
-
-#
-# set up the node definition
-#
-cat>"${PUPPET_NODE_DEFINITION}"<<EOF
-node $(hostname) {
-    midonet_api::install {"$(hostname)":
-    }
-    ->
-    midonet_api::configure {"$(hostname)":
-        keystone_admin_token => "${ADMIN_TOKEN}",
-        keystone_service_host => "${KEYSTONE_IP}",
-        rest_api_base_url => "http://${MIDONET_API_OUTER_IP}:${MIDONET_API_URL}",
-        zookeeper_hosts => "${ZOOKEEPER_HOSTS}"
-    }
-    ->
-    midonet_api::start {"$(hostname)":
-    }
-}
-EOF
-
-#
-# do the puppet run
-#
-puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
-
-#
-# patch the port of midonet-api to be at :8081 (swift is on 8080)
-#
-cat>/etc/tomcat6/server.xml<<EOF
-<?xml version='1.0' encoding='utf-8'?>
-
-<Server port="8005" shutdown="SHUTDOWN">
-
-  <Listener className="org.apache.catalina.core.JasperListener" />
-  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
-  <Listener className="org.apache.catalina.mbeans.ServerLifecycleListener" />
-  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
-
-  <GlobalNamingResources>
-
-    <Resource name="UserDatabase"
-        auth="Container"
-        type="org.apache.catalina.UserDatabase"
-        description="User database that can be updated and saved"
-        factory="org.apache.catalina.users.MemoryUserDatabaseFactory" pathname="conf/tomcat-users.xml" />
-
-  </GlobalNamingResources>
-
-  <Service name="Catalina">
-    <Connector port="8081" protocol="HTTP/1.1" connectionTimeout="120000" URIEncoding="UTF-8" redirectPort="8443" />
-
-    <Engine name="Catalina" defaultHost="localhost">
-
-      <Realm className="org.apache.catalina.realm.UserDatabaseRealm" resourceName="UserDatabase"/>
-      <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true" xmlValidation="false" xmlNamespaceAware="false"></Host>
-
-    </Engine>
-  </Service>
-
-</Server>
-
-EOF
-
-service tomcat6 restart
-
-""" % (
-        metadata.config["debug"],
-        open(os.environ["PASSWORDCACHE"]).read(),
-        metadata.config["midonet_puppet_modules"],
-        metadata.config["midonet_puppet_modules_branch"],
-        metadata.containers[metadata.roles["container_openstack_keystone"][0]]["ip"],
-        metadata.containers[env.host_string]["ip"],
-        metadata.servers[metadata.roles["midonet_api"][0]]["ip"],
-        ",".join(map(lambda zk: str(metadata.containers[zk]["ip"]), sorted(metadata.roles["container_zookeeper"]))),
-        metadata.services["midonet"]["internalurl"]
-    ))
+""" % metadata.servers[metadata.roles["midonet_api"][0]]["ip"])
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
@@ -801,7 +500,8 @@ def stage7_container_midonet_manager():
 
     if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
         if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
-            run("""
+            if "MEM" == metadata.config["midonet_repo"]:
+                run("""
 if [[ "%s" == "True" ]] ; then set -x; fi
 
 #
@@ -887,7 +587,7 @@ API_URI="%s"
 
 OPENSTACK_RELEASE="%s"
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 if [[ "kilo" == "${OPENSTACK_RELEASE}" || "liberty" == "${OPENSTACK_RELEASE}" ]]; then
     ADMIN_TENANT_ID="$(openstack project list --format csv | sed 's,",,g;' | grep -v ^ID | grep ',admin' | awk -F',' '{print $1;}' | xargs -n1 echo)"
@@ -1031,7 +731,7 @@ FIP_BASE="%s"
 
 OPENSTACK_RELEASE="%s"
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 if [[ "kilo" == "${OPENSTACK_RELEASE}" || "liberty" == "${OPENSTACK_RELEASE}" ]]; then
     neutron net-list | grep public || \
@@ -1199,7 +899,7 @@ if [[ "%s" == "True" ]] ; then set -x; fi
 
 FIP_BASE="%s"
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 neutron floatingip-list | grep "${FIP_BASE}" || neutron floatingip-create public
 
@@ -1237,7 +937,7 @@ neutron floatingip-list
 
     run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address)"
 
@@ -1260,7 +960,7 @@ ping -c9 "${FIP}"
         puts(green("trying to run command [%s] in testvm" % cxc))
         run("""
 
-source /etc/keystone/KEYSTONERC_ADMIN || source /etc/keystone/admin-openrc.sh
+source /etc/keystone/KEYSTONERC_ADMIN 2>/dev/null || source /etc/keystone/admin-openrc.sh
 
 FIP="$(neutron floatingip-list --field floating_ip_address --format csv --quote none | grep -v ^floating_ip_address | head -n1)"
 

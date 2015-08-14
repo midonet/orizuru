@@ -36,10 +36,6 @@ config:
     # used for the vpn between different testbed hosts
     vpn_base: 192.168.253
 
-    HEAP_INITIAL: 1024M
-    MAX_HEAPSIZE: 1024M
-    HEAP_NEWSIZE: 512M
-
 vpnclients:
     - alex101
     - alex102

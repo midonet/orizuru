@@ -414,6 +414,14 @@ fi
     def install_puppet(self):
         cuisine.package_ensure("puppet")
 
+        run("""
+
+puppet module install "%s" || echo
+
+sed -i "s|key        => 'B999A372',|key        => '7E41C00F85BFC1706C4FFFB3350200F2B999A372',|g;" /etc/puppet/modules/midonet/manifests/repository/ubuntu.pp
+
+""" % self._metadata.config["midonet_puppet_modules_forge"])
+
     def rsyslog(self):
 
         cuisine.package_ensure("rsyslog")
