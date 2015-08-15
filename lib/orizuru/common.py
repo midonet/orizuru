@@ -81,9 +81,8 @@ class Orizuru(object):
             puts("%s %s.%s" % (container_ip, role, server))
             puts("%s %s.%s.dockernet.%s" % (container_ip, role, server, self._metadata.config["domain"]))
 
-    def sshconfig(self):
-        for server in sorted(self._metadata.servers):
-            puts("""
+    def sshconfig_emit(self, name, hostname):
+        puts("""
 Host %s
     User root
     ServerAliveInterval 2
@@ -92,54 +91,41 @@ Host %s
     TCPKeepAlive yes
     Hostname %s
 
-Host %s.%s
+""" % (name, hostname))
+
+    def sshconfig_emit_proxycommand(self, name, hostname, proxy):
+        puts("""
+Host %s
     User root
     ServerAliveInterval 2
     KeepAlive yes
     ConnectTimeout 30
     TCPKeepAlive yes
-    Hostname %s
+    ProxyCommand /usr/bin/ssh -F%s -W%s:22 root@%s
 
-""" % ( server,
-        self._metadata.servers[server]["ip"],
-        server,
-        self._metadata.config["domain"],
-        self._metadata.servers[server]["ip"]))
+""" % (name, "%s/.ssh/config" % os.environ["TMPDIR"], hostname, proxy))
 
+    def sshconfig_emit_proxycommands(self, role, server, container_ip, proxy_ip):
+        self.sshconfig_emit_proxycommand(role, container_ip, proxy_ip)
+        self.sshconfig_emit_proxycommand("%s.%s" % (role, server), container_ip, proxy_ip)
+        self.sshconfig_emit_proxycommand("%s_%s" % (role, server), container_ip, proxy_ip)
+
+    def sshconfig(self):
+        for server in sorted(self._metadata.servers):
+            self.sshconfig_emit(server, self._metadata.servers[server]["ip"])
+            self.sshconfig_emit("%s.%s" % (server, self._metadata.config["domain"]), self._metadata.servers[server]["ip"])
 
         for container in sorted(self._metadata.containers):
             container_ip = self._metadata.containers[container]["ip"]
             role = self._metadata.containers[container]["role"]
             server = self._metadata.containers[container]["server"]
+            proxy_ip = self._metadata.servers[server]["ip"]
 
-            puts("""
-Host %s
-    User root
-    ServerAliveInterval 2
-    KeepAlive yes
-    ConnectTimeout 30
-    TCPKeepAlive yes
-    ProxyCommand /usr/bin/ssh -F%s -W%s:22 root@%s
+            self.sshconfig_emit_proxycommands(role, server, container_ip, proxy_ip)
 
-Host %s.%s
-    User root
-    ServerAliveInterval 2
-    KeepAlive yes
-    ConnectTimeout 30
-    TCPKeepAlive yes
-    ProxyCommand /usr/bin/ssh -F%s -W%s:22 root@%s
+            if role == 'midonet_api':
+                self.sshconfig_emit_proxycommands('midonet-api', server, container_ip, proxy_ip)
 
-Host %s_%s
-    User root
-    ServerAliveInterval 2
-    KeepAlive yes
-    ConnectTimeout 30
-    TCPKeepAlive yes
-    ProxyCommand /usr/bin/ssh -F%s -W%s:22 root@%s
-
-""" % (
-        role, "%s/.ssh/config" % os.environ["TMPDIR"], container_ip, self._metadata.servers[server]["ip"],
-        role, server, "%s/.ssh/config" % os.environ["TMPDIR"], container_ip, self._metadata.servers[server]["ip"],
-        role, server, "%s/.ssh/config" % os.environ["TMPDIR"], container_ip, self._metadata.servers[server]["ip"]
-    ))
+            if role == 'midonet_cli':
+                self.sshconfig_emit_proxycommands('midonet-cli', server, container_ip, proxy_ip)
 

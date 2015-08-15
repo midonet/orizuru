@@ -21,7 +21,7 @@ Localhost Quickstart
 ====================
 This is useful if you do not want to install to other servers and install everything on your localhost right away.
 
-Please make sure that you have at least 4 cores (8 HT cores) and 16 GB memory on the machine where the installer runs and the demo is installed.
+Please make sure that you have at least 4 cores (8 HT cores) and 32 GB memory on the machine where the installer runs and the demo is installed.
 
 Also ssh root@localhost must work and the ssh fingerprint of the server should be saved in .ssh/known_hosts.
 
