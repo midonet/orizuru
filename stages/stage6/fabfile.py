@@ -498,13 +498,6 @@ for PIC in favicon.ico logo.png logo-splash.png; do
     test -f "${PIC}.ORIG" || rsync -avpx "${PIC}" "${PIC}.ORIG"
 done
 
-#
-# get rid of the orange
-#
-sed -i 's,#dd4814,#000000,g' -- \
-    /usr/share/openstack-dashboard/openstack_dashboard/static/custom/_variables.scss \
-    /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/css/*.css
-
 service apache2 restart
 service memcached restart
 
@@ -523,6 +516,14 @@ service memcached restart
         run("""
 
 apt-get install --reinstall openstack-dashboard-ubuntu-theme
+
+#
+# get rid of the orange
+#
+sed -i 's,#dd4814,#000000,g' -- \
+    /usr/share/openstack-dashboard/openstack_dashboard/static/custom/_variables.scss \
+    /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/css/*.css
+
 service apache2 restart
 
 """)
