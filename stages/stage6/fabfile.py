@@ -1879,19 +1879,31 @@ keystone-manage db_sync
 
 rm -fv /var/lib/keystone/keystone.db
 
-if [[ "kilo" == "${OPENSTACK_RELEASE}" ]]; then
-    cat> /etc/apache2/sites-available/wsgi-keystone.conf<<EOF
+""" % (
+        metadata.config["debug"],
+        metadata.config["verbose"],
+        metadata.config["debug"],
+        open(os.environ["PASSWORDCACHE"]).read(),
+        metadata.config["constrictor"],
+        metadata.containers[metadata.roles["container_openstack_mysql"][0]]["ip"],
+        metadata.config["openstack_release"]
+    ))
+
+    if metadata.config['openstack_release'] in ['kilo', 'liberty']:
+        run("""
+
+cat> /etc/apache2/sites-available/wsgi-keystone.conf<<EOF
 Listen 5000
 Listen 35357
 
 <VirtualHost *:5000>
-    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone display-name=%%{GROUP}
+    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-public
     WSGIScriptAlias / /var/www/cgi-bin/keystone/main
-    WSGIApplicationGroup %%{GLOBAL}
+    WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
     <IfVersion >= 2.4>
-      ErrorLogFormat "%%{cu}t %%M"
+      ErrorLogFormat "%{cu}t %M"
     </IfVersion>
     LogLevel info
     ErrorLog /var/log/apache2/keystone-error.log
@@ -1899,13 +1911,13 @@ Listen 35357
 </VirtualHost>
 
 <VirtualHost *:35357>
-    WSGIDaemonProcess keystone-admin processes=5 threads=1 user=keystone display-name=%%{GROUP}
+    WSGIDaemonProcess keystone-admin processes=5 threads=1 user=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-admin
     WSGIScriptAlias / /var/www/cgi-bin/keystone/admin
-    WSGIApplicationGroup %%{GLOBAL}
+    WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
     <IfVersion >= 2.4>
-      ErrorLogFormat "%%{cu}t %%M"
+      ErrorLogFormat "%{cu}t %M"
     </IfVersion>
     LogLevel info
     ErrorLog /var/log/apache2/keystone-error.log
@@ -1932,33 +1944,33 @@ EOF
 
     service apache2 restart
     service memcached restart
-else
-    chmod 0777 /var/run/screen
 
-    sync
+""")
 
-    ps axufwwwwwwwwwww | grep -v grep | grep keystone | awk '{print $2;}' | xargs -n1 --no-run-if-empty kill -9 || true
+    if metadata.config['openstack_release'] == 'juno':
+        run("""
 
-    chown -R keystone:keystone /var/lib/keystone
+chmod 0777 /var/run/screen
 
-    sleep 2
+sync
 
-    ps axufwwwwwwwwwww | grep -v grep | grep keystone || screen -S keystone -d -m -- start-stop-daemon --start --chuid keystone --chdir /var/lib/keystone --name keystone --exec /usr/bin/keystone-all
+ps axufwwwwwwwwwww | grep -v grep | grep keystone | awk '{print $2;}' | xargs -n1 --no-run-if-empty kill -9 || true
 
-    sleep 2
+chown -R keystone:keystone /var/lib/keystone
 
-    ps axufwwwwwwwwwww | grep -v grep | grep keystone
-fi
+sleep 2
 
-""" % (
-        metadata.config["debug"],
-        metadata.config["verbose"],
-        metadata.config["debug"],
-        open(os.environ["PASSWORDCACHE"]).read(),
-        metadata.config["constrictor"],
-        metadata.containers[metadata.roles["container_openstack_mysql"][0]]["ip"],
-        metadata.config["openstack_release"]
-    ))
+ps axufwwwwwwwwwww | \
+    grep -v grep | \
+    grep keystone || \
+        screen -S keystone -d -m -- \
+            start-stop-daemon --start --chuid keystone --chdir /var/lib/keystone --name keystone --exec /usr/bin/keystone-all
+
+sleep 2
+
+ps axufwwwwwwwwwww | grep -v grep | grep keystone
+
+""")
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
