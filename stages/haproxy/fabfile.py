@@ -60,7 +60,7 @@ def haproxy():
 
     if env.host_string in metadata.roles['midonet_api']:
         restart = 1
-        for port in [8081, 8459, 8460]:
+        for port in [8081, 8459, 8460, 8088]:
             haproxy_into_container(port, port, 'container_midonet_api')
 
     if env.host_string in metadata.roles['openstack_horizon']:
