@@ -286,6 +286,13 @@ def stage7_install_midonet_agent():
 
     Puppet.apply('midonet::midonet_agent', args, metadata)
 
+    #
+    # *sigh*
+    #
+    run("""
+sed -i 's,^opyright 2014 Midokura SARL,#,g;' /etc/midolman/midolman.conf
+""")
+
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
 @roles('physical_openstack_compute')
