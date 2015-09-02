@@ -416,7 +416,17 @@ fi
 
         run("""
 
-puppet module install "%s" || echo
+FORGE_MODULE="%s"
+
+#
+# uninstall it in case of bugfixes online
+#
+puppet module uninstall "${FORGE_MODULE}" || echo
+
+#
+# install it again
+#
+puppet module install "${FORGE_MODULE}" || echo
 
 sed -i "s|key        => 'B999A372',|key        => '7E41C00F85BFC1706C4FFFB3350200F2B999A372',|g;" /etc/puppet/modules/midonet/manifests/repository/ubuntu.pp
 
