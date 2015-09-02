@@ -271,13 +271,19 @@ def stage7_install_midonet_agent():
 
     zk = []
 
+    zkc = []
+
     for zkhost in metadata.roles['container_zookeeper']:
         zk.append("{'ip' => '%s', 'port' => '2181'}" % metadata.containers[zkhost]['ip'])
+        zkc.append("%s:2181" % metadata.containers[zkhost]['ip'])
 
     cs = []
 
+    csc = []
+
     for cshost in metadata.roles['container_cassandra']:
         cs.append("'%s'" % metadata.containers[cshost]['ip'])
+        csc.append("%s" % metadata.containers[cshost]['ip'])
 
     args = {}
 
@@ -287,11 +293,33 @@ def stage7_install_midonet_agent():
     Puppet.apply('midonet::midonet_agent', args, metadata)
 
     #
-    # *sigh*
+    # the midolman.conf that comes with the puppet module is hopelessly broken, we replace it here
     #
     run("""
-sed -i 's,^opyright 2014 Midokura SARL,#,g;' /etc/midolman/midolman.conf
-""")
+
+ZK="%s"
+CS="%s"
+CS_COUNT="%s"
+
+cat >/etc/midolman/midolman.conf<<EOF
+
+[zookeeper]
+zookeeper_hosts = ${ZK}
+session_timeout = 30000
+midolman_root_key = /midonet/v1
+session_gracetime = 30000
+
+[cassandra]
+servers = ${CS}
+replication_factor = ${CS_COUNT}
+cluster = midonet
+EOF
+
+""" % (
+    ",".join(zkc),
+    ",".join(csc),
+    len(csc)
+    ))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
