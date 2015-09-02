@@ -273,7 +273,7 @@ def stage7_install_midonet_agent():
 
     zkc = []
 
-    for zkhost in metadata.roles['container_zookeeper']:
+    for zkhost in sorted(metadata.roles['container_zookeeper']):
         zk.append("{'ip' => '%s', 'port' => '2181'}" % metadata.containers[zkhost]['ip'])
         zkc.append("%s:2181" % metadata.containers[zkhost]['ip'])
 
@@ -281,7 +281,7 @@ def stage7_install_midonet_agent():
 
     csc = []
 
-    for cshost in metadata.roles['container_cassandra']:
+    for cshost in sorted(metadata.roles['container_cassandra']):
         cs.append("'%s'" % metadata.containers[cshost]['ip'])
         csc.append("%s" % metadata.containers[cshost]['ip'])
 
@@ -472,7 +472,7 @@ def stage7_container_midonet_api():
 
     zk = []
 
-    for zkhost in metadata.roles['container_zookeeper']:
+    for zkhost in sorted(metadata.roles['container_zookeeper']):
         zk.append("{'ip' => '%s', 'port' => '2181'}" % metadata.containers[zkhost]['ip'])
 
     args = {}
