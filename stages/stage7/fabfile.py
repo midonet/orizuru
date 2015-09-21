@@ -70,7 +70,8 @@ def stage7():
 
     execute(stage7_midonet_fakeuplinks)
 
-    execute(stage7_test_connectivity)
+    if 'container_midonet_gateway' in metadata.roles:
+        execute(stage7_test_connectivity)
 
 @roles('container_zookeeper')
 def stage7_container_zookeeper():
