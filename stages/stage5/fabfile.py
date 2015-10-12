@@ -49,6 +49,7 @@ def stage5():
     puts(yellow("executing stage5 install"))
     execute(install_stage5)
 
+@parallel(pool_size=5)
 @roles('all_containers')
 def configure_stage5():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -60,6 +61,7 @@ def configure_stage5():
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
+@parallel(pool_size=5)
 @roles('all_containers')
 def install_stage5():
     metadata = Config(os.environ["CONFIGFILE"])
@@ -71,6 +73,7 @@ def install_stage5():
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
+@parallel(pool_size=5)
 @roles('all_servers')
 def stage5_ping_containers():
     metadata = Config(os.environ["CONFIGFILE"])
