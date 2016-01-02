@@ -79,12 +79,6 @@ def stage5_ping_containers():
     metadata = Config(os.environ["CONFIGFILE"])
 
     for container in sorted(metadata.containers):
-        role = metadata.containers[container]["role"]
-        repo = metadata.config["midonet_repo"]
-
-        if (role == 'midonet_manager' and repo != "MEM"):
-            continue
-
         container_ip = metadata.containers[container]["ip"]
 
         run("""
