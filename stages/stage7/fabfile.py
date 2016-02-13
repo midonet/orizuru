@@ -111,6 +111,10 @@ def stage7_container_zookeeper():
         run("""
 IP="%s"
 
+for i in $(seq 1 10); do
+    echo ruok | nc "${IP}" 2181 | grep imok || sleep 10
+done
+
 echo ruok | nc "${IP}" 2181 | grep imok
 
 """ % metadata.containers[zkhost]['ip'])

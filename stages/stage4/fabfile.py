@@ -37,6 +37,18 @@ def stage4():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
+    run("""
+
+cat >/etc/default/docker<<EOF
+DOCKER_OPTS="--dns 8.8.8.8 --dns 8.8.4.4"
+EOF
+
+service docker restart
+
+sleep 10
+
+""")
+
     run("docker ps")
 
     run("docker images")
@@ -134,6 +146,10 @@ cp "${DOCKERFILE}" Dockerfile
 mkdir -pv root/.ssh
 
 cat /root/.ssh/authorized_keys > root/.ssh/authorized_keys
+
+echo nameserver 8.8.8.8 | tee /etc/resolv.conf
+
+echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6
 
 docker images | grep "template_${SERVER_NAME}" || docker build --no-cache=true -t "template_${SERVER_NAME}" .
 

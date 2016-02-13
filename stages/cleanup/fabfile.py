@@ -86,6 +86,8 @@ virsh list --all | grep instance | awk '{print $2;}' | xargs -n1 --no-run-if-emp
 
 virsh list --all | grep instance | awk '{print $2;}' | xargs -n1 --no-run-if-empty virsh undefine || echo
 
+apt-get -y -u remove --purge nova-compute-libvirt libvirt-bin libvirt0 python-libvirt nova-common nova-network python-nova python-novaclient
+
 exit 0
 """)
 
@@ -129,6 +131,10 @@ docker images | grep '^<none>' | awk '{print $3}' | xargs -n1 --no-run-if-empty 
 service docker.io restart
 
 rm -fv /etc/newrelic/nrsysmond.cfg
+
+apt-get -y -u remove --purge midolman
+
+rm -fv /etc/midonet_host_id.properties
 
 sync
 
