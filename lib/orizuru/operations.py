@@ -184,13 +184,13 @@ if [[ "${REPO_FLAVOR}" == "MEM" ]]; then
 # MEM midolman
 #
 
-deb [arch=amd64] http://${USERNAME}:${PASSWORD}@apt.midokura.com/midonet/v${MIDONET_VERSION}/stable precise main non-free
+deb [arch=amd64] http://${USERNAME}:${PASSWORD}@apt.midokura.com/midonet/v${MIDONET_VERSION}/stable trusty main non-free
 
 #
 # MEM midonet neutron plugin
 #
 
-deb [arch=amd64] http://${USERNAME}:${PASSWORD}@apt.midokura.com/openstack/${OPENSTACK_PLUGIN_VERSION}/stable precise main
+deb [arch=amd64] http://${USERNAME}:${PASSWORD}@apt.midokura.com/openstack/${OPENSTACK_PLUGIN_VERSION}/stable trusty main
 
 EOF
     else
