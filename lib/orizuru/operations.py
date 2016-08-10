@@ -421,7 +421,7 @@ FORGE_MODULE="%s"
 #
 # uninstall it in case of bugfixes online
 #
-puppet module uninstall "${FORGE_MODULE}" || echo
+puppet module list 2>&1 | grep midonet-midonet && puppet module uninstall "${FORGE_MODULE}" || echo
 
 #
 # install it again

@@ -103,6 +103,42 @@ def stage7_container_zookeeper():
 
     Puppet.apply('midonet::zookeeper', args, metadata)
 
+    # https://forge.puppet.com/midonet/midonet generates a broken zoo.cfg with indentation
+    run("""
+
+cat >/etc/zookeeper/conf/zoo.cfg <<EOF
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/var/lib/zookeeper
+clientPort=2181
+snapCount=10000
+autopurge.snapRetainCount=3
+autopurge.purgeInterval=0
+clientPortAddress=%s
+EOF
+
+""" % metadata.containers[env.host_string]['ip'])
+
+    zkid = 1
+    for zkhost in sorted(metadata.roles["container_zookeeper"]):
+        run("""
+cat >>/etc/zookeeper/conf/zoo.cfg <<EOF
+server.%s=%s:2888:3888
+EOF
+
+""" % (zkid, metadata.containers[zkhost]['ip']))
+
+        zkid = zkid + 1
+
+    # if there is only one server in the ensemble make it the leader of itself.
+    if zkid == 2:
+        run("""
+cat >>/etc/zookeeper/conf/zoo.cfg <<EOF
+leaderServes=yes
+EOF
+""")
+
     run("service zookeeper stop; service zookeeper start")
 
     Daemon.poll('org.apache.zookeeper.server.quorum', 600)
