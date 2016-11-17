@@ -362,23 +362,6 @@ chmod 0755 /etc/rc.local.d/docker_${CONTAINER_ROLE}_${SERVER_NAME}_NAT
 
 """ % (metadata.config["debug"], server, role))
 
-    run("""
-DOMAIN="%s"
-MTU_PHYSICAL="%s"
-MTU_MEZZANINE="%s"
-GW="$(ip route show | grep 'default via' | awk -Fdev '{print $2;}' | xargs -n1 echo)"
-
-# TODO ip link set dev "${GW}" mtu "${MTU_PHYSICAL}"
-# TODO ip link set dev ${DOMAIN} mtu "${MTU_MEZZANINE}"
-
-exit 0
-
-""" % (
-        metadata.config["domain"],
-        metadata.config["mtu_physical"],
-        metadata.config["mtu_mezzanine"]
-    ))
-
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
     puts(green("waiting for other servers to finish their container bootstrapping"))

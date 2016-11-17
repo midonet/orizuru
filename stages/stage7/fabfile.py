@@ -100,7 +100,7 @@ def stage7_container_zookeeper():
     args['servers'] = "[%s]" % ",".join(zk)
     args['server_id'] = "%s" % myid
 
-    # TODO install zookeeper
+    cuisine.package_ensure(["zookeeper", "zookeeperd", "zkdump"])
 
     run("""
 
@@ -152,9 +152,7 @@ echo ruok | nc "${IP}" 2181 | grep imok
 
 """ % metadata.containers[zkhost]['ip'])
 
-    #
-    # TODO status check for 'not serving requests'
-    #
+    puts(red("TODO status check for 'not serving requests'"))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
@@ -177,9 +175,15 @@ def stage7_container_cassandra():
     args['seeds'] = "[%s]" % ",".join(cs)
     args['seed_address'] = "'%s'" % metadata.containers[env.host_string]['ip']
 
-    # TODO install cassandra and configure it
+    cuisine.package_ensure(["openjdk-8-jre-headless", "dsc22"])
+
+    puts(red("TODO /etc/cassandra/cassandra.yaml"))
+
+    run("service cassandra stop; rm -rf /var/lib/cassandra/*; service cassandra start")
 
     Daemon.poll('org.apache.cassandra.service.CassandraDaemon', 600)
+
+    run("nodetool --host 127.0.0.1 status")
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
@@ -323,12 +327,7 @@ def stage7_install_midonet_agent():
         cs.append("'%s'" % metadata.containers[cshost]['ip'])
         csc.append("%s" % metadata.containers[cshost]['ip'])
 
-    args = {}
-
-    args['zk_servers'] = "[%s]" % ",".join(zk)
-    args['cassandra_seeds'] = "[%s]" % ",".join(cs)
-
-    # TODO install midolman
+    cuisine.package_ensure("midolman")
 
     run("""
 
@@ -349,6 +348,22 @@ servers = ${CS}
 replication_factor = ${CS_COUNT}
 cluster = midonet
 EOF
+
+cat << EOF | mn-conf set -t default
+zookeeper {
+    zookeeper_hosts = "${ZK}"
+}
+
+cassandra {
+    servers = "${CS}
+}
+EOF
+
+echo "cassandra.replication_factor : ${CS_COUNT}" | mn-conf set -t default
+
+mn-conf template-set -h local -t agent-compute-medium
+
+cp /etc/midolman/midolman-env.sh.compute.medium /etc/midolman/midolman-env.sh
 
 """ % (
     ",".join(zkc),
@@ -536,16 +551,15 @@ def stage7_container_midonet_api():
     args['keystone_admin_token'] = "'%s'" % passwords["export ADMIN_TOKEN"]
     args['keystone_tenant_name'] = "'admin'"
 
-    # TODO install midonet-api and configure it
+    cuisine.package_ensure(["midonet-api", "tomcat7"])
 
-    #
-    # in case mock auth was installed:
-    #
-    run("""
+    puts(red("TODO /usr/share/midonet-api/WEB-INF/web.xml"))
 
-sed -i 's,org.midonet.api.auth.MockAuthService,org.midonet.cluster.auth.MockAuthService,g;' /usr/share/midonet-api/WEB-INF/web.xml
+    puts(red("TODO /etc/default/tomcat7"))
 
-""")
+    puts(red("TODO /etc/tomcat7/server.xml"))
+
+    puts(red("TODO /etc/tomcat7/Catalina/localhost/midonet-api.xml"))
 
     #
     # wait for the api to come up
@@ -569,7 +583,7 @@ def stage7_container_midonet_manager():
     if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
         if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
             if "MEM" == metadata.config["midonet_repo"]:
-                # TODO install midonet manager and configure it
+                puts(red("TODO install midonet manager and configure it"))
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
