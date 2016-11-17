@@ -17,7 +17,7 @@
 INCLUDE = include
 
 ifeq "$(CONFIGFILE)" ""
-CONFIGFILE = $(PWD)/conf/localhost.yaml
+CONFIGFILE = $(PWD)/conf/allinone.yaml
 endif
 
 SRCDIR = .

@@ -13,12 +13,12 @@ config:
     verbose: True
     debug: False
 
-    domain: orizuru.midonet.org
+    domain: orizuru.midokura.de
 
     # if you enable MEM here you should also set two environment variables:
     # OS_MIDOKURA_REPOSITORY_USER
     # OS_MIDOKURA_REPOSITORY_PASS
-    midonet_repo: OSS # can be OSS or MEM
+    midonet_repo: MEM
 
     midonet_mem_version: 1.9
     midonet_mem_openstack_plugin_version: kilo
@@ -35,12 +35,6 @@ config:
 
     # used for the vpn between different testbed hosts
     vpn_base: 192.168.253
-
-vpnclients:
-    - alex101
-    - alex102
-    - alex103
-    - alex104
 
 roles:
     zookeeper:
@@ -87,7 +81,7 @@ roles:
 
 servers:
     os001:
-        ip: 127.0.0.1
+        ip: 119.15.122.137
         # used for the containers on this host
         dockernet: 192.168.252.0/24
 

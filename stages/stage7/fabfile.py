@@ -20,7 +20,6 @@ import os
 import sys
 
 from orizuru.config import Config
-from orizuru.utils import Puppet
 from orizuru.utils import Daemon
 
 from fabric.api import *
@@ -101,9 +100,8 @@ def stage7_container_zookeeper():
     args['servers'] = "[%s]" % ",".join(zk)
     args['server_id'] = "%s" % myid
 
-    Puppet.apply('midonet::zookeeper', args, metadata)
+    # TODO install zookeeper
 
-    # https://forge.puppet.com/midonet/midonet generates a broken zoo.cfg with indentation
     run("""
 
 cat >/etc/zookeeper/conf/zoo.cfg <<EOF
@@ -120,8 +118,9 @@ EOF
 
 """ % metadata.containers[env.host_string]['ip'])
 
-    zkid = 1
+    zkid = 0
     for zkhost in sorted(metadata.roles["container_zookeeper"]):
+        zkid = zkid + 1
         run("""
 cat >>/etc/zookeeper/conf/zoo.cfg <<EOF
 server.%s=%s:2888:3888
@@ -129,10 +128,8 @@ EOF
 
 """ % (zkid, metadata.containers[zkhost]['ip']))
 
-        zkid = zkid + 1
-
     # if there is only one server in the ensemble make it the leader of itself.
-    if zkid == 2:
+    if zkid == 1:
         run("""
 cat >>/etc/zookeeper/conf/zoo.cfg <<EOF
 leaderServes=yes
@@ -180,7 +177,7 @@ def stage7_container_cassandra():
     args['seeds'] = "[%s]" % ",".join(cs)
     args['seed_address'] = "'%s'" % metadata.containers[env.host_string]['ip']
 
-    Puppet.apply('midonet::cassandra', args, metadata)
+    # TODO install cassandra and configure it
 
     Daemon.poll('org.apache.cassandra.service.CassandraDaemon', 600)
 
@@ -331,11 +328,8 @@ def stage7_install_midonet_agent():
     args['zk_servers'] = "[%s]" % ",".join(zk)
     args['cassandra_seeds'] = "[%s]" % ",".join(cs)
 
-    Puppet.apply('midonet::midonet_agent', args, metadata)
+    # TODO install midolman
 
-    #
-    # the midolman.conf that comes with the puppet module is hopelessly broken, we replace it here
-    #
     run("""
 
 ZK="%s"
@@ -542,7 +536,7 @@ def stage7_container_midonet_api():
     args['keystone_admin_token'] = "'%s'" % passwords["export ADMIN_TOKEN"]
     args['keystone_tenant_name'] = "'admin'"
 
-    Puppet.apply('midonet::midonet_api', args, metadata)
+    # TODO install midonet-api and configure it
 
     #
     # in case mock auth was installed:
@@ -572,66 +566,10 @@ def stage7_container_midonet_manager():
     if cuisine.file_exists("/tmp/.%s.lck" % sys._getframe().f_code.co_name):
         return
 
-    puppet_module_name = "midonet_manager18"
-
     if "OS_MIDOKURA_REPOSITORY_USER" in os.environ:
         if "OS_MIDOKURA_REPOSITORY_PASS" in os.environ:
             if "MEM" == metadata.config["midonet_repo"]:
-                run("""
-if [[ "%s" == "True" ]] ; then set -x; fi
-
-#
-# initialize the password cache
-#
-%s
-
-#
-# initialize the puppet module for the midonet manager
-#
-REPO="%s"
-BRANCH="%s"
-API_IP="%s"
-API_OUTER_IP="%s"
-PUPPET_MODULE="%s"
-
-PUPPET_NODE_DEFINITION="$(mktemp)"
-
-cd "$(mktemp -d)"; git clone "${REPO}" --branch "${BRANCH}"
-
-PUPPET_MODULES="$(pwd)/$(basename ${REPO})/puppet/modules"
-
-#
-# set up the node definition
-#
-cat>"${PUPPET_NODE_DEFINITION}"<<EOF
-node $(hostname) {
-    ${PUPPET_MODULE}::install {"$(hostname)":
-    }
-    ->
-    ${PUPPET_MODULE}::configure {"$(hostname)":
-        rest_api_base => "http://${API_OUTER_IP}:8081",
-        rest_api_ip => "${API_OUTER_IP}"
-    }
-    ->
-    ${PUPPET_MODULE}::start {"$(hostname)":
-    }
-}
-EOF
-
-#
-# do the puppet run
-#
-puppet apply --verbose --show_diff --modulepath="${PUPPET_MODULES}" "${PUPPET_NODE_DEFINITION}"
-
-""" % (
-        metadata.config["debug"],
-        open(os.environ["PASSWORDCACHE"]).read(),
-        metadata.config["midonet_puppet_modules"],
-        metadata.config["midonet_puppet_modules_branch"],
-        metadata.containers[metadata.roles["container_midonet_api"][0]]["ip"],
-        metadata.servers[metadata.roles["midonet_api"][0]]["ip"],
-        puppet_module_name
-    ))
+                # TODO install midonet manager and configure it
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 

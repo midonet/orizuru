@@ -61,6 +61,9 @@ class Configure(object):
     def name_resolution(self):
         if env.host_string not in self._metadata.roles["all_containers"]:
             run("hostname %s" % env.host_string.split(".")[0])
+
+            run("ip address add %s/32 dev lo" % self._metadata.servers[env.host_string]["ip"])
+
             cuisine.file_write("/etc/hostname", env.host_string.split(".")[0])
 
             cuisine.file_write("/etc/resolv.conf", """
@@ -68,10 +71,7 @@ nameserver %s
 options single-request
 """ % self._metadata.config["nameserver"])
 
-            if "local_ip_behind_nat" in self._metadata.servers[env.host_string]:
-                local_ip = self._metadata.servers[env.host_string]["local_ip_behind_nat"]
-            else:
-                local_ip = self._metadata.servers[env.host_string]["ip"]
+            local_ip = self._metadata.servers[env.host_string]["ip"]
 
             cuisine.file_write("/etc/hosts", """
 127.0.0.1 localhost.localdomain localhost
@@ -291,7 +291,6 @@ class Install(object):
         self.login_stuff()
         self.apt_get_update()
         self.common_packages()
-        self.install_puppet()
         self.newrelic()
         self.rp_filter()
         self.cloud_repository()
@@ -410,27 +409,6 @@ fi
 
     def common_packages(self):
         cuisine.package_ensure(self._metadata.config["common_packages"])
-
-    def install_puppet(self):
-        cuisine.package_ensure("puppet")
-
-        run("""
-
-FORGE_MODULE="%s"
-
-#
-# uninstall it in case of bugfixes online
-#
-puppet module list 2>&1 | grep midonet-midonet && puppet module uninstall "${FORGE_MODULE}" || echo
-
-#
-# install it again
-#
-puppet module install "${FORGE_MODULE}" || echo
-
-sed -i "s|key        => 'B999A372',|key        => '7E41C00F85BFC1706C4FFFB3350200F2B999A372',|g;" /etc/puppet/modules/midonet/manifests/repository/ubuntu.pp
-
-""" % self._metadata.config["midonet_puppet_modules_forge"])
 
     def rsyslog(self):
 
