@@ -28,8 +28,6 @@ config:
     midonet_oss_version: 2015.06
     midonet_oss_openstack_plugin_version: kilo
 
-    newrelic_license_key: 5bb3df5f1f18a73de737a37e17690c58252bd183
-
     # must be a file under /usr/share/zoneinfo
     timezone: Europe/Berlin
 

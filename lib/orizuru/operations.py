@@ -493,12 +493,13 @@ done
 """)
 
     def newrelic(self):
-        if env.host_string not in self._metadata.containers:
-            run("rm -fv /etc/newrelic/nrsysmond.cfg* || true")
+        if "NEWRELIC_LICENSE_KEY" in os.environ:
+            if env.host_string not in self._metadata.containers:
+                run("rm -fv /etc/newrelic/nrsysmond.cfg* || true")
 
-            cuisine.package_ensure("newrelic-sysmond")
+                cuisine.package_ensure("newrelic-sysmond")
 
-            run("""
+                run("""
 
 SERVER_NAME="%s"
 DOMAIN_NAME="%s"
@@ -528,7 +529,7 @@ ps axufwwwwwwwww | grep -v grep | grep nrsysmond
 """ % (
         env.host_string,
         self._metadata.config["domain"],
-        self._metadata.config["newrelic_license_key"]
+        os.environ["NEWRELIC_LICENSE_KEY"]
     ))
 
     def cloud_repository(self):

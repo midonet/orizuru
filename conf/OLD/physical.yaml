@@ -33,8 +33,6 @@ config:
 
     openstack_release: juno
 
-    newrelic_license_key: 5bb3df5f1f18a73de737a37e17690c58252bd183
-
     # must be a file under /usr/share/zoneinfo
     timezone: Europe/Berlin
 
