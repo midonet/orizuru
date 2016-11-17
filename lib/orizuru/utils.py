@@ -24,15 +24,6 @@ class Daemon(object):
     def __init__(self, configfile):
         pass
 
-    def start(self, command, daemon_string, timeout=15):
-        run("""
-
-echo screen session for command
-
-""")
-
-        self.poll(daemon_string, timeout)
-
     @classmethod
     def poll(cls, daemon_string, timeout=15):
         run("""
