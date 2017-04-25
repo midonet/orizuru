@@ -1,3 +1,7 @@
+THIS PROJECT IS DEPRECATED.
+
+Please use github.com/agabert/zeus for MEM5 demo installations.
+
 折鶴
 ====
 
