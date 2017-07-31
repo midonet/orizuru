@@ -1362,9 +1362,9 @@ ping -c9 "${FIP}"
 
     cxx=[]
 
-    cxx.append('wget -O/dev/null http://www.midokura.com')
-    cxx.append('ping -c3 www.midokura.com')
-    cxx.append('ping -c3 www.google.com')
+    cxx.append('wget -O/dev/null http://www.midokura.de')
+    cxx.append('ping -c3 www.midokura.de')
+    cxx.append('ping -c3 www.google.de')
 
     for cxc in cxx:
         puts(green("trying to run command [%s] in testvm" % cxc))

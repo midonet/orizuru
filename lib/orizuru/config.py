@@ -197,7 +197,7 @@ class Config(object):
                         idx = idx + 1
 
     def __prepare_config(self):
-        common1 = 'htop vim screen atop tcpdump nload make git dstat tinc bridge-utils openjdk-7-jre-headless iperf beep figlet'
+        common1 = 'htop vim screen atop tcpdump nload make git dstat tinc bridge-utils openjdk-7-jre-headless iperf beep'
         common2 = 'traceroute mosh python-mysqldb mysql-client-core-5.5 apparmor docker.io python git minicom strace sharutils'
 
         common_packages = "%s %s" % (common1, common2)
@@ -236,10 +236,6 @@ class Config(object):
         defaults["os_release_codename"] = "trusty"
 
         defaults["fip_base"] = "10.0.0"
-
-        defaults["mtu_physical"] = 1500
-        defaults["mtu_mezzanine"] = 1500
-        defaults["mtu_container"] = 1500
 
         for overloading_key in defaults:
             if overloading_key not in self._config:

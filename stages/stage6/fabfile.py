@@ -1384,6 +1384,7 @@ glance image-list | grep 'trusty' || \
 
     cuisine.file_write("/tmp/.%s.lck" % sys._getframe().f_code.co_name, "xoxo")
 
+@parallel(pool_size=5)
 @roles('all_containers')
 def stage6_container_openstack_keystone_keystonerc():
     metadata = Config(os.environ["CONFIGFILE"])

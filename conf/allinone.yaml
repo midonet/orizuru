@@ -7,6 +7,8 @@
 #
 config:
 
+    mtu_container: 1400
+
     # used for the midonet gateway veth pair
     fake_transfer_net: 192.168.254
 
@@ -24,9 +26,6 @@ config:
     midonet_mem_openstack_plugin_version: kilo
 
     openstack_release: kilo
-
-    midonet_oss_version: 2015.06
-    midonet_oss_openstack_plugin_version: kilo
 
     # must be a file under /usr/share/zoneinfo
     timezone: Europe/Berlin
@@ -79,7 +78,7 @@ roles:
 
 servers:
     os001:
-        ip: 192.168.6.121
+        ip: 192.168.12.183
         # used for the containers on this host
         dockernet: 192.168.252.0/24
 

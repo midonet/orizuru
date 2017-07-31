@@ -58,7 +58,7 @@ FAB = $(PP) $(CC) $(TT) $(PW) fab $(FABSSHCONFIG) $(FABFABFILE) $(@)
 RUNSTAGE_CHECK = test -f "$(TMPDIR)/.SUCCESS_$(@)"
 RUNSTAGE_TOUCH = date | tee "$(TMPDIR)/.SUCCESS_$(@)"
 
-RUNSTAGE = figlet "running $(@)" || echo "running $(@)"; $(RUNSTAGE_CHECK) || $(FAB) && $(RUNSTAGE_TOUCH)
+RUNSTAGE = echo "running $(@)"; $(RUNSTAGE_CHECK) || $(FAB) && $(RUNSTAGE_TOUCH)
 
 REQUIREMENTS = $(INCLUDE)/requirements.txt
 
@@ -71,14 +71,14 @@ $(TMPDIR):
 	mkdir -pv "$(TMPDIR)"
 
 pipinstalled:
-	which pip || sudo apt-get -y install python-pip
-	dpkg -l | grep ^ii | grep python-dev || sudo apt-get -y install python-dev
-	dpkg -l | grep ^ii | grep python-yaml || sudo apt-get -y install python-yaml
-	dpkg -l | grep ^ii | grep python-netaddr || sudo apt-get -y install python-netaddr
+	#which pip || sudo apt-get -y install python-pip
+	#dpkg -l | grep ^ii | grep python-dev || sudo apt-get -y install python-dev
+	#dpkg -l | grep ^ii | grep python-yaml || sudo apt-get -y install python-yaml
+	#dpkg -l | grep ^ii | grep python-netaddr || sudo apt-get -y install python-netaddr
 
 pipdeps: $(TMPDIR)
-	test -f "$(TMPDIR)/.SUCCESS_pipinstall" || \
-		sudo pip install --upgrade -r "$(REQUIREMENTS)" && \
+	#test -f "$(TMPDIR)/.SUCCESS_pipinstall" || \
+	#	sudo pip install --upgrade -r "$(REQUIREMENTS)" && \
 		touch "$(TMPDIR)/.SUCCESS_pipinstall"
 
 cleanup:

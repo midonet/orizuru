@@ -58,7 +58,6 @@ etchosts:
 	mv $(HOSTSFILE).NEW $(HOSTSFILE)
 
 stage1: $(PREREQUISITES)
-	@figlet UPGRADE SYSTEMS || true
 	test -f "$(TMPDIR)/.SUCCESS_$(@)" || $(FAB)pingcheck
 	test -f "$(TMPDIR)/.SUCCESS_$(@)" || $(FAB)sshcheck
 	$(RUNSTAGE)
@@ -87,60 +86,50 @@ stage2: $(PREREQUISITES)
 	rm $(TMPDIR)/.SUCCESS_$(@)
 
 stage3: $(PREREQUISITES)
-	@figlet SET UP VPN || true
 	mkdir -pv "$(TMPDIR)/etc/tinc"
 	$(RUNSTAGE)
 
 stage4: $(PREREQUISITES)
-	@figlet CONFIGURE CONTAINERS || true
 	$(RUNSTAGE)
 
 haproxy: $(PREREQUISITES)
-	@figlet CONFIGURE HAPROXY || true
 	$(RUNSTAGE)
 
 stage5: $(PREREQUISITES)
-	@figlet UPGRADE CONTAINERS || true
 	test -f "$(TMPDIR)/.SUCCESS_$(@)" || $(FAB)pingcheck
 	$(RUNSTAGE)
 
 stage6: $(PREREQUISITES)
-	@figlet INSTALL OPENSTACK || true
 	mkdir -pv $(TMPDIR)/img
 	cp img/favicon.ico $(TMPDIR)/img/favicon.ico
 	cp img/midokura.png $(TMPDIR)/img/midokura.png
 	$(RUNSTAGE)
 
 stage7: $(PREREQUISITES)
-	@figlet INSTALL MIDONET || true
 	$(RUNSTAGE)
 
 #
 # tempest
 #
 stage8: $(PREREQUISITES)
-	@figlet TEMPEST || true
 	$(RUNSTAGE)
 
 #
 # swift
 #
 stage9: $(PREREQUISITES)
-	@figlet SWIFT || true
 	$(RUNSTAGE)
 
 #
 # vtep logic
 #
 stage10: $(PREREQUISITES)
-	@figlet VTEP || true
 	$(RUNSTAGE)
 
 #
 # install gnome on all servers
 #
 stage11: $(PREREQUISITES)
-	@figlet GNOME || true
 	$(RUNSTAGE)
 
 uptime: $(PREREQUISITES)
